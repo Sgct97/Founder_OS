@@ -278,7 +278,9 @@ async def process_document(document_id: uuid.UUID) -> None:
 
 
 def _parse_file(file_path: Path, file_type: str) -> str:
-    """Parse a file to raw text using the unstructured library.
+    """Parse a file to raw text.
+
+    Uses pypdf for PDFs and plain file reads for text/markdown.
 
     Args:
         file_path: Path to the file on disk.
@@ -287,10 +289,19 @@ def _parse_file(file_path: Path, file_type: str) -> str:
     Returns:
         Extracted text content.
     """
-    from unstructured.partition.auto import partition
+    if file_type == "pdf":
+        from pypdf import PdfReader
 
-    elements = partition(filename=str(file_path))
-    return "\n\n".join(str(el) for el in elements if str(el).strip())
+        reader = PdfReader(str(file_path))
+        pages = []
+        for page in reader.pages:
+            text = page.extract_text()
+            if text and text.strip():
+                pages.append(text.strip())
+        return "\n\n".join(pages)
+
+    # Markdown and plain text — just read the file.
+    return file_path.read_text(encoding="utf-8")
 
 
 def _chunk_text(

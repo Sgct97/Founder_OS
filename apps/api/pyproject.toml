@@ -19,7 +19,7 @@ openai = "^1.57.0"
 python-multipart = "^0.0.18"
 httpx = "^0.28.0"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
-unstructured = {extras = ["pdf"], version = "^0.16.0"}
+pypdf = "^5.0.0"
 tiktoken = "^0.8.0"
 sse-starlette = "^2.1.0"
 supabase = "^2.11.0"
