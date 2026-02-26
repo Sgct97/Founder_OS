@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 CHAT_MODEL = "gpt-5.2"
 TOP_K_CHUNKS = 5
+SIMILARITY_THRESHOLD = 0.25  # Chunks below this score are considered irrelevant
 NO_CONTEXT_RESPONSE = (
     "I don't have any uploaded documents to reference for this question, but I can still "
     "help with general Amedici project knowledge. Could you rephrase your question, or "
@@ -160,14 +161,37 @@ SYSTEM_PROMPT = (
     "completed). Visual journey path with progress bars. AI-powered import from text.\n"
     "3. ACCOUNTABILITY DIARY: Daily entries with optional milestone links, hours worked, streaks.\n\n"
 
-    "═══ YOUR ROLE ═══\n\n"
+    "═══ YOUR ROLE — STRICT SOURCE ATTRIBUTION RULES ═══\n\n"
 
-    "You answer questions using the Amedici project context above AND the document context "
-    "provided below from the user's uploaded knowledge base. When document context is provided, "
-    "ground your answers in those documents and cite sources using [Document: title] notation. "
-    "If the documents do not contain enough information to answer, you may use the Amedici "
-    "project context above, but clearly indicate when you are drawing from general project "
-    "knowledge vs. uploaded documents. Be concise, precise, and helpful."
+    "You help the founders reason through problems using their uploaded documents as the "
+    "PRIMARY source of truth. You MUST follow these attribution rules without exception:\n\n"
+
+    "1. KNOWLEDGE BASE DOCUMENTS (highest priority): When document context is provided below, "
+    "ground your answer in those documents. Cite every claim with (Source: [document title]) "
+    "inline, immediately after the sentence or paragraph that uses that information.\n\n"
+
+    "2. AMEDICI PROJECT CONTEXT (secondary): The project context above is background knowledge "
+    "about what we are building. If you use any of it in your answer, you MUST prefix that "
+    "section with: '⚡ From Amedici project context:' so the user knows it did not come from "
+    "their uploaded documents.\n\n"
+
+    "3. YOUR OWN TRAINING DATA (last resort): If you draw on general knowledge from your "
+    "training (e.g., how Daml works, industry best practices, coding patterns), you MUST "
+    "prefix that section with: '💡 From general knowledge (not from your documents):' so the "
+    "user knows this information was NOT retrieved from their knowledge base.\n\n"
+
+    "4. MIXED ANSWERS: If your answer combines multiple sources, label EACH part separately. "
+    "Never blend sourced and unsourced information without attribution.\n\n"
+
+    "5. NO SILENT FALLBACKS: If the uploaded documents don't contain what's needed, SAY SO "
+    "explicitly — e.g., 'Your uploaded documents don't cover this topic. Here's what I can "
+    "offer from general knowledge:' — before providing supplementary information.\n\n"
+
+    "6. REASONING & LOGIC: When the user asks you to help reason through a problem, walk "
+    "through the logic step by step. Reference specific passages from their documents and "
+    "quote them when useful. If you identify gaps in the documents, call them out.\n\n"
+
+    "Be concise, precise, and helpful. Always prioritize the user's uploaded documents."
 )
 
 # ── Conversation CRUD ────────────────────────────────────────────
@@ -373,13 +397,30 @@ def _build_rag_prompt(
     if chunks:
         context_parts = []
         for chunk in chunks:
+            sim = chunk.get("similarity", 0)
             context_parts.append(
-                f"[Document: {chunk['document_title']}]\n{chunk['content']}"
+                f"[Document: {chunk['document_title']}] (relevance: {sim:.2f})\n{chunk['content']}"
             )
         context_text = "\n\n---\n\n".join(context_parts)
         messages.append({
             "role": "system",
-            "content": f"Context from uploaded documents:\n\n{context_text}",
+            "content": (
+                f"══ RETRIEVED DOCUMENT CONTEXT ({len(chunks)} relevant chunks) ══\n\n"
+                f"The following excerpts were retrieved from the user's uploaded knowledge base. "
+                f"Use these as your PRIMARY source and cite them with (Source: [document title]).\n\n"
+                f"{context_text}"
+            ),
+        })
+    else:
+        messages.append({
+            "role": "system",
+            "content": (
+                "══ NO RELEVANT DOCUMENT CONTEXT FOUND ══\n\n"
+                "No uploaded documents matched this query above the relevance threshold. "
+                "You may answer using the Amedici project context or your general knowledge, "
+                "but you MUST explicitly label which source you are drawing from. "
+                "Start your answer by noting: 'Your uploaded documents don't cover this topic.'"
+            ),
         })
 
     # Add conversation history (last 10 messages for context window budget).
@@ -446,25 +487,22 @@ async def send_message_streaming(
         yield _sse_data({"type": "error", "content": error_msg})
         return
 
-    # Retrieve relevant chunks.
-    chunks = await _retrieve_relevant_chunks(db, workspace_id, query_embedding)
+    # Retrieve relevant chunks and filter by similarity threshold.
+    all_chunks = await _retrieve_relevant_chunks(db, workspace_id, query_embedding)
+    chunks = [c for c in all_chunks if c["similarity"] >= SIMILARITY_THRESHOLD]
+
+    logger.info(
+        "RAG retrieval: %d/%d chunks above threshold (%.2f). Top score: %.3f",
+        len(chunks),
+        len(all_chunks),
+        SIMILARITY_THRESHOLD,
+        all_chunks[0]["similarity"] if all_chunks else 0.0,
+    )
 
     if not chunks:
-        # No documents or no relevant chunks found.
-        yield _sse_data({"type": "content", "content": NO_CONTEXT_RESPONSE})
-
-        # Save the response.
-        assistant_message = Message(
-            conversation_id=conversation_id,
-            role="assistant",
-            content=NO_CONTEXT_RESPONSE,
-            sources=None,
-        )
-        db.add(assistant_message)
-        await db.commit()
-
-        yield _sse_data({"type": "done", "message_id": str(assistant_message.id)})
-        return
+        # No relevant chunks found — answer from project context only.
+        # Pass empty chunks so the model still has the system prompt context.
+        chunks = []
 
     # Build conversation history.
     history_result = await db.execute(
@@ -514,32 +552,34 @@ async def send_message_streaming(
         yield _sse_data({"type": "error", "content": error_msg})
         return
 
-    # Build source citations.
+    # Build source citations — only for chunks that were actually relevant.
     sources = [
         {
             "document_id": chunk["document_id"],
             "document_title": chunk["document_title"],
             "chunk_id": chunk["chunk_id"],
             "snippet": chunk["content"][:200],
+            "similarity": round(chunk["similarity"], 3),
         }
         for chunk in chunks
-    ]
+    ] if chunks else []
 
     # Save assistant message with sources.
     assistant_message = Message(
         conversation_id=conversation_id,
         role="assistant",
         content=full_response,
-        sources=sources,
+        sources=sources if sources else None,
     )
     db.add(assistant_message)
     await db.commit()
 
-    # Send sources and completion signal.
-    yield _sse_data({
-        "type": "sources",
-        "sources": sources,
-    })
+    # Send sources and completion signal (only if we have relevant sources).
+    if sources:
+        yield _sse_data({
+            "type": "sources",
+            "sources": sources,
+        })
     yield _sse_data({
         "type": "done",
         "message_id": str(assistant_message.id),
