@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     supabase_service_key: str = ""
     supabase_jwt_secret: str = ""
     openai_api_key: str = ""
-    cors_origins: str = "http://localhost:8081,http://localhost:19006"
+    cors_origins: str = "http://localhost:8081,http://localhost:19006,https://founder-os-web.onrender.com"
     log_level: str = "INFO"
     upload_dir: str = "./uploads"
 
