@@ -98,6 +98,15 @@ const FILE_TYPE_LABELS: Record<string, string> = {
   pdf: "PDF Document",
   md: "Markdown",
   txt: "Plain Text",
+  csv: "CSV Spreadsheet",
+  json: "JSON Data",
+  html: "HTML Page",
+  htm: "HTML Page",
+  yaml: "YAML Config",
+  yml: "YAML Config",
+  xml: "XML Document",
+  log: "Log File",
+  rst: "reStructuredText",
 };
 
 // ── Metadata Row ────────────────────────────────────────────

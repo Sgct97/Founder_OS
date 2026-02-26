@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 EMBEDDING_MODEL = "text-embedding-3-small"
 CHUNK_TARGET_TOKENS = 512
 CHUNK_OVERLAP_TOKENS = 50
-ALLOWED_EXTENSIONS = {"pdf", "md", "txt"}
+ALLOWED_EXTENSIONS = {"pdf", "md", "txt", "csv", "json", "html", "htm", "yaml", "yml", "log", "rst", "xml"}
 MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB
 
 # ── CRUD Operations ──────────────────────────────────────────────
@@ -280,11 +280,12 @@ async def process_document(document_id: uuid.UUID) -> None:
 def _parse_file(file_path: Path, file_type: str) -> str:
     """Parse a file to raw text.
 
-    Uses pypdf for PDFs and plain file reads for text/markdown.
+    Uses pypdf for PDFs, BeautifulSoup for HTML, and plain file reads
+    for everything else (md, txt, csv, json, yaml, xml, log, rst).
 
     Args:
         file_path: Path to the file on disk.
-        file_type: File extension (pdf, md, txt).
+        file_type: File extension (pdf, md, txt, html, csv, etc.).
 
     Returns:
         Extracted text content.
@@ -300,7 +301,17 @@ def _parse_file(file_path: Path, file_type: str) -> str:
                 pages.append(text.strip())
         return "\n\n".join(pages)
 
-    # Markdown and plain text — just read the file.
+    if file_type in ("html", "htm"):
+        from bs4 import BeautifulSoup
+
+        raw_html = file_path.read_text(encoding="utf-8")
+        soup = BeautifulSoup(raw_html, "html.parser")
+        # Remove script and style elements.
+        for tag in soup(["script", "style", "nav", "footer", "header"]):
+            tag.decompose()
+        return soup.get_text(separator="\n", strip=True)
+
+    # Everything else (md, txt, csv, json, yaml, xml, log, rst) — read as text.
     return file_path.read_text(encoding="utf-8")
 
 

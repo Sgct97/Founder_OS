@@ -94,6 +94,15 @@ const FILE_TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   pdf: "document-text",
   md: "code-slash",
   txt: "reader",
+  csv: "grid",
+  json: "code",
+  html: "globe",
+  htm: "globe",
+  yaml: "settings",
+  yml: "settings",
+  xml: "code-working",
+  log: "terminal",
+  rst: "reader",
 };
 
 // ── Status Badge ────────────────────────────────────────────
@@ -209,7 +218,7 @@ function UploadButton({ onPress }: { onPress: () => void }) {
       </View>
       <View style={styles.uploadTextContainer}>
         <Text style={styles.uploadTitle}>Upload Document</Text>
-        <Text style={styles.uploadSubtitle}>PDF, Markdown, or plain text</Text>
+        <Text style={styles.uploadSubtitle}>PDF, Markdown, CSV, HTML, JSON, and more</Text>
       </View>
       <Ionicons name="add-circle" size={24} color={COLORS.primary} />
     </Pressable>
@@ -246,7 +255,7 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
           color={COLORS.textTertiary}
         />
         <Text style={styles.chipText}>
-          PDF, Markdown, and plain text supported
+          PDF, CSV, HTML, JSON, Markdown, and more
         </Text>
       </View>
     </View>
@@ -300,6 +309,13 @@ export default function KnowledgeScreen() {
           "text/plain",
           "text/markdown",
           "text/x-markdown",
+          "text/csv",
+          "application/json",
+          "text/html",
+          "text/yaml",
+          "text/xml",
+          "application/xml",
+          "application/x-yaml",
         ],
         copyToCacheDirectory: true,
       });

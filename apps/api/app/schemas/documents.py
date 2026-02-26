@@ -25,6 +25,15 @@ class DocumentFileType(str, Enum):
     PDF = "pdf"
     MARKDOWN = "md"
     TEXT = "txt"
+    CSV = "csv"
+    JSON = "json"
+    HTML = "html"
+    HTM = "htm"
+    YAML = "yaml"
+    YML = "yml"
+    LOG = "log"
+    RST = "rst"
+    XML = "xml"
 
 
 # ── Response Schemas ─────────────────────────────────────────────
