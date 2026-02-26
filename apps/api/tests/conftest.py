@@ -1,5 +1,6 @@
 """Shared test fixtures for the API test suite."""
 
+import os
 import uuid
 from collections.abc import AsyncGenerator
 
@@ -12,15 +13,55 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from app.config import settings
 from app.database import get_db
 from app.main import app
 from app.models import Base
 
+# ── Determine test database URL ──────────────────────────────────────
+#
+# SAFETY: Tests DROP ALL TABLES after every run. They must NEVER point
+# at the production database.
+#
+# Priority:
+#   1. TEST_DATABASE_URL env var (explicit override)
+#   2. Automatically derive a "_test" variant from DATABASE_URL
+#   3. Hard-coded local default
+#
+# A runtime guard below will refuse to run if the resolved URL does NOT
+# contain the word "test" anywhere in the database name.
+
+_prod_url = os.environ.get(
+    "DATABASE_URL",
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/founder_os",
+)
+
+
+def _derive_test_url(prod_url: str) -> str:
+    """Swap the database name to append '_test' if not already present."""
+    # URL looks like: ...://user:pass@host:port/dbname
+    if "/founder_os_test" in prod_url:
+        return prod_url  # already points at test DB
+    return prod_url.replace("/founder_os", "/founder_os_test")
+
+
+TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL") or _derive_test_url(
+    _prod_url
+)
+
+# ── Guard: refuse to run against production ──────────────────────────
+_db_name = TEST_DATABASE_URL.rsplit("/", 1)[-1].split("?")[0]
+if "test" not in _db_name.lower():
+    raise RuntimeError(
+        f"REFUSING TO RUN TESTS: database name '{_db_name}' does not contain "
+        f"'test'. Tests drop all tables — this would destroy production data.\n"
+        f"Set TEST_DATABASE_URL to a test database or ensure DATABASE_URL "
+        f"points to a database with 'test' in its name."
+    )
+
 # ── Test database engine (NullPool avoids connection reuse conflicts) ──
 
 test_engine = create_async_engine(
-    settings.database_url, echo=False, poolclass=NullPool
+    TEST_DATABASE_URL, echo=False, poolclass=NullPool
 )
 TestSessionLocal = async_sessionmaker(
     test_engine, class_=AsyncSession, expire_on_commit=False
