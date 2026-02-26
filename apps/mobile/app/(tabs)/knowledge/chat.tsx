@@ -467,7 +467,13 @@ export default function ChatScreen() {
         <View style={styles.headerLeftGroup}>
           <Pressable
             style={styles.headerButton}
-            onPress={() => router.back()}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/(tabs)/knowledge");
+              }
+            }}
           >
             <Ionicons name="chevron-back" size={22} color={COLORS.primary} />
           </Pressable>
