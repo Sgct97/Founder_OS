@@ -320,6 +320,9 @@ export default function KnowledgeScreen() {
           "text/xml",
           "application/xml",
           "application/x-yaml",
+          "text/x-rst",
+          "text/restructuredtext",
+          "text/x-log",
         ],
         copyToCacheDirectory: true,
       });
