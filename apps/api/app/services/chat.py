@@ -499,7 +499,7 @@ async def send_message_streaming(
                 messages=messages,
                 stream=True,
                 temperature=0.3,
-                max_tokens=2000,
+                max_completion_tokens=2000,
             )
 
             async for chunk in stream:

@@ -95,8 +95,9 @@ export function useStreamingChat(conversationId: string | undefined) {
   const contentRef = useRef("");
 
   const sendMessage = useCallback(
-    async (content: string) => {
-      if (!conversationId || state.isStreaming) return;
+    async (content: string, conversationIdOverride?: string) => {
+      const targetId = conversationIdOverride ?? conversationId;
+      if (!targetId || state.isStreaming) return;
 
       contentRef.current = "";
       setState({
@@ -108,7 +109,7 @@ export function useStreamingChat(conversationId: string | undefined) {
 
       try {
         await chatService.sendMessageStreaming(
-          conversationId,
+          targetId,
           content,
           (event: SSEChatEvent) => {
             switch (event.type) {
@@ -136,7 +137,7 @@ export function useStreamingChat(conversationId: string | undefined) {
                 queryClient.invalidateQueries({
                   queryKey: [
                     ...CONVERSATIONS_KEY,
-                    conversationId,
+                    targetId,
                     "messages",
                   ],
                 });

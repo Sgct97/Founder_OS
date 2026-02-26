@@ -384,10 +384,8 @@ export default function ChatScreen() {
         });
         setActiveConversationId(newConv.id);
         setInputText("");
-        // Send the message after a brief delay to let state settle.
-        setTimeout(() => {
-          sendMessage(trimmed);
-        }, 200);
+        // Pass the new conversation ID directly to avoid stale closure.
+        await sendMessage(trimmed, newConv.id);
         return;
       } catch (err) {
         Alert.alert(
