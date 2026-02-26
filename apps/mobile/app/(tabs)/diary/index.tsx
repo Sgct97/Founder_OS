@@ -26,6 +26,10 @@ import {
   useDiaryEntries,
   useStreaks,
 } from "@/hooks/use-diary";
+import {
+  SkeletonStreakRow,
+  SkeletonTimelineEntry,
+} from "@/components/ui/Skeleton";
 import type { DiaryEntryResponse, StreakInfo } from "@/types/diary";
 import {
   BORDER_RADIUS,
@@ -310,8 +314,17 @@ export default function DiaryScreen() {
 
   if (entriesLoading && !entries) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
+      <View style={styles.screen}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <SkeletonStreakRow />
+          {[0, 1, 2, 3].map((i) => (
+            <SkeletonTimelineEntry key={i} />
+          ))}
+        </ScrollView>
       </View>
     );
   }
@@ -321,6 +334,15 @@ export default function DiaryScreen() {
       <View style={styles.errorContainer}>
         <Ionicons name="alert-circle" size={32} color={COLORS.error} />
         <Text style={styles.errorText}>Failed to load diary entries</Text>
+        <Text style={styles.errorDetail}>
+          {entriesError instanceof Error
+            ? entriesError.message
+            : "An unexpected error occurred"}
+        </Text>
+        <Pressable style={styles.retryButton} onPress={() => refetchEntries()}>
+          <Ionicons name="refresh" size={16} color={COLORS.primary} />
+          <Text style={styles.retryText}>Try Again</Text>
+        </Pressable>
       </View>
     );
   }
@@ -411,6 +433,28 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.semibold,
     color: COLORS.textPrimary,
     marginTop: SPACING.md,
+  },
+  errorDetail: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textTertiary,
+    marginTop: SPACING.xs,
+    textAlign: "center",
+    maxWidth: 300,
+  },
+  retryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: BORDER_RADIUS.sm,
+    backgroundColor: COLORS.primaryMuted,
+    gap: SPACING.xs,
+  },
+  retryText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.primary,
   },
   scrollView: {
     flex: 1,

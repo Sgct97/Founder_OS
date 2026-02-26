@@ -10,6 +10,9 @@ from app.database import get_db
 from app.dependencies import CurrentUser
 from app.schemas.milestones import (
     MilestoneCreate,
+    MilestoneImportPreview,
+    MilestoneImportRequest,
+    MilestoneImportResponse,
     MilestoneResponse,
     MilestoneUpdate,
     PhaseCreate,
@@ -18,6 +21,7 @@ from app.schemas.milestones import (
     PhaseWithMilestonesResponse,
 )
 from app.services import milestones as milestones_service
+from app.services.milestone_import import create_phases_from_preview, parse_text_with_ai
 
 router = APIRouter()
 
@@ -154,4 +158,47 @@ async def delete_milestone(
     """Delete a milestone."""
     workspace_id = _require_workspace(current_user)
     await milestones_service.delete_milestone(db, milestone_id, workspace_id)
+
+
+# ── Import endpoints ─────────────────────────────────────────────
+
+
+@router.post(
+    "/phases/import/preview",
+    response_model=MilestoneImportPreview,
+    summary="Preview milestone import — parse text with AI",
+)
+async def import_preview(
+    payload: MilestoneImportRequest,
+    current_user: CurrentUser,
+) -> MilestoneImportPreview:
+    """Send raw text to GPT-5.2 and return a structured preview of phases
+    and milestones before committing anything to the database."""
+    _require_workspace(current_user)
+    return await parse_text_with_ai(payload.content)
+
+
+@router.post(
+    "/phases/import/confirm",
+    response_model=MilestoneImportResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Confirm and save imported milestones",
+)
+async def import_confirm(
+    payload: MilestoneImportRequest,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> MilestoneImportResponse:
+    """Parse the text again and save the resulting phases/milestones to
+    the database. Use `replace_existing=true` to clear all current phases."""
+    workspace_id = _require_workspace(current_user)
+    preview = await parse_text_with_ai(payload.content)
+    phases = await create_phases_from_preview(
+        db, workspace_id, preview, payload.replace_existing
+    )
+    return MilestoneImportResponse(
+        phases_created=len(phases),
+        milestones_created=sum(len(p.milestones) for p in phases),
+        phases=[PhaseWithMilestonesResponse.model_validate(p) for p in phases],
+    )
 

@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 # ── Constants ─────────────────────────────────────────────────────
 
-CHAT_MODEL = "gpt-4o"
+CHAT_MODEL = "gpt-5.2"
 TOP_K_CHUNKS = 5
 NO_CONTEXT_RESPONSE = (
     "I don't have enough information in your documents to answer this. "

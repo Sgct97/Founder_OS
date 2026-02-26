@@ -28,6 +28,7 @@ import {
   SHADOW,
   SPACING,
 } from "@/constants/theme";
+import { Skeleton, SkeletonMetadataCard } from "@/components/ui/Skeleton";
 import {
   useDeleteDocument,
   useDocument,
@@ -180,9 +181,26 @@ export default function DocumentDetailScreen() {
 
   if (isLoading || !document) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
-      </View>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Status hero card skeleton */}
+        <View style={[styles.statusCard, { borderLeftColor: COLORS.borderLight }]}>
+          <View style={styles.statusCardTop}>
+            <Skeleton width={48} height={48} borderRadius={BORDER_RADIUS.md} />
+            <View style={{ flex: 1, marginLeft: SPACING.md }}>
+              <Skeleton width="40%" height={16} />
+              <Skeleton width="70%" height={12} style={{ marginTop: 8 }} />
+            </View>
+          </View>
+        </View>
+
+        {/* Metadata skeleton */}
+        <Skeleton width={60} height={10} style={{ marginBottom: SPACING.md }} />
+        <SkeletonMetadataCard />
+      </ScrollView>
     );
   }
 

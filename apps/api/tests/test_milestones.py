@@ -1,6 +1,8 @@
 """Tests for milestone and phase endpoints — CRUD + edge cases."""
 
+import json
 import uuid
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import AsyncClient
@@ -431,4 +433,185 @@ async def test_phases_sorted_by_sort_order(authed_client: AsyncClient) -> None:
     response = await authed_client.get("/api/v1/phases")
     titles = [p["title"] for p in response.json()]
     assert titles == ["A", "B", "C"]
+
+
+# ── Import endpoint tests ────────────────────────────────────────
+
+
+def _mock_openai_response(content: dict) -> MagicMock:
+    """Build a mock OpenAI ChatCompletion response."""
+    message = MagicMock()
+    message.content = json.dumps(content)
+    choice = MagicMock()
+    choice.message = message
+    response = MagicMock()
+    response.choices = [choice]
+    return response
+
+
+SAMPLE_AI_RESPONSE = {
+    "phases": [
+        {
+            "title": "Phase 1: Foundation",
+            "description": "Core infrastructure",
+            "milestones": [
+                {"title": "Set up authentication", "description": None},
+                {"title": "Design database schema", "description": "SQL tables"},
+            ],
+        },
+        {
+            "title": "Phase 2: Features",
+            "description": None,
+            "milestones": [
+                {"title": "Build document upload", "description": None},
+                {"title": "Implement search", "description": None},
+                {"title": "Create dashboard", "description": None},
+            ],
+        },
+    ]
+}
+
+
+@pytest.mark.asyncio
+async def test_import_preview(authed_client: AsyncClient) -> None:
+    """POST /api/v1/phases/import/preview should return AI-parsed preview."""
+    mock_response = _mock_openai_response(SAMPLE_AI_RESPONSE)
+
+    with patch("app.services.milestone_import.AsyncOpenAI") as MockOpenAI:
+        mock_client = AsyncMock()
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+        MockOpenAI.return_value = mock_client
+
+        response = await authed_client.post(
+            "/api/v1/phases/import/preview",
+            json={"content": "# Phase 1\n- task 1\n- task 2\n# Phase 2\n- task 3"},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_phases"] == 2
+    assert data["total_milestones"] == 5
+    assert len(data["phases"]) == 2
+    assert data["phases"][0]["title"] == "Phase 1: Foundation"
+    assert len(data["phases"][0]["milestones"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_import_confirm_creates_phases(authed_client: AsyncClient) -> None:
+    """POST /api/v1/phases/import/confirm should create phases in DB."""
+    mock_response = _mock_openai_response(SAMPLE_AI_RESPONSE)
+
+    with patch("app.services.milestone_import.AsyncOpenAI") as MockOpenAI:
+        mock_client = AsyncMock()
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+        MockOpenAI.return_value = mock_client
+
+        response = await authed_client.post(
+            "/api/v1/phases/import/confirm",
+            json={"content": "# Phase 1\n- task 1\n- task 2\n# Phase 2\n- task 3"},
+        )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["phases_created"] == 2
+    assert data["milestones_created"] == 5
+    assert len(data["phases"]) == 2
+    assert data["phases"][0]["title"] == "Phase 1: Foundation"
+    assert len(data["phases"][0]["milestones"]) == 2
+    assert len(data["phases"][1]["milestones"]) == 3
+
+    # Verify phases appear in regular listing.
+    list_resp = await authed_client.get("/api/v1/phases")
+    assert len(list_resp.json()) == 2
+
+
+@pytest.mark.asyncio
+async def test_import_confirm_replace_existing(authed_client: AsyncClient) -> None:
+    """Import with replace_existing=true should delete existing phases first."""
+    # Create a pre-existing phase.
+    await authed_client.post("/api/v1/phases", json={"title": "Old Phase"})
+    list_resp = await authed_client.get("/api/v1/phases")
+    assert len(list_resp.json()) == 1
+
+    mock_response = _mock_openai_response(SAMPLE_AI_RESPONSE)
+
+    with patch("app.services.milestone_import.AsyncOpenAI") as MockOpenAI:
+        mock_client = AsyncMock()
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+        MockOpenAI.return_value = mock_client
+
+        response = await authed_client.post(
+            "/api/v1/phases/import/confirm",
+            json={
+                "content": "# Phase 1\n- task 1\n# Phase 2\n- task 3",
+                "replace_existing": True,
+            },
+        )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["phases_created"] == 2
+
+    # Old phase should be gone; only imported phases remain.
+    list_resp = await authed_client.get("/api/v1/phases")
+    titles = [p["title"] for p in list_resp.json()]
+    assert "Old Phase" not in titles
+    assert len(list_resp.json()) == 2
+
+
+@pytest.mark.asyncio
+async def test_import_confirm_append_mode(authed_client: AsyncClient) -> None:
+    """Import without replace_existing should append to existing phases."""
+    await authed_client.post(
+        "/api/v1/phases", json={"title": "Existing Phase", "sort_order": 0}
+    )
+
+    mock_response = _mock_openai_response(SAMPLE_AI_RESPONSE)
+
+    with patch("app.services.milestone_import.AsyncOpenAI") as MockOpenAI:
+        mock_client = AsyncMock()
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+        MockOpenAI.return_value = mock_client
+
+        response = await authed_client.post(
+            "/api/v1/phases/import/confirm",
+            json={"content": "# Phase 1\n- task 1\n# Phase 2\n- task 3"},
+        )
+
+    assert response.status_code == 201
+
+    list_resp = await authed_client.get("/api/v1/phases")
+    assert len(list_resp.json()) == 3  # 1 existing + 2 imported
+
+
+@pytest.mark.asyncio
+async def test_import_preview_too_short(authed_client: AsyncClient) -> None:
+    """Content shorter than 10 chars should return 422."""
+    response = await authed_client.post(
+        "/api/v1/phases/import/preview",
+        json={"content": "too short"},
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_import_preview_no_auth(client: AsyncClient) -> None:
+    """Import without auth should return 403."""
+    response = await client.post(
+        "/api/v1/phases/import/preview",
+        json={"content": "some content that is long enough to pass"},
+    )
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_import_preview_no_workspace(
+    authed_client_no_workspace: AsyncClient,
+) -> None:
+    """Import without a workspace should return 400."""
+    response = await authed_client_no_workspace.post(
+        "/api/v1/phases/import/preview",
+        json={"content": "some content that is long enough to pass"},
+    )
+    assert response.status_code == 400
 

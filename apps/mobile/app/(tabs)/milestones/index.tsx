@@ -23,6 +23,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import { Button } from "@/components/ui/Button";
+import ImportModal from "@/components/milestones/ImportModal";
+import { Skeleton, SkeletonPhaseCard } from "@/components/ui/Skeleton";
 import {
   useCreateMilestone,
   useCreatePhase,
@@ -58,7 +60,7 @@ const STATUS_ORDER: MilestoneStatus[] = [
 
 function nextStatus(current: MilestoneStatus): MilestoneStatus {
   const idx = STATUS_ORDER.indexOf(current);
-  return STATUS_ORDER[(idx + 1) % STATUS_ORDER.length];
+  return STATUS_ORDER[(idx + 1) % STATUS_ORDER.length] ?? "not_started";
 }
 
 function statusIcon(
@@ -368,8 +370,10 @@ function FormModal({
 
 function EmptyState({
   onAddPhase,
+  onImportPress,
 }: {
   onAddPhase: () => void;
+  onImportPress: () => void;
 }): React.JSX.Element {
   return (
     <View style={styles.emptyState}>
@@ -387,8 +391,13 @@ function EmptyState({
         </View>
         <Text style={styles.emptyProgressLabel}>0 of 0 milestones</Text>
       </View>
-      <View style={{ marginTop: SPACING.lg, width: 200 }}>
+      <View style={{ marginTop: SPACING.lg, width: 220, gap: SPACING.sm }}>
         <Button label="Add First Phase" onPress={onAddPhase} />
+        <Button
+          label="Import with AI"
+          variant="ghost"
+          onPress={onImportPress}
+        />
       </View>
     </View>
   );
@@ -397,7 +406,7 @@ function EmptyState({
 // ── Main Screen ─────────────────────────────────────────────
 
 export default function MilestonesScreen() {
-  const { data: phases, isLoading, error } = usePhases();
+  const { data: phases, isLoading, error, refetch } = usePhases();
 
   const createPhase = useCreatePhase();
   const updatePhase = useUpdatePhase();
@@ -405,6 +414,9 @@ export default function MilestonesScreen() {
   const createMilestone = useCreateMilestone();
   const updateMilestone = useUpdateMilestone();
   const deleteMilestone = useDeleteMilestone();
+
+  // Import modal state
+  const [importModalVisible, setImportModalVisible] = useState(false);
 
   // Modal state
   const [modalVisible, setModalVisible] = useState(false);
@@ -557,8 +569,27 @@ export default function MilestonesScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
+      <View style={styles.screen}>
+        {/* Skeleton overall progress header */}
+        <View style={styles.overallHeader}>
+          <View style={styles.overallHeaderLeft}>
+            <Skeleton width={100} height={10} />
+            <Skeleton width={140} height={13} style={{ marginTop: 6 }} />
+          </View>
+          <Skeleton width={48} height={28} />
+        </View>
+        <View style={styles.overallProgressBar}>
+          <Skeleton width="100%" height={4} borderRadius={BORDER_RADIUS.full} />
+        </View>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {[0, 1, 2].map((i) => (
+            <SkeletonPhaseCard key={i} />
+          ))}
+        </ScrollView>
       </View>
     );
   }
@@ -569,8 +600,12 @@ export default function MilestonesScreen() {
         <Ionicons name="alert-circle" size={32} color={COLORS.error} />
         <Text style={styles.errorText}>Failed to load milestones</Text>
         <Text style={styles.errorDetail}>
-          {error instanceof Error ? error.message : "Unknown error"}
+          {error instanceof Error ? error.message : "An unexpected error occurred"}
         </Text>
+        <Pressable style={styles.retryButton} onPress={() => refetch()}>
+          <Ionicons name="refresh" size={16} color={COLORS.primary} />
+          <Text style={styles.retryText}>Try Again</Text>
+        </Pressable>
       </View>
     );
   }
@@ -623,15 +658,27 @@ export default function MilestonesScreen() {
               />
             ))}
 
-            {/* Add Phase Button */}
-            <Pressable style={styles.addPhaseBtn} onPress={handleAddPhase}>
-              <Ionicons name="add-circle-outline" size={20} color={COLORS.primary} />
-              <Text style={styles.addPhaseBtnText}>Add Phase</Text>
-            </Pressable>
+            {/* Action Buttons */}
+            <View style={styles.actionRow}>
+              <Pressable style={styles.addPhaseBtn} onPress={handleAddPhase}>
+                <Ionicons name="add-circle-outline" size={20} color={COLORS.primary} />
+                <Text style={styles.addPhaseBtnText}>Add Phase</Text>
+              </Pressable>
+              <Pressable
+                style={styles.importBtn}
+                onPress={() => setImportModalVisible(true)}
+              >
+                <Ionicons name="sparkles" size={18} color={COLORS.primary} />
+                <Text style={styles.importBtnText}>Import with AI</Text>
+              </Pressable>
+            </View>
           </ScrollView>
         </>
       ) : (
-        <EmptyState onAddPhase={handleAddPhase} />
+        <EmptyState
+          onAddPhase={handleAddPhase}
+          onImportPress={() => setImportModalVisible(true)}
+        />
       )}
 
       {/* Form Modal */}
@@ -643,6 +690,12 @@ export default function MilestonesScreen() {
         onClose={() => setModalVisible(false)}
         onSubmit={handleModalSubmit}
         loading={modalLoading}
+      />
+
+      {/* Import Modal */}
+      <ImportModal
+        visible={importModalVisible}
+        onClose={() => setImportModalVisible(false)}
       />
     </View>
   );
@@ -678,6 +731,23 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.sm,
     color: COLORS.textTertiary,
     marginTop: SPACING.xs,
+    textAlign: "center",
+    maxWidth: 300,
+  },
+  retryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: BORDER_RADIUS.sm,
+    backgroundColor: COLORS.primaryMuted,
+    gap: SPACING.xs,
+  },
+  retryText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.primary,
   },
 
   // ── Overall Progress ──────────────────────────────────
@@ -856,7 +926,13 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.medium,
     color: COLORS.primary,
   },
+  actionRow: {
+    flexDirection: "row",
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
   addPhaseBtn: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -866,9 +942,23 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     borderStyle: "dashed",
     gap: SPACING.xs,
-    marginBottom: SPACING.md,
   },
   addPhaseBtnText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.primary,
+  },
+  importBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.primaryMuted,
+    gap: SPACING.xs,
+  },
+  importBtnText: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.semibold,
     color: COLORS.primary,

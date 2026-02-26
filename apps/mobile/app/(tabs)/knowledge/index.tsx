@@ -31,6 +31,10 @@ import {
   SPACING,
 } from "@/constants/theme";
 import {
+  SkeletonDocumentCard,
+  SkeletonStatsRow,
+} from "@/components/ui/Skeleton";
+import {
   useDeleteDocument,
   useDocuments,
   useUploadDocument,
@@ -368,11 +372,20 @@ export default function KnowledgeScreen() {
     router.push("/(tabs)/knowledge/chat");
   }, [router]);
 
-  // ── Loading state
+  // ── Loading state (skeleton)
   if (isLoading && !documents) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
+      <View style={styles.screen}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <SkeletonStatsRow />
+          {[0, 1, 2, 3].map((i) => (
+            <SkeletonDocumentCard key={i} />
+          ))}
+        </ScrollView>
       </View>
     );
   }

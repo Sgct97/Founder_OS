@@ -64,3 +64,33 @@ export interface MilestoneUpdatePayload {
   sort_order?: number;
 }
 
+// ── Import types ─────────────────────────────────────────────
+
+export interface ImportMilestoneItem {
+  title: string;
+  description: string | null;
+}
+
+export interface ImportPhaseItem {
+  title: string;
+  description: string | null;
+  milestones: ImportMilestoneItem[];
+}
+
+export interface MilestoneImportPreview {
+  phases: ImportPhaseItem[];
+  total_phases: number;
+  total_milestones: number;
+}
+
+export interface MilestoneImportRequest {
+  content: string;
+  replace_existing?: boolean;
+}
+
+export interface MilestoneImportResponse {
+  phases_created: number;
+  milestones_created: number;
+  phases: PhaseWithMilestones[];
+}
+

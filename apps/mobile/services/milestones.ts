@@ -5,6 +5,9 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/services/api";
 import type {
   MilestoneCreatePayload,
+  MilestoneImportPreview,
+  MilestoneImportRequest,
+  MilestoneImportResponse,
   MilestoneResponse,
   MilestoneUpdatePayload,
   PhaseCreatePayload,
@@ -67,5 +70,27 @@ export async function updateMilestone(
 /** Delete a milestone. */
 export async function deleteMilestone(milestoneId: string): Promise<void> {
   return apiDelete(`/api/v1/milestones/${milestoneId}`);
+}
+
+// ── Import operations ────────────────────────────────────────
+
+/** Preview an AI-parsed milestone import (no DB changes). */
+export async function importPreview(
+  payload: MilestoneImportRequest
+): Promise<MilestoneImportPreview> {
+  return apiPost<MilestoneImportPreview>(
+    "/api/v1/phases/import/preview",
+    payload
+  );
+}
+
+/** Confirm and save an AI-parsed milestone import to the database. */
+export async function importConfirm(
+  payload: MilestoneImportRequest
+): Promise<MilestoneImportResponse> {
+  return apiPost<MilestoneImportResponse>(
+    "/api/v1/phases/import/confirm",
+    payload
+  );
 }
 

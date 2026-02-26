@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # ── Enums ────────────────────────────────────────────────────────
@@ -100,4 +100,53 @@ class PhaseWithMilestonesResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# ── Import Schemas ────────────────────────────────────────────
+
+
+class ImportMilestoneItem(BaseModel):
+    """A single milestone extracted by GPT from imported text."""
+
+    title: str = Field(..., min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=5000)
+
+
+class ImportPhaseItem(BaseModel):
+    """A single phase with milestones extracted by GPT from imported text."""
+
+    title: str = Field(..., min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=5000)
+    milestones: list[ImportMilestoneItem] = Field(default_factory=list)
+
+
+class MilestoneImportRequest(BaseModel):
+    """Body for POST /phases/import — raw text or markdown to parse with AI."""
+
+    content: str = Field(
+        ...,
+        min_length=10,
+        max_length=50000,
+        description="Markdown or plain text describing project phases and milestones.",
+    )
+    replace_existing: bool = Field(
+        default=False,
+        description="If true, delete all existing phases before importing.",
+    )
+
+
+class MilestoneImportPreview(BaseModel):
+    """Preview of what the AI parsed — returned before final confirmation."""
+
+    phases: list[ImportPhaseItem]
+    total_phases: int
+    total_milestones: int
+
+
+class MilestoneImportResponse(BaseModel):
+    """Response after successfully importing milestones."""
+
+    phases_created: int
+    milestones_created: int
+    phases: list[PhaseWithMilestonesResponse]
 

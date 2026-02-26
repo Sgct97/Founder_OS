@@ -10,6 +10,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as milestonesService from "@/services/milestones";
 import type {
   MilestoneCreatePayload,
+  MilestoneImportRequest,
+  MilestoneImportResponse,
   MilestoneUpdatePayload,
   PhaseCreatePayload,
   PhaseUpdatePayload,
@@ -103,6 +105,26 @@ export function useDeleteMilestone() {
   return useMutation({
     mutationFn: (milestoneId: string) =>
       milestonesService.deleteMilestone(milestoneId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PHASES_KEY });
+    },
+  });
+}
+
+/** Preview an AI import — does NOT write to the database. */
+export function useImportPreview() {
+  return useMutation({
+    mutationFn: (payload: MilestoneImportRequest) =>
+      milestonesService.importPreview(payload),
+  });
+}
+
+/** Confirm an AI import — writes phases/milestones to the database. */
+export function useImportConfirm() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: MilestoneImportRequest) =>
+      milestonesService.importConfirm(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PHASES_KEY });
     },

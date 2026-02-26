@@ -18,6 +18,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import { Button } from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import {
   BORDER_RADIUS,
@@ -30,7 +31,7 @@ import {
 } from "@/constants/theme";
 
 export default function SettingsScreen() {
-  const { user, workspace, signOut } = useAuth();
+  const { user, workspace, isLoading, signOut } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = useCallback(async () => {
@@ -59,6 +60,34 @@ export default function SettingsScreen() {
         .toUpperCase()
         .slice(0, 2)
     : "?";
+
+  if (isLoading) {
+    return (
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Profile skeleton */}
+        <View style={styles.card}>
+          <View style={styles.profileRow}>
+            <Skeleton width={48} height={48} borderRadius={BORDER_RADIUS.full} />
+            <View style={{ flex: 1, marginLeft: SPACING.md }}>
+              <Skeleton width="60%" height={16} />
+              <Skeleton width="80%" height={12} style={{ marginTop: 8 }} />
+            </View>
+          </View>
+        </View>
+        {/* Workspace skeleton */}
+        <View style={styles.card}>
+          <Skeleton width={80} height={10} style={{ marginBottom: SPACING.md }} />
+          <Skeleton width="100%" height={36} style={{ marginBottom: SPACING.sm }} />
+          <Skeleton width="100%" height={36} style={{ marginBottom: SPACING.sm }} />
+          <Skeleton width="100%" height={36} />
+        </View>
+      </ScrollView>
+    );
+  }
 
   return (
     <ScrollView
