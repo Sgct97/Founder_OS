@@ -1,0 +1,97 @@
+# FounderOS — CI/CD Pipeline
+#
+# On push to main:
+#   1. Lint + type-check the backend
+#   2. Run pytest suite against a real PostgreSQL + pgvector instance
+#   3. If tests pass: SSH into the Droplet, pull, install, migrate, restart
+#
+# Required GitHub Secrets:
+#   DROPLET_HOST      — Droplet IP or domain
+#   DROPLET_USER      — SSH user (e.g. "deploy")
+#   DROPLET_SSH_KEY   — Private SSH key for the deploy user
+
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  # ── Lint + Test ──────────────────────────────────────────────────
+  test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: founder_os
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/founder_os
+
+    defaults:
+      run:
+        working-directory: apps/api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Lint (ruff)
+        run: poetry run ruff check app/ tests/
+
+      - name: Run tests with coverage
+        run: |
+          poetry run coverage run -m pytest tests/ -v
+          poetry run coverage report --fail-under=90
+
+  # ── Deploy to Droplet ────────────────────────────────────────────
+  deploy:
+    name: Deploy to Droplet
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/founder-os
+            git pull origin main
+            cd apps/api
+            ~/.local/bin/poetry install --no-interaction
+            ~/.local/bin/poetry run alembic upgrade head
+            sudo systemctl restart founderos-api
+            echo "Deploy complete — $(date)"
+

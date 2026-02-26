@@ -1,0 +1,42 @@
+# /etc/systemd/system/founderos-api.service
+#
+# Systemd unit for the FounderOS FastAPI backend.
+# Runs Gunicorn with Uvicorn workers behind Nginx.
+#
+# Install: sudo cp founderos-api.service /etc/systemd/system/
+#          sudo systemctl daemon-reload
+#          sudo systemctl enable --now founderos-api
+
+[Unit]
+Description=FounderOS FastAPI Backend
+After=network.target postgresql.service
+
+[Service]
+User=deploy
+Group=deploy
+WorkingDirectory=/home/deploy/founder-os/apps/api
+EnvironmentFile=/home/deploy/founder-os/apps/api/.env
+ExecStartPre=/bin/mkdir -p /home/deploy/founder-os/apps/api/uploads
+ExecStart=/home/deploy/.local/bin/poetry run gunicorn app.main:app \
+    --workers 2 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 127.0.0.1:8000 \
+    --access-logfile - \
+    --error-logfile - \
+    --timeout 300 \
+    --graceful-timeout 30 \
+    --keep-alive 65
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=founderos-api
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/home/deploy/founder-os/apps/api/uploads
+ProtectHome=false
+
+[Install]
+WantedBy=multi-user.target
