@@ -54,7 +54,7 @@ export function useDocumentStatus(documentId: string | undefined) {
 export function useUploadDocument() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (file: { uri: string; name: string; mimeType: string }) =>
+    mutationFn: (file: { uri: string; name: string; mimeType: string; file?: File }) =>
       documentsService.uploadDocument(file),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: DOCUMENTS_KEY });

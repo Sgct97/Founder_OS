@@ -328,6 +328,8 @@ export default function KnowledgeScreen() {
         uri: asset.uri,
         name: asset.name,
         mimeType: asset.mimeType ?? "application/octet-stream",
+        // On web, expo-document-picker provides a File object.
+        file: (asset as unknown as { file?: File }).file,
       });
     } catch (err) {
       Alert.alert(

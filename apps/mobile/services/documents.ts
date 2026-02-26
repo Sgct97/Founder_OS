@@ -41,18 +41,27 @@ export async function deleteDocument(documentId: string): Promise<void> {
  *
  * Uses a raw fetch instead of the apiPost helper because
  * we need to send FormData (not JSON).
+ *
+ * Handles both web (File object) and native (uri-based) uploads.
  */
 export async function uploadDocument(
-  file: { uri: string; name: string; mimeType: string }
+  file: { uri: string; name: string; mimeType: string; file?: File }
 ): Promise<DocumentResponse> {
   const token = await getAccessToken();
 
   const formData = new FormData();
-  formData.append("file", {
-    uri: file.uri,
-    name: file.name,
-    type: file.mimeType,
-  } as unknown as Blob);
+
+  if (file.file) {
+    // Web: use the File object directly.
+    formData.append("file", file.file, file.name);
+  } else {
+    // Native (React Native): use the { uri, name, type } pattern.
+    formData.append("file", {
+      uri: file.uri,
+      name: file.name,
+      type: file.mimeType,
+    } as unknown as Blob);
+  }
 
   const response = await fetch(`${API_BASE_URL}/api/v1/documents`, {
     method: "POST",
