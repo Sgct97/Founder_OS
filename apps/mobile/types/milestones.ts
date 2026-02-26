@@ -9,6 +9,7 @@ export interface MilestoneResponse {
   phase_id: string;
   title: string;
   description: string | null;
+  notes: string | null;
   status: MilestoneStatus;
   sort_order: number;
   created_at: string;
@@ -60,6 +61,7 @@ export interface MilestoneCreatePayload {
 export interface MilestoneUpdatePayload {
   title?: string;
   description?: string | null;
+  notes?: string | null;
   status?: MilestoneStatus;
   sort_order?: number;
 }

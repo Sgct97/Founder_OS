@@ -173,6 +173,7 @@ async def create_milestone(
         phase_id=phase_id,
         title=payload.title,
         description=payload.description,
+        notes=payload.notes,
         status=payload.status.value,
         sort_order=payload.sort_order,
     )
@@ -235,6 +236,8 @@ async def update_milestone(
         milestone.title = payload.title
     if payload.description is not None:
         milestone.description = payload.description
+    if payload.notes is not None:
+        milestone.notes = payload.notes
     if payload.status is not None:
         milestone.status = payload.status.value
     if payload.sort_order is not None:

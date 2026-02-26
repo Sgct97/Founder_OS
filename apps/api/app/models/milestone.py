@@ -28,6 +28,7 @@ class Milestone(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         String(20), nullable=False, server_default="not_started"
     )
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
     phase: Mapped["Phase"] = relationship(  # noqa: F821

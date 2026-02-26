@@ -6,12 +6,11 @@
  * add/edit/delete. Designed to rival Linear and Notion.
  */
 
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Animated,
-  FlatList,
+  Easing,
   Modal,
   Pressable,
   ScrollView,
@@ -24,6 +23,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { Button } from "@/components/ui/Button";
 import ImportModal from "@/components/milestones/ImportModal";
+import MilestoneDetailSheet from "@/components/milestones/MilestoneDetailSheet";
 import { Skeleton, SkeletonPhaseCard } from "@/components/ui/Skeleton";
 import {
   useCreateMilestone,
@@ -87,82 +87,150 @@ function statusLabel(status: MilestoneStatus): string {
   }
 }
 
-// ── Milestone Item ──────────────────────────────────────────
+// ── Journey Node (replaces flat MilestoneItem) ─────────────
 
-interface MilestoneItemProps {
+interface JourneyNodeProps {
   milestone: MilestoneResponse;
+  index: number;
+  isLast: boolean;
+  onPress: (milestone: MilestoneResponse) => void;
   onToggleStatus: (id: string, newStatus: MilestoneStatus) => void;
-  onEdit: (milestone: MilestoneResponse) => void;
-  onDelete: (id: string) => void;
 }
 
-function MilestoneItem({
+function JourneyNode({
   milestone,
+  index,
+  isLast,
+  onPress,
   onToggleStatus,
-  onEdit,
-  onDelete,
-}: MilestoneItemProps): React.JSX.Element {
-  const { name: iconName, color: iconColor } = statusIcon(milestone.status);
+}: JourneyNodeProps): React.JSX.Element {
   const isCompleted = milestone.status === "completed";
+  const isInProgress = milestone.status === "in_progress";
+
+  // Staggered entrance animation
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 350,
+      delay: index * 80,
+      easing: Easing.out(Easing.back(1.1)),
+      useNativeDriver: true,
+    }).start();
+  }, [anim, index]);
+
+  // Pulsing ring for in-progress
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (isInProgress) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.35, duration: 900, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [isInProgress, pulseAnim]);
 
   const handleToggle = useCallback(() => {
     onToggleStatus(milestone.id, nextStatus(milestone.status));
   }, [milestone.id, milestone.status, onToggleStatus]);
 
-  const handleLongPress = useCallback(() => {
-    Alert.alert(milestone.title, undefined, [
-      { text: "Edit", onPress: () => onEdit(milestone) },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => onDelete(milestone.id),
-      },
-      { text: "Cancel", style: "cancel" },
-    ]);
-  }, [milestone, onEdit, onDelete]);
-
   return (
-    <Pressable
-      style={styles.milestoneRow}
-      onPress={handleToggle}
-      onLongPress={handleLongPress}
+    <Animated.View
+      style={[
+        styles.journeyNodeOuter,
+        {
+          opacity: anim,
+          transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }],
+        },
+      ]}
     >
-      <Ionicons name={iconName} size={22} color={iconColor} />
-      <View style={styles.milestoneContent}>
-        <Text
-          style={[
-            styles.milestoneTitle,
-            isCompleted && styles.milestoneTitleDone,
-          ]}
-          numberOfLines={2}
-        >
-          {milestone.title}
-        </Text>
+      {/* Vertical connector line */}
+      <View style={styles.journeyLineColumn}>
+        {/* Top line (hidden for first) */}
+        <View style={[styles.journeyLineSeg, index === 0 && { backgroundColor: "transparent" }, isCompleted && { backgroundColor: COLORS.primary }]} />
+        {/* Node circle */}
+        <Pressable onPress={handleToggle} hitSlop={8} style={styles.journeyNodeCircleWrap}>
+          {isInProgress && (
+            <Animated.View
+              style={[
+                styles.journeyPulseRing,
+                { transform: [{ scale: pulseAnim }] },
+              ]}
+            />
+          )}
+          <View
+            style={[
+              styles.journeyNodeCircle,
+              isCompleted && styles.journeyNodeCircleCompleted,
+              isInProgress && styles.journeyNodeCircleInProgress,
+            ]}
+          >
+            {isCompleted && (
+              <Ionicons name="checkmark" size={12} color={COLORS.white} />
+            )}
+            {isInProgress && (
+              <View style={styles.journeyNodeInnerDot} />
+            )}
+          </View>
+        </Pressable>
+        {/* Bottom line (hidden for last) */}
+        <View style={[styles.journeyLineSeg, isLast && { backgroundColor: "transparent" }, isCompleted && { backgroundColor: COLORS.primary }]} />
+      </View>
+
+      {/* Card */}
+      <Pressable
+        style={[
+          styles.journeyCard,
+          isCompleted && styles.journeyCardCompleted,
+          isInProgress && styles.journeyCardInProgress,
+        ]}
+        onPress={() => onPress(milestone)}
+      >
+        <View style={styles.journeyCardHeader}>
+          <Text
+            style={[
+              styles.journeyCardTitle,
+              isCompleted && styles.journeyCardTitleDone,
+            ]}
+            numberOfLines={2}
+          >
+            {milestone.title}
+          </Text>
+          <View
+            style={[
+              styles.journeyStatusBadge,
+              isCompleted && styles.journeyStatusBadgeCompleted,
+              isInProgress && styles.journeyStatusBadgeInProgress,
+            ]}
+          >
+            <Text
+              style={[
+                styles.journeyStatusText,
+                isCompleted && styles.journeyStatusTextCompleted,
+                isInProgress && styles.journeyStatusTextInProgress,
+              ]}
+            >
+              {statusLabel(milestone.status)}
+            </Text>
+          </View>
+        </View>
         {milestone.description ? (
-          <Text style={styles.milestoneDesc} numberOfLines={1}>
+          <Text style={styles.journeyCardDesc} numberOfLines={2}>
             {milestone.description}
           </Text>
         ) : null}
-      </View>
-      <View
-        style={[
-          styles.statusBadge,
-          milestone.status === "completed" && styles.statusBadgeCompleted,
-          milestone.status === "in_progress" && styles.statusBadgeInProgress,
-        ]}
-      >
-        <Text
-          style={[
-            styles.statusBadgeText,
-            milestone.status === "completed" && styles.statusBadgeTextCompleted,
-            milestone.status === "in_progress" &&
-              styles.statusBadgeTextInProgress,
-          ]}
-        >
-          {statusLabel(milestone.status)}
-        </Text>
-      </View>
-    </Pressable>
+        {milestone.notes ? (
+          <View style={styles.journeyNotesIndicator}>
+            <Ionicons name="document-text-outline" size={11} color={COLORS.textMuted} />
+            <Text style={styles.journeyNotesText}>Has notes</Text>
+          </View>
+        ) : null}
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -170,9 +238,10 @@ function MilestoneItem({
 
 interface PhaseCardProps {
   phase: PhaseWithMilestones;
+  phaseIndex: number;
+  totalPhases: number;
   onToggleMilestoneStatus: (id: string, newStatus: MilestoneStatus) => void;
-  onEditMilestone: (milestone: MilestoneResponse) => void;
-  onDeleteMilestone: (id: string) => void;
+  onMilestonePress: (milestone: MilestoneResponse, phaseName: string) => void;
   onAddMilestone: (phaseId: string) => void;
   onEditPhase: (phase: PhaseWithMilestones) => void;
   onDeletePhase: (phaseId: string) => void;
@@ -180,9 +249,10 @@ interface PhaseCardProps {
 
 function PhaseCard({
   phase,
+  phaseIndex,
+  totalPhases,
   onToggleMilestoneStatus,
-  onEditMilestone,
-  onDeleteMilestone,
+  onMilestonePress,
   onAddMilestone,
   onEditPhase,
   onDeletePhase,
@@ -194,6 +264,7 @@ function PhaseCard({
     (m) => m.status === "completed"
   ).length;
   const progressPct = total > 0 ? (completed / total) * 100 : 0;
+  const allDone = total > 0 && completed === total;
 
   const handleHeaderPress = useCallback(() => {
     setExpanded((prev) => !prev);
@@ -216,12 +287,19 @@ function PhaseCard({
       {/* Phase Header */}
       <Pressable style={styles.phaseHeader} onPress={handleHeaderPress}>
         <View style={styles.phaseHeaderLeft}>
-          <Ionicons
-            name={expanded ? "chevron-down" : "chevron-forward"}
-            size={18}
-            color={COLORS.textTertiary}
-          />
-          <Text style={styles.phaseTitle}>{phase.title}</Text>
+          <View style={[styles.phaseNumber, allDone && styles.phaseNumberDone]}>
+            {allDone ? (
+              <Ionicons name="checkmark" size={13} color={COLORS.white} />
+            ) : (
+              <Text style={styles.phaseNumberText}>{phaseIndex + 1}</Text>
+            )}
+          </View>
+          <View style={styles.phaseTitleWrap}>
+            <Text style={styles.phaseTitle} numberOfLines={1}>{phase.title}</Text>
+            {phase.description ? (
+              <Text style={styles.phaseSubtitle} numberOfLines={1}>{phase.description}</Text>
+            ) : null}
+          </View>
         </View>
         <View style={styles.phaseHeaderRight}>
           <Text style={styles.phaseCount}>
@@ -238,6 +316,11 @@ function PhaseCard({
               color={COLORS.textTertiary}
             />
           </Pressable>
+          <Ionicons
+            name={expanded ? "chevron-down" : "chevron-forward"}
+            size={16}
+            color={COLORS.textTertiary}
+          />
         </View>
       </Pressable>
 
@@ -250,16 +333,17 @@ function PhaseCard({
         </View>
       </View>
 
-      {/* Milestones */}
+      {/* Journey Path Milestones */}
       {expanded && (
-        <View style={styles.milestonesContainer}>
-          {phase.milestones.map((milestone) => (
-            <MilestoneItem
+        <View style={styles.journeyContainer}>
+          {phase.milestones.map((milestone, idx) => (
+            <JourneyNode
               key={milestone.id}
               milestone={milestone}
+              index={idx}
+              isLast={idx === phase.milestones.length - 1}
+              onPress={(m) => onMilestonePress(m, phase.title)}
               onToggleStatus={onToggleMilestoneStatus}
-              onEdit={onEditMilestone}
-              onDelete={onDeleteMilestone}
             />
           ))}
 
@@ -268,7 +352,7 @@ function PhaseCard({
             style={styles.addMilestoneBtn}
             onPress={() => onAddMilestone(phase.id)}
           >
-            <Ionicons name="add" size={18} color={COLORS.primary} />
+            <Ionicons name="add-circle-outline" size={16} color={COLORS.primary} />
             <Text style={styles.addMilestoneBtnText}>Add milestone</Text>
           </Pressable>
         </View>
@@ -418,6 +502,11 @@ export default function MilestonesScreen() {
   // Import modal state
   const [importModalVisible, setImportModalVisible] = useState(false);
 
+  // Detail sheet state
+  const [detailMilestone, setDetailMilestone] = useState<MilestoneResponse | null>(null);
+  const [detailPhaseName, setDetailPhaseName] = useState("");
+  const [detailVisible, setDetailVisible] = useState(false);
+
   // Modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
@@ -514,6 +603,15 @@ export default function MilestonesScreen() {
       ]);
     },
     [deleteMilestone]
+  );
+
+  const handleMilestonePress = useCallback(
+    (milestone: MilestoneResponse, phaseName: string) => {
+      setDetailMilestone(milestone);
+      setDetailPhaseName(phaseName);
+      setDetailVisible(true);
+    },
+    []
   );
 
   const handleToggleMilestoneStatus = useCallback(
@@ -645,13 +743,14 @@ export default function MilestonesScreen() {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {phases.map((phase) => (
+            {phases.map((phase, idx) => (
               <PhaseCard
                 key={phase.id}
                 phase={phase}
+                phaseIndex={idx}
+                totalPhases={phases.length}
                 onToggleMilestoneStatus={handleToggleMilestoneStatus}
-                onEditMilestone={handleEditMilestone}
-                onDeleteMilestone={handleDeleteMilestone}
+                onMilestonePress={handleMilestonePress}
                 onAddMilestone={handleAddMilestone}
                 onEditPhase={handleEditPhase}
                 onDeletePhase={handleDeletePhase}
@@ -696,6 +795,16 @@ export default function MilestonesScreen() {
       <ImportModal
         visible={importModalVisible}
         onClose={() => setImportModalVisible(false)}
+      />
+
+      {/* Milestone Detail Sheet */}
+      <MilestoneDetailSheet
+        milestone={detailMilestone}
+        phaseName={detailPhaseName}
+        visible={detailVisible}
+        onClose={() => setDetailVisible(false)}
+        onEdit={handleEditMilestone}
+        onDelete={handleDeleteMilestone}
       />
     </View>
   );
@@ -797,7 +906,7 @@ const styles = StyleSheet.create({
   phaseCard: {
     backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.lg,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.lg,
     ...SHADOW.sm,
     overflow: "hidden",
   },
@@ -814,12 +923,35 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: SPACING.sm,
   },
+  phaseNumber: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: COLORS.navyMid,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  phaseNumberDone: {
+    backgroundColor: COLORS.primary,
+  },
+  phaseNumberText: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.white,
+  },
+  phaseTitleWrap: {
+    flex: 1,
+  },
   phaseTitle: {
     fontSize: FONT_SIZE.md,
     fontWeight: FONT_WEIGHT.semibold,
     color: COLORS.textPrimary,
     letterSpacing: -0.2,
-    flex: 1,
+  },
+  phaseSubtitle: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textTertiary,
+    marginTop: 1,
   },
   phaseHeaderRight: {
     flexDirection: "row",
@@ -857,58 +989,139 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
 
-  // ── Milestones ────────────────────────────────────────
-  milestonesContainer: {
+  // ── Journey Path ──────────────────────────────────────
+  journeyContainer: {
     paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.sm,
+    paddingBottom: SPACING.md,
+    paddingTop: SPACING.xs,
   },
-  milestoneRow: {
+  journeyNodeOuter: {
+    flexDirection: "row",
+    minHeight: 72,
+  },
+  journeyLineColumn: {
+    width: 28,
+    alignItems: "center",
+  },
+  journeyLineSeg: {
+    flex: 1,
+    width: 2,
+    backgroundColor: COLORS.borderLight,
+  },
+  journeyNodeCircleWrap: {
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  journeyPulseRing: {
+    position: "absolute",
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.warning,
+    opacity: 0.3,
+  },
+  journeyNodeCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: COLORS.borderLight,
+    backgroundColor: COLORS.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  journeyNodeCircleCompleted: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  journeyNodeCircleInProgress: {
+    borderColor: COLORS.warning,
+    backgroundColor: COLORS.surface,
+  },
+  journeyNodeInnerDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.warning,
+  },
+
+  // Journey cards
+  journeyCard: {
+    flex: 1,
+    marginLeft: SPACING.sm,
+    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  journeyCardCompleted: {
+    borderColor: COLORS.successMuted,
+    backgroundColor: "rgba(46, 196, 160, 0.03)",
+  },
+  journeyCardInProgress: {
+    borderColor: COLORS.warning,
+    backgroundColor: "rgba(243, 156, 18, 0.03)",
+    ...SHADOW.sm,
+  },
+  journeyCardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: SPACING.sm + 2,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
+    justifyContent: "space-between",
     gap: SPACING.sm,
   },
-  milestoneContent: {
+  journeyCardTitle: {
     flex: 1,
-  },
-  milestoneTitle: {
     fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
+    fontWeight: FONT_WEIGHT.semibold,
     color: COLORS.textPrimary,
     lineHeight: 20,
   },
-  milestoneTitleDone: {
-    textDecorationLine: "line-through",
+  journeyCardTitleDone: {
     color: COLORS.textTertiary,
   },
-  milestoneDesc: {
+  journeyCardDesc: {
     fontSize: FONT_SIZE.xs,
     color: COLORS.textTertiary,
-    marginTop: 1,
+    marginTop: SPACING.xxs + 1,
+    lineHeight: 18,
   },
-  statusBadge: {
+  journeyNotesIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: SPACING.xs,
+  },
+  journeyNotesText: {
+    fontSize: FONT_SIZE.caption,
+    color: COLORS.textMuted,
+  },
+  journeyStatusBadge: {
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.xxs + 1,
-    borderRadius: BORDER_RADIUS.xs,
+    borderRadius: BORDER_RADIUS.full,
     backgroundColor: COLORS.backgroundSubtle,
   },
-  statusBadgeCompleted: {
+  journeyStatusBadgeCompleted: {
     backgroundColor: COLORS.successMuted,
   },
-  statusBadgeInProgress: {
+  journeyStatusBadgeInProgress: {
     backgroundColor: COLORS.warningMuted,
   },
-  statusBadgeText: {
+  journeyStatusText: {
     fontSize: FONT_SIZE.caption,
     fontWeight: FONT_WEIGHT.semibold,
     color: COLORS.textTertiary,
   },
-  statusBadgeTextCompleted: {
+  journeyStatusTextCompleted: {
     color: COLORS.success,
   },
-  statusBadgeTextInProgress: {
+  journeyStatusTextInProgress: {
     color: COLORS.warning,
   },
 
@@ -916,14 +1129,18 @@ const styles = StyleSheet.create({
   addMilestoneBtn: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     paddingVertical: SPACING.sm + 2,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
+    marginTop: SPACING.xs,
+    borderRadius: BORDER_RADIUS.sm,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: COLORS.border,
     gap: SPACING.xs,
   },
   addMilestoneBtnText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.semibold,
     color: COLORS.primary,
   },
   actionRow: {

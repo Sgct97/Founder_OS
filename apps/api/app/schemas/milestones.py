@@ -26,6 +26,7 @@ class MilestoneCreate(BaseModel):
 
     title: str = Field(..., min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=5000)
+    notes: str | None = Field(default=None, max_length=50000)
     status: MilestoneStatus = MilestoneStatus.NOT_STARTED
     sort_order: int = Field(default=0, ge=0)
 
@@ -35,6 +36,7 @@ class MilestoneUpdate(BaseModel):
 
     title: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = None
+    notes: str | None = None
     status: MilestoneStatus | None = None
     sort_order: int | None = Field(default=None, ge=0)
 
@@ -46,6 +48,7 @@ class MilestoneResponse(BaseModel):
     phase_id: uuid.UUID
     title: str
     description: str | None
+    notes: str | None
     status: str
     sort_order: int
     created_at: datetime
