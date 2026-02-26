@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from app.config import settings
 from app.database import get_db
 from app.main import app
 from app.models import Base
@@ -25,15 +26,13 @@ from app.models import Base
 # Priority:
 #   1. TEST_DATABASE_URL env var (explicit override)
 #   2. Automatically derive a "_test" variant from DATABASE_URL
+#      (uses pydantic settings so .env files are picked up)
 #   3. Hard-coded local default
 #
 # A runtime guard below will refuse to run if the resolved URL does NOT
 # contain the word "test" anywhere in the database name.
 
-_prod_url = os.environ.get(
-    "DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/founder_os",
-)
+_prod_url = settings.database_url
 
 
 def _derive_test_url(prod_url: str) -> str:
