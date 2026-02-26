@@ -464,16 +464,24 @@ export default function ChatScreen() {
     >
       {/* Header Actions */}
       <View style={styles.chatHeader}>
-        <Pressable
-          style={styles.headerButton}
-          onPress={() => setShowSidebar(!showSidebar)}
-        >
-          <Ionicons
-            name={showSidebar ? "close" : "menu"}
-            size={22}
-            color={COLORS.textSecondary}
-          />
-        </Pressable>
+        <View style={styles.headerLeftGroup}>
+          <Pressable
+            style={styles.headerButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="chevron-back" size={22} color={COLORS.primary} />
+          </Pressable>
+          <Pressable
+            style={styles.headerButton}
+            onPress={() => setShowSidebar(!showSidebar)}
+          >
+            <Ionicons
+              name={showSidebar ? "close" : "menu"}
+              size={22}
+              color={COLORS.textSecondary}
+            />
+          </Pressable>
+        </View>
         <Text style={styles.chatHeaderTitle} numberOfLines={1}>
           {activeConversationId
             ? conversations?.find((c) => c.id === activeConversationId)
@@ -585,6 +593,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.borderLight,
     backgroundColor: COLORS.surface,
+  },
+  headerLeftGroup: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   headerButton: {
     width: 36,
