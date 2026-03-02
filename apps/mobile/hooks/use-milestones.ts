@@ -154,7 +154,7 @@ export function useUploadAttachment() {
       file,
     }: {
       milestoneId: string;
-      file: { uri: string; name: string; type: string };
+      file: File | { uri: string; name: string; type: string };
     }) => milestonesService.uploadAttachment(milestoneId, file),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({

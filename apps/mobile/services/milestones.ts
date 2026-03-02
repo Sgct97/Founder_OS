@@ -106,13 +106,23 @@ export async function listAttachments(
   );
 }
 
-/** Upload a file attachment to a milestone. */
+/** Upload a file attachment to a milestone.
+ *  Accepts either a web File object or a React Native { uri, name, type } descriptor.
+ */
 export async function uploadAttachment(
   milestoneId: string,
-  file: { uri: string; name: string; type: string }
+  file: File | { uri: string; name: string; type: string }
 ): Promise<MilestoneAttachment> {
   const formData = new FormData();
-  formData.append("file", file as unknown as Blob);
+
+  if (file instanceof File) {
+    // Web — real File object from DocumentPicker
+    formData.append("file", file);
+  } else {
+    // React Native — the RN FormData polyfill understands { uri, name, type }
+    formData.append("file", file as unknown as Blob);
+  }
+
   return apiPostMultipart<MilestoneAttachment>(
     `/api/v1/milestones/${milestoneId}/attachments`,
     formData

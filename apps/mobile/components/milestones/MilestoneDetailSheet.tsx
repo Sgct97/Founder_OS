@@ -216,13 +216,20 @@ export default function MilestoneDetailSheet({
       const asset = result.assets[0];
       if (!asset) return;
 
+      // On web, asset.file is the real File object — use it directly.
+      // On native, FormData polyfill understands the { uri, name, type } shape.
+      const file: File | { uri: string; name: string; type: string } =
+        Platform.OS === "web" && (asset as unknown as { file?: File }).file
+          ? (asset as unknown as { file: File }).file
+          : {
+              uri: asset.uri,
+              name: asset.name,
+              type: asset.mimeType || "application/octet-stream",
+            };
+
       uploadAttachment.mutate({
         milestoneId: milestone.id,
-        file: {
-          uri: asset.uri,
-          name: asset.name,
-          type: asset.mimeType || "application/octet-stream",
-        },
+        file,
       });
     } catch (err) {
       console.error("File pick failed:", err);
