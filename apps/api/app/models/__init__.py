@@ -7,6 +7,7 @@ from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.message import Message
 from app.models.milestone import Milestone
+from app.models.milestone_attachment import MilestoneAttachment
 from app.models.phase import Phase
 from app.models.user import User
 from app.models.workspace import Workspace
@@ -19,6 +20,7 @@ __all__ = [
     "DocumentChunk",
     "Message",
     "Milestone",
+    "MilestoneAttachment",
     "Phase",
     "User",
     "Workspace",

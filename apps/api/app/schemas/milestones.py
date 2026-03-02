@@ -41,6 +41,20 @@ class MilestoneUpdate(BaseModel):
     sort_order: int | None = Field(default=None, ge=0)
 
 
+class MilestoneAttachmentResponse(BaseModel):
+    """Public representation of a milestone attachment."""
+
+    id: uuid.UUID
+    milestone_id: uuid.UUID
+    filename: str
+    file_size_bytes: int
+    file_type: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class MilestoneResponse(BaseModel):
     """Public representation of a milestone."""
 
@@ -51,6 +65,7 @@ class MilestoneResponse(BaseModel):
     notes: str | None
     status: str
     sort_order: int
+    attachments: list[MilestoneAttachmentResponse] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 

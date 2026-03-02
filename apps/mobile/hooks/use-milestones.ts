@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import * as milestonesService from "@/services/milestones";
 import type {
+  MilestoneAttachment,
   MilestoneCreatePayload,
   MilestoneImportRequest,
   MilestoneImportResponse,
@@ -126,6 +127,59 @@ export function useImportConfirm() {
     mutationFn: (payload: MilestoneImportRequest) =>
       milestonesService.importConfirm(payload),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PHASES_KEY });
+    },
+  });
+}
+
+// ── Attachment hooks ─────────────────────────────────────────
+
+const ATTACHMENTS_KEY = ["milestone-attachments"] as const;
+
+/** Fetch all attachments for a milestone. */
+export function useMilestoneAttachments(milestoneId: string | undefined) {
+  return useQuery<MilestoneAttachment[]>({
+    queryKey: [...ATTACHMENTS_KEY, milestoneId],
+    queryFn: () => milestonesService.listAttachments(milestoneId!),
+    enabled: !!milestoneId,
+  });
+}
+
+/** Upload a file attachment to a milestone. Invalidates phases + attachment cache. */
+export function useUploadAttachment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      milestoneId,
+      file,
+    }: {
+      milestoneId: string;
+      file: { uri: string; name: string; type: string };
+    }) => milestonesService.uploadAttachment(milestoneId, file),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [...ATTACHMENTS_KEY, variables.milestoneId],
+      });
+      queryClient.invalidateQueries({ queryKey: PHASES_KEY });
+    },
+  });
+}
+
+/** Delete a file attachment. Invalidates phases + attachment cache. */
+export function useDeleteAttachment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      milestoneId,
+      attachmentId,
+    }: {
+      milestoneId: string;
+      attachmentId: string;
+    }) => milestonesService.deleteAttachment(milestoneId, attachmentId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [...ATTACHMENTS_KEY, variables.milestoneId],
+      });
       queryClient.invalidateQueries({ queryKey: PHASES_KEY });
     },
   });

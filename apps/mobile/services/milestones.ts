@@ -2,8 +2,9 @@
  * Milestones API service — wraps all phase and milestone endpoints.
  */
 
-import { apiDelete, apiGet, apiPatch, apiPost } from "@/services/api";
+import { apiDelete, apiGet, apiPatch, apiPost, apiPostMultipart } from "@/services/api";
 import type {
+  MilestoneAttachment,
   MilestoneCreatePayload,
   MilestoneImportPreview,
   MilestoneImportRequest,
@@ -91,6 +92,40 @@ export async function importConfirm(
   return apiPost<MilestoneImportResponse>(
     "/api/v1/phases/import/confirm",
     payload
+  );
+}
+
+// ── Attachment operations ────────────────────────────────────
+
+/** List all attachments for a milestone. */
+export async function listAttachments(
+  milestoneId: string
+): Promise<MilestoneAttachment[]> {
+  return apiGet<MilestoneAttachment[]>(
+    `/api/v1/milestones/${milestoneId}/attachments`
+  );
+}
+
+/** Upload a file attachment to a milestone. */
+export async function uploadAttachment(
+  milestoneId: string,
+  file: { uri: string; name: string; type: string }
+): Promise<MilestoneAttachment> {
+  const formData = new FormData();
+  formData.append("file", file as unknown as Blob);
+  return apiPostMultipart<MilestoneAttachment>(
+    `/api/v1/milestones/${milestoneId}/attachments`,
+    formData
+  );
+}
+
+/** Delete a file attachment from a milestone. */
+export async function deleteAttachment(
+  milestoneId: string,
+  attachmentId: string
+): Promise<void> {
+  return apiDelete(
+    `/api/v1/milestones/${milestoneId}/attachments/${attachmentId}`
   );
 }
 

@@ -36,7 +36,9 @@ async def list_phases(db: AsyncSession, workspace_id: uuid.UUID) -> list[Phase]:
     result = await db.execute(
         select(Phase)
         .where(Phase.workspace_id == workspace_id)
-        .options(selectinload(Phase.milestones))
+        .options(
+            selectinload(Phase.milestones).selectinload(Milestone.attachments)
+        )
         .order_by(Phase.sort_order, Phase.created_at)
     )
     return list(result.scalars().all())
@@ -86,7 +88,9 @@ async def get_phase(
     result = await db.execute(
         select(Phase)
         .where(Phase.id == phase_id, Phase.workspace_id == workspace_id)
-        .options(selectinload(Phase.milestones))
+        .options(
+            selectinload(Phase.milestones).selectinload(Milestone.attachments)
+        )
     )
     phase = result.scalar_one_or_none()
     if phase is None:
@@ -179,6 +183,7 @@ async def create_milestone(
     )
     db.add(milestone)
     await db.flush()
+    await db.refresh(milestone, attribute_names=["attachments"])
     logger.info("Milestone created: id=%s phase=%s", milestone.id, phase_id)
     return milestone
 
@@ -203,6 +208,7 @@ async def get_milestone(
         select(Milestone)
         .join(Phase, Milestone.phase_id == Phase.id)
         .where(Milestone.id == milestone_id, Phase.workspace_id == workspace_id)
+        .options(selectinload(Milestone.attachments))
     )
     milestone = result.scalar_one_or_none()
     if milestone is None:

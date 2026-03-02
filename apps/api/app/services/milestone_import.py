@@ -226,11 +226,13 @@ async def create_phases_from_preview(
 
     await db.flush()
 
-    # Re-fetch with milestones loaded
+    # Re-fetch with milestones and attachments loaded
     result = await db.execute(
         select(Phase)
         .where(Phase.id.in_(created_phase_ids))
-        .options(selectinload(Phase.milestones))
+        .options(
+            selectinload(Phase.milestones).selectinload(Milestone.attachments)
+        )
         .order_by(Phase.sort_order)
     )
     return list(result.scalars().all())

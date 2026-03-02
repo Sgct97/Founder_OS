@@ -1,14 +1,17 @@
 """Milestone router — phase and milestone CRUD endpoints."""
 
 import uuid
+from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import CurrentUser
 from app.schemas.milestones import (
+    MilestoneAttachmentResponse,
     MilestoneCreate,
     MilestoneImportPreview,
     MilestoneImportRequest,
@@ -20,6 +23,7 @@ from app.schemas.milestones import (
     PhaseUpdate,
     PhaseWithMilestonesResponse,
 )
+from app.services import milestone_attachments as attachments_service
 from app.services import milestones as milestones_service
 from app.services.milestone_import import create_phases_from_preview, parse_text_with_ai
 
@@ -200,5 +204,92 @@ async def import_confirm(
         phases_created=len(phases),
         milestones_created=sum(len(p.milestones) for p in phases),
         phases=[PhaseWithMilestonesResponse.model_validate(p) for p in phases],
+    )
+
+
+# ── Attachment endpoints ──────────────────────────────────────────
+
+
+@router.get(
+    "/milestones/{milestone_id}/attachments",
+    response_model=list[MilestoneAttachmentResponse],
+    summary="List attachments for a milestone",
+)
+async def list_attachments(
+    milestone_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> list[MilestoneAttachmentResponse]:
+    """Return all attachments for a given milestone."""
+    workspace_id = _require_workspace(current_user)
+    attachments = await attachments_service.list_attachments(
+        db, milestone_id, workspace_id
+    )
+    return [MilestoneAttachmentResponse.model_validate(a) for a in attachments]
+
+
+@router.post(
+    "/milestones/{milestone_id}/attachments",
+    response_model=MilestoneAttachmentResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload an attachment to a milestone",
+)
+async def upload_attachment(
+    milestone_id: uuid.UUID,
+    file: UploadFile,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> MilestoneAttachmentResponse:
+    """Upload a supporting document to a milestone."""
+    workspace_id = _require_workspace(current_user)
+    attachment = await attachments_service.upload_attachment(
+        db, milestone_id, workspace_id, file
+    )
+    return MilestoneAttachmentResponse.model_validate(attachment)
+
+
+@router.delete(
+    "/milestones/{milestone_id}/attachments/{attachment_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete an attachment",
+)
+async def delete_attachment(
+    milestone_id: uuid.UUID,
+    attachment_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> None:
+    """Delete an attachment and its file from disk."""
+    workspace_id = _require_workspace(current_user)
+    await attachments_service.delete_attachment(
+        db, milestone_id, attachment_id, workspace_id
+    )
+
+
+@router.get(
+    "/milestones/{milestone_id}/attachments/{attachment_id}/download",
+    summary="Download an attachment",
+)
+async def download_attachment(
+    milestone_id: uuid.UUID,
+    attachment_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> FileResponse:
+    """Download an attachment file."""
+    workspace_id = _require_workspace(current_user)
+    attachment = await attachments_service.get_attachment(
+        db, milestone_id, attachment_id, workspace_id
+    )
+    file_path = Path(attachment.file_path)
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Attachment file not found on disk",
+        )
+    return FileResponse(
+        path=str(file_path),
+        filename=attachment.filename,
+        media_type="application/octet-stream",
     )
 

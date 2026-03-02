@@ -2,13 +2,14 @@
  * MilestoneDetailSheet — Premium slide-up detail card for a milestone.
  *
  * Shows full title, description, status toggle, notes editor,
- * timestamps, and quick actions (edit, delete).
+ * attachments section, timestamps, and quick actions (edit, delete).
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Animated,
-  Easing,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -20,10 +21,15 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
 
-import { Button } from "@/components/ui/Button";
-import { useUpdateMilestone } from "@/hooks/use-milestones";
-import type { MilestoneResponse, MilestoneStatus } from "@/types/milestones";
+import {
+  useDeleteAttachment,
+  useMilestoneAttachments,
+  useUpdateMilestone,
+  useUploadAttachment,
+} from "@/hooks/use-milestones";
+import type { MilestoneAttachment, MilestoneResponse, MilestoneStatus } from "@/types/milestones";
 import {
   BORDER_RADIUS,
   COLORS,
@@ -71,6 +77,45 @@ const STATUS_ORDER: MilestoneStatus[] = [
   "completed",
 ];
 
+// ── File type icon mapping ───────────────────────────────────
+
+const FILE_TYPE_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
+  pdf: "document-text-outline",
+  doc: "document-text-outline",
+  docx: "document-text-outline",
+  xls: "grid-outline",
+  xlsx: "grid-outline",
+  ppt: "easel-outline",
+  pptx: "easel-outline",
+  png: "image-outline",
+  jpg: "image-outline",
+  jpeg: "image-outline",
+  gif: "image-outline",
+  webp: "image-outline",
+  svg: "image-outline",
+  csv: "grid-outline",
+  json: "code-slash-outline",
+  html: "code-slash-outline",
+  htm: "code-slash-outline",
+  md: "reader-outline",
+  txt: "reader-outline",
+  yaml: "code-slash-outline",
+  yml: "code-slash-outline",
+  xml: "code-slash-outline",
+  rst: "reader-outline",
+  log: "terminal-outline",
+};
+
+function getFileIcon(fileType: string): keyof typeof Ionicons.glyphMap {
+  return FILE_TYPE_ICON[fileType] || "document-outline";
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 // ── Component ────────────────────────────────────────────────
 
 interface MilestoneDetailSheetProps {
@@ -91,6 +136,11 @@ export default function MilestoneDetailSheet({
   onDelete,
 }: MilestoneDetailSheetProps): React.JSX.Element {
   const updateMilestone = useUpdateMilestone();
+  const uploadAttachment = useUploadAttachment();
+  const deleteAttachment = useDeleteAttachment();
+  const { data: attachments = [], isLoading: loadingAttachments } =
+    useMilestoneAttachments(milestone?.id);
+
   const [notes, setNotes] = useState(milestone?.notes ?? "");
   const [notesDirty, setNotesDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -151,6 +201,62 @@ export default function MilestoneDetailSheet({
     }
     onClose();
   }, [notesDirty, milestone, notes, updateMilestone, onClose]);
+
+  const handlePickFile = useCallback(async () => {
+    if (!milestone) return;
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "*/*",
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if (result.canceled || result.assets.length === 0) return;
+
+      const asset = result.assets[0];
+      if (!asset) return;
+
+      uploadAttachment.mutate({
+        milestoneId: milestone.id,
+        file: {
+          uri: asset.uri,
+          name: asset.name,
+          type: asset.mimeType || "application/octet-stream",
+        },
+      });
+    } catch (err) {
+      console.error("File pick failed:", err);
+    }
+  }, [milestone, uploadAttachment]);
+
+  const handleDeleteAttachment = useCallback(
+    (attachment: MilestoneAttachment) => {
+      if (!milestone) return;
+
+      const doDelete = () => {
+        deleteAttachment.mutate({
+          milestoneId: milestone.id,
+          attachmentId: attachment.id,
+        });
+      };
+
+      if (Platform.OS === "web") {
+        if (window.confirm(`Delete "${attachment.filename}"?`)) {
+          doDelete();
+        }
+      } else {
+        Alert.alert(
+          "Delete Attachment",
+          `Are you sure you want to delete "${attachment.filename}"?`,
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Delete", style: "destructive", onPress: doDelete },
+          ]
+        );
+      }
+    },
+    [milestone, deleteAttachment]
+  );
 
   if (!milestone) return <></>;
 
@@ -256,6 +362,94 @@ export default function MilestoneDetailSheet({
                   multiline
                   textAlignVertical="top"
                 />
+
+                {/* ── Attachments Section ─────────────────────── */}
+                <View style={s.attachmentHeader}>
+                  <Text style={s.sectionLabel}>Supporting Documents</Text>
+                  <Pressable
+                    style={s.uploadBtn}
+                    onPress={handlePickFile}
+                    disabled={uploadAttachment.isPending}
+                  >
+                    {uploadAttachment.isPending ? (
+                      <ActivityIndicator size="small" color={COLORS.primary} />
+                    ) : (
+                      <>
+                        <Ionicons
+                          name="cloud-upload-outline"
+                          size={14}
+                          color={COLORS.primary}
+                        />
+                        <Text style={s.uploadBtnText}>Upload</Text>
+                      </>
+                    )}
+                  </Pressable>
+                </View>
+
+                {uploadAttachment.isError && (
+                  <View style={s.errorBanner}>
+                    <Ionicons name="alert-circle" size={14} color={COLORS.error} />
+                    <Text style={s.errorBannerText}>
+                      Upload failed. Please try again.
+                    </Text>
+                  </View>
+                )}
+
+                {loadingAttachments ? (
+                  <View style={s.attachmentLoading}>
+                    <ActivityIndicator size="small" color={COLORS.textMuted} />
+                    <Text style={s.attachmentLoadingText}>
+                      Loading attachments...
+                    </Text>
+                  </View>
+                ) : attachments.length === 0 ? (
+                  <View style={s.emptyAttachments}>
+                    <Ionicons
+                      name="folder-open-outline"
+                      size={28}
+                      color={COLORS.borderLight}
+                    />
+                    <Text style={s.emptyAttachmentsText}>
+                      No documents attached yet
+                    </Text>
+                    <Text style={s.emptyAttachmentsSubtext}>
+                      Upload PDFs, images, spreadsheets, or any supporting files
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={s.attachmentList}>
+                    {attachments.map((att) => (
+                      <View key={att.id} style={s.attachmentCard}>
+                        <View style={s.attachmentIconWrap}>
+                          <Ionicons
+                            name={getFileIcon(att.file_type)}
+                            size={18}
+                            color={COLORS.primary}
+                          />
+                        </View>
+                        <View style={s.attachmentInfo}>
+                          <Text style={s.attachmentName} numberOfLines={1}>
+                            {att.filename}
+                          </Text>
+                          <Text style={s.attachmentMeta}>
+                            {att.file_type.toUpperCase()} · {formatFileSize(att.file_size_bytes)}
+                          </Text>
+                        </View>
+                        <Pressable
+                          style={s.attachmentDeleteBtn}
+                          onPress={() => handleDeleteAttachment(att)}
+                          hitSlop={8}
+                        >
+                          <Ionicons
+                            name="trash-outline"
+                            size={16}
+                            color={COLORS.textMuted}
+                          />
+                        </Pressable>
+                      </View>
+                    ))}
+                  </View>
+                )}
 
                 {/* Metadata */}
                 <View style={s.metaRow}>
@@ -467,6 +661,121 @@ const s = StyleSheet.create({
     color: COLORS.white,
   },
 
+  // ── Attachments ────────────────────────────────────────────
+  attachmentHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  uploadBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs + 2,
+    borderRadius: BORDER_RADIUS.sm,
+    backgroundColor: COLORS.primaryMuted,
+    marginBottom: SPACING.sm,
+    marginTop: SPACING.lg,
+  },
+  uploadBtnText: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.primary,
+  },
+
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.xs,
+    backgroundColor: COLORS.errorMuted,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.sm,
+    marginBottom: SPACING.sm,
+  },
+  errorBannerText: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.error,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+
+  attachmentLoading: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: SPACING.sm,
+    paddingVertical: SPACING.lg,
+  },
+  attachmentLoadingText: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textMuted,
+  },
+
+  emptyAttachments: {
+    alignItems: "center",
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    borderRadius: BORDER_RADIUS.md,
+    borderStyle: "dashed",
+    backgroundColor: COLORS.background,
+  },
+  emptyAttachmentsText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.textTertiary,
+    marginTop: SPACING.sm,
+  },
+  emptyAttachmentsSubtext: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textMuted,
+    marginTop: SPACING.xxs,
+    textAlign: "center",
+  },
+
+  attachmentList: {
+    gap: SPACING.sm,
+  },
+  attachmentCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
+    paddingHorizontal: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.surface,
+  },
+  attachmentIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: BORDER_RADIUS.sm,
+    backgroundColor: COLORS.primaryMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  attachmentInfo: {
+    flex: 1,
+  },
+  attachmentName: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.textPrimary,
+    lineHeight: 20,
+  },
+  attachmentMeta: {
+    fontSize: FONT_SIZE.caption,
+    color: COLORS.textMuted,
+    marginTop: 1,
+  },
+  attachmentDeleteBtn: {
+    padding: SPACING.xs,
+    borderRadius: BORDER_RADIUS.sm,
+  },
+
   // Metadata
   metaRow: {
     flexDirection: "row",
@@ -514,4 +823,3 @@ const s = StyleSheet.create({
     color: COLORS.error,
   },
 });
-

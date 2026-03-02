@@ -34,6 +34,12 @@ class Milestone(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     phase: Mapped["Phase"] = relationship(  # noqa: F821
         "Phase", back_populates="milestones", lazy="selectin"
     )
+    attachments: Mapped[list["MilestoneAttachment"]] = relationship(  # noqa: F821
+        "MilestoneAttachment",
+        back_populates="milestone",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
     def __repr__(self) -> str:
         return f"<Milestone id={self.id} title={self.title!r} status={self.status!r}>"

@@ -138,3 +138,22 @@ export async function apiDelete<T = void>(path: string): Promise<T> {
   return handleResponse<T>(response);
 }
 
+/** Typed multipart POST request — for file uploads. */
+export async function apiPostMultipart<T>(
+  path: string,
+  formData: FormData
+): Promise<T> {
+  // Build headers WITHOUT Content-Type — the browser sets it with the boundary.
+  const headers: Record<string, string> = { Accept: "application/json" };
+  const token = await getAccessToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  return handleResponse<T>(response);
+}
+

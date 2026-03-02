@@ -4,6 +4,16 @@
 
 export type MilestoneStatus = "not_started" | "in_progress" | "completed";
 
+export interface MilestoneAttachment {
+  id: string;
+  milestone_id: string;
+  filename: string;
+  file_size_bytes: number;
+  file_type: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface MilestoneResponse {
   id: string;
   phase_id: string;
@@ -12,6 +22,7 @@ export interface MilestoneResponse {
   notes: string | null;
   status: MilestoneStatus;
   sort_order: number;
+  attachments: MilestoneAttachment[];
   created_at: string;
   updated_at: string;
 }
