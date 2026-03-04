@@ -5,6 +5,7 @@ from app.models.conversation import Conversation
 from app.models.diary_entry import DiaryEntry
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
+from app.models.feature_request import FeatureRequest, FeatureVote
 from app.models.message import Message
 from app.models.milestone import Milestone
 from app.models.milestone_attachment import MilestoneAttachment
@@ -18,6 +19,8 @@ __all__ = [
     "DiaryEntry",
     "Document",
     "DocumentChunk",
+    "FeatureRequest",
+    "FeatureVote",
     "Message",
     "Milestone",
     "MilestoneAttachment",

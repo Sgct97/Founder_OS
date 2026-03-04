@@ -62,6 +62,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="features/index"
+        options={{
+          title: "Requests",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="bulb-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="diary"
         options={{
           title: "Diary",
