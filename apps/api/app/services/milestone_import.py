@@ -3,6 +3,7 @@
 import json
 import logging
 import uuid
+from pathlib import Path
 
 from fastapi import HTTPException, status
 from openai import AsyncOpenAI
@@ -12,6 +13,7 @@ from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.models.milestone import Milestone
+from app.models.milestone_attachment import MilestoneAttachment
 from app.models.phase import Phase
 from app.schemas.milestones import (
     ImportMilestoneItem,
@@ -171,15 +173,27 @@ async def create_phases_from_preview(
         List of newly created Phase objects with milestones loaded.
     """
     if replace_existing:
-        # Delete all existing phases (milestones cascade)
         existing = await db.execute(
-            select(Phase).where(Phase.workspace_id == workspace_id)
+            select(Phase)
+            .where(Phase.workspace_id == workspace_id)
+            .options(
+                selectinload(Phase.milestones).selectinload(Milestone.attachments)
+            )
         )
         for phase in existing.scalars().all():
+            for milestone in phase.milestones:
+                for attachment in milestone.attachments:
+                    file_path = Path(attachment.file_path)
+                    if file_path.exists():
+                        file_path.unlink()
+                        logger.info("Deleted attachment file: %s", file_path)
+                parent_dir = Path(settings.upload_dir) / "milestone_attachments" / str(milestone.id)
+                if parent_dir.exists() and not any(parent_dir.iterdir()):
+                    parent_dir.rmdir()
             await db.delete(phase)
         await db.flush()
         logger.info(
-            "Deleted existing phases for workspace=%s (replace mode)",
+            "Deleted existing phases + attachment files for workspace=%s (replace mode)",
             workspace_id,
         )
         starting_order = 0
