@@ -11,6 +11,7 @@ import {
   Alert,
   Animated,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -22,6 +23,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
+
+import { API_BASE_URL } from "@/constants/api";
+import { getAccessToken } from "@/services/api";
 
 import {
   useDeleteAttachment,
@@ -265,6 +269,40 @@ export default function MilestoneDetailSheet({
     [milestone, deleteAttachment]
   );
 
+  const handleDownloadAttachment = useCallback(
+    async (attachment: MilestoneAttachment) => {
+      if (!milestone) return;
+      const url = `${API_BASE_URL}/api/v1/milestones/${milestone.id}/attachments/${attachment.id}/download`;
+
+      if (Platform.OS === "web") {
+        try {
+          const token = await getAccessToken();
+          const resp = await fetch(url, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          if (!resp.ok) throw new Error("Download failed");
+          const blob = await resp.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = blobUrl;
+          a.download = attachment.filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(blobUrl);
+        } catch (err) {
+          console.error("Download failed:", err);
+          window.alert("Failed to download file.");
+        }
+      } else {
+        Linking.openURL(url).catch(() =>
+          Alert.alert("Error", "Could not open download link.")
+        );
+      }
+    },
+    [milestone]
+  );
+
   if (!milestone) return <></>;
 
   const meta = STATUS_META[milestone.status as MilestoneStatus];
@@ -427,21 +465,31 @@ export default function MilestoneDetailSheet({
                   <View style={s.attachmentList}>
                     {attachments.map((att) => (
                       <View key={att.id} style={s.attachmentCard}>
-                        <View style={s.attachmentIconWrap}>
+                        <Pressable
+                          style={s.attachmentTappable}
+                          onPress={() => handleDownloadAttachment(att)}
+                        >
+                          <View style={s.attachmentIconWrap}>
+                            <Ionicons
+                              name={getFileIcon(att.file_type)}
+                              size={18}
+                              color={COLORS.primary}
+                            />
+                          </View>
+                          <View style={s.attachmentInfo}>
+                            <Text style={s.attachmentName} numberOfLines={1}>
+                              {att.filename}
+                            </Text>
+                            <Text style={s.attachmentMeta}>
+                              {att.file_type.toUpperCase()} · {formatFileSize(att.file_size_bytes)}
+                            </Text>
+                          </View>
                           <Ionicons
-                            name={getFileIcon(att.file_type)}
-                            size={18}
+                            name="download-outline"
+                            size={16}
                             color={COLORS.primary}
                           />
-                        </View>
-                        <View style={s.attachmentInfo}>
-                          <Text style={s.attachmentName} numberOfLines={1}>
-                            {att.filename}
-                          </Text>
-                          <Text style={s.attachmentMeta}>
-                            {att.file_type.toUpperCase()} · {formatFileSize(att.file_size_bytes)}
-                          </Text>
-                        </View>
+                        </Pressable>
                         <Pressable
                           style={s.attachmentDeleteBtn}
                           onPress={() => handleDeleteAttachment(att)}
@@ -748,13 +796,19 @@ const s = StyleSheet.create({
   attachmentCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: SPACING.md,
-    paddingVertical: SPACING.sm + 2,
-    paddingHorizontal: SPACING.md,
+    paddingRight: SPACING.xs,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: BORDER_RADIUS.md,
     backgroundColor: COLORS.surface,
+  },
+  attachmentTappable: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
+    paddingHorizontal: SPACING.md,
   },
   attachmentIconWrap: {
     width: 36,
