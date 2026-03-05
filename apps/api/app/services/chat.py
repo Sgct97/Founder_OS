@@ -16,6 +16,9 @@ from app.models.conversation import Conversation
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.message import Message
+from app.models.milestone import Milestone
+from app.models.milestone_attachment import MilestoneAttachment
+from app.models.phase import Phase
 from app.services.documents import generate_query_embedding
 
 logger = logging.getLogger(__name__)
@@ -198,22 +201,27 @@ SYSTEM_PROMPT = (
 
 
 async def list_conversations(
-    db: AsyncSession, workspace_id: uuid.UUID
+    db: AsyncSession,
+    workspace_id: uuid.UUID,
+    milestone_id: uuid.UUID | None = None,
 ) -> list[Conversation]:
-    """List all conversations for a workspace, newest first.
+    """List conversations for a workspace, optionally filtered by milestone.
 
     Args:
         db: Active database session.
         workspace_id: The workspace to list conversations for.
+        milestone_id: If provided, only return conversations for this milestone.
+                      If None, return only knowledge-base conversations (no milestone).
 
     Returns:
         List of Conversation objects (without messages).
     """
-    result = await db.execute(
-        select(Conversation)
-        .where(Conversation.workspace_id == workspace_id)
-        .order_by(Conversation.updated_at.desc())
-    )
+    stmt = select(Conversation).where(Conversation.workspace_id == workspace_id)
+    if milestone_id is not None:
+        stmt = stmt.where(Conversation.milestone_id == milestone_id)
+    else:
+        stmt = stmt.where(Conversation.milestone_id.is_(None))
+    result = await db.execute(stmt.order_by(Conversation.updated_at.desc()))
     return list(result.scalars().all())
 
 
@@ -222,14 +230,16 @@ async def create_conversation(
     workspace_id: uuid.UUID,
     user_id: uuid.UUID,
     title: str,
+    milestone_id: uuid.UUID | None = None,
 ) -> Conversation:
-    """Create a new conversation.
+    """Create a new conversation, optionally scoped to a milestone.
 
     Args:
         db: Active database session.
         workspace_id: The workspace to create the conversation in.
         user_id: The user creating the conversation.
         title: The conversation title.
+        milestone_id: If provided, scope this conversation to a milestone.
 
     Returns:
         The newly created Conversation.
@@ -238,10 +248,14 @@ async def create_conversation(
         workspace_id=workspace_id,
         created_by=user_id,
         title=title,
+        milestone_id=milestone_id,
     )
     db.add(conversation)
     await db.flush()
-    logger.info("Conversation created: id=%s workspace=%s", conversation.id, workspace_id)
+    logger.info(
+        "Conversation created: id=%s workspace=%s milestone=%s",
+        conversation.id, workspace_id, milestone_id,
+    )
     return conversation
 
 
@@ -318,6 +332,85 @@ async def delete_conversation(
     logger.info("Conversation deleted: id=%s", conversation_id)
 
 
+# ── Milestone Prompt Builder ──────────────────────────────────────
+
+
+async def _build_milestone_system_prompt(
+    db: AsyncSession,
+    milestone_id: uuid.UUID,
+    workspace_id: uuid.UUID,
+) -> str:
+    """Dynamically compose a system prompt for a milestone-scoped conversation.
+
+    Fetches the target milestone (with phase, attachments) and the full
+    project roadmap to give the AI complete context.
+    """
+    ms_result = await db.execute(
+        select(Milestone)
+        .where(Milestone.id == milestone_id)
+        .options(
+            selectinload(Milestone.phase),
+            selectinload(Milestone.attachments),
+        )
+    )
+    milestone = ms_result.scalar_one_or_none()
+    if milestone is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Milestone not found",
+        )
+
+    phases_result = await db.execute(
+        select(Phase)
+        .where(Phase.workspace_id == workspace_id)
+        .options(selectinload(Phase.milestones))
+        .order_by(Phase.sort_order)
+    )
+    phases = phases_result.scalars().all()
+
+    roadmap_lines: list[str] = []
+    for phase in phases:
+        sorted_ms = sorted(phase.milestones, key=lambda m: m.sort_order)
+        completed = sum(1 for m in sorted_ms if m.status == "completed")
+        roadmap_lines.append(f"{phase.title} ({completed}/{len(sorted_ms)} completed)")
+        for ms in sorted_ms:
+            marker = " <-- YOU ARE HERE" if ms.id == milestone_id else ""
+            roadmap_lines.append(f"  - [{ms.status}] {ms.title}{marker}")
+
+    roadmap_text = "\n".join(roadmap_lines)
+
+    attachment_names = [a.filename for a in milestone.attachments] if milestone.attachments else []
+    attachments_str = ", ".join(attachment_names) if attachment_names else "None"
+
+    return (
+        "You are an AI assistant embedded inside FounderOS, helping a startup team "
+        "iterate on a specific milestone within their project.\n\n"
+
+        "=== CURRENT MILESTONE ===\n"
+        f"Phase: {milestone.phase.title}\n"
+        f"Title: {milestone.title}\n"
+        f"Status: {milestone.status}\n"
+        f"Description: {milestone.description or '(none)'}\n"
+        f"Notes: {milestone.notes or '(none)'}\n"
+        f"Attached Documents: {attachments_str}\n\n"
+
+        "=== FULL PROJECT ROADMAP ===\n"
+        f"{roadmap_text}\n\n"
+
+        "=== YOUR ROLE ===\n"
+        "You are an expert advisor for this specific milestone. Help the user iterate on it: "
+        "suggest implementation approaches, identify blockers, point out dependencies on other "
+        "milestones, refine scope, and provide technical or strategic guidance.\n\n"
+        "You have full awareness of the project roadmap above and can reference any milestone or "
+        "phase when relevant. Ground your answers in the milestone details and project context. "
+        "If knowledge base documents are provided below, use them as additional context and cite "
+        "them with (Source: [document title]) inline.\n\n"
+        "Be concise, actionable, and specific. Reference the milestone's notes and attached "
+        "documents when relevant. If the user asks about something outside your context, say so "
+        "and offer to help with what you do know."
+    )
+
+
 # ── RAG Pipeline ─────────────────────────────────────────────────
 
 
@@ -381,6 +474,7 @@ def _build_rag_prompt(
     question: str,
     chunks: list[dict],
     conversation_history: list[dict] | None = None,
+    system_prompt_override: str | None = None,
 ) -> list[dict]:
     """Build the messages array for the OpenAI chat completion.
 
@@ -388,11 +482,13 @@ def _build_rag_prompt(
         question: The user's question.
         chunks: Retrieved document chunks with context.
         conversation_history: Previous messages for context continuity.
+        system_prompt_override: If provided, use this instead of the default SYSTEM_PROMPT.
 
     Returns:
         List of message dicts for the OpenAI API.
     """
-    messages: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
+    prompt = system_prompt_override if system_prompt_override else SYSTEM_PROMPT
+    messages: list[dict] = [{"role": "system", "content": prompt}]
 
     if chunks:
         context_parts = []
@@ -516,8 +612,16 @@ async def send_message_streaming(
         if m.role in ("user", "assistant")
     ]
 
-    # Build RAG prompt.
-    messages = _build_rag_prompt(content, chunks, history[:-1])  # exclude current msg
+    # Build system prompt — milestone-scoped or default knowledge-base.
+    milestone_prompt: str | None = None
+    if conversation.milestone_id is not None:
+        milestone_prompt = await _build_milestone_system_prompt(
+            db, conversation.milestone_id, workspace_id
+        )
+
+    messages = _build_rag_prompt(
+        content, chunks, history[:-1], system_prompt_override=milestone_prompt
+    )
 
     # Stream response from OpenAI.
     full_response = ""

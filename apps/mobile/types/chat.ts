@@ -23,6 +23,7 @@ export interface ConversationResponse {
   workspace_id: string;
   created_by: string;
   title: string;
+  milestone_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -31,6 +32,7 @@ export interface ConversationResponse {
 
 export interface ConversationCreatePayload {
   title?: string;
+  milestone_id?: string;
 }
 
 export interface MessageCreatePayload {

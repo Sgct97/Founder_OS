@@ -13,9 +13,12 @@ import type {
 
 // ── Conversation CRUD ────────────────────────────────────────
 
-/** Fetch all conversations for the workspace, newest first. */
-export async function listConversations(): Promise<ConversationResponse[]> {
-  return apiGet<ConversationResponse[]>("/api/v1/conversations");
+/** Fetch conversations. Pass milestoneId to scope to a specific milestone. */
+export async function listConversations(
+  milestoneId?: string
+): Promise<ConversationResponse[]> {
+  const params = milestoneId ? `?milestone_id=${milestoneId}` : "";
+  return apiGet<ConversationResponse[]>(`/api/v1/conversations${params}`);
 }
 
 /** Create a new conversation. */

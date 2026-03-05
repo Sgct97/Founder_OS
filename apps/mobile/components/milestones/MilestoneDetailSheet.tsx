@@ -129,6 +129,7 @@ interface MilestoneDetailSheetProps {
   onClose: () => void;
   onEdit: (milestone: MilestoneResponse) => void;
   onDelete: (id: string) => void;
+  onChat?: (milestone: MilestoneResponse) => void;
 }
 
 export default function MilestoneDetailSheet({
@@ -138,6 +139,7 @@ export default function MilestoneDetailSheet({
   onClose,
   onEdit,
   onDelete,
+  onChat,
 }: MilestoneDetailSheetProps): React.JSX.Element {
   const updateMilestone = useUpdateMilestone();
   const uploadAttachment = useUploadAttachment();
@@ -540,6 +542,28 @@ export default function MilestoneDetailSheet({
                   </View>
                 </View>
 
+                {/* AI Chat Button */}
+                {onChat && (
+                  <Pressable
+                    style={s.chatBtn}
+                    onPress={() => {
+                      onClose();
+                      setTimeout(() => onChat(milestone), 200);
+                    }}
+                  >
+                    <View style={s.chatBtnIconWrap}>
+                      <Ionicons name="sparkles" size={16} color={COLORS.white} />
+                    </View>
+                    <View style={s.chatBtnTextWrap}>
+                      <Text style={s.chatBtnTitle}>Chat about this milestone</Text>
+                      <Text style={s.chatBtnSubtitle}>
+                        Get AI help with implementation, blockers & strategy
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+                  </Pressable>
+                )}
+
                 {/* Actions */}
                 <View style={s.actionRow}>
                   <Pressable
@@ -835,6 +859,42 @@ const s = StyleSheet.create({
   attachmentDeleteBtn: {
     padding: SPACING.xs,
     borderRadius: BORDER_RADIUS.sm,
+  },
+
+  // Chat button
+  chatBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    marginTop: SPACING.lg,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.primaryMuted,
+    borderWidth: 1,
+    borderColor: COLORS.primary + "30",
+  },
+  chatBtnIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chatBtnTextWrap: {
+    flex: 1,
+  },
+  chatBtnTitle: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.primary,
+    marginBottom: 2,
+  },
+  chatBtnSubtitle: {
+    fontSize: FONT_SIZE.caption,
+    color: COLORS.textTertiary,
+    lineHeight: 16,
   },
 
   // Metadata

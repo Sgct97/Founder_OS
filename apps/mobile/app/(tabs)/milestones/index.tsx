@@ -20,6 +20,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 import { Button } from "@/components/ui/Button";
 import ImportModal from "@/components/milestones/ImportModal";
@@ -490,6 +491,7 @@ function EmptyState({
 // ── Main Screen ─────────────────────────────────────────────
 
 export default function MilestonesScreen() {
+  const router = useRouter();
   const { data: phases, isLoading, error, refetch } = usePhases();
 
   const createPhase = useCreatePhase();
@@ -612,6 +614,20 @@ export default function MilestonesScreen() {
       setDetailVisible(true);
     },
     []
+  );
+
+  const handleChatMilestone = useCallback(
+    (milestone: MilestoneResponse) => {
+      router.push({
+        pathname: "/(tabs)/milestones/chat",
+        params: {
+          milestoneId: milestone.id,
+          milestoneTitle: milestone.title,
+          phaseName: detailPhaseName,
+        },
+      });
+    },
+    [router, detailPhaseName]
   );
 
   const handleToggleMilestoneStatus = useCallback(
@@ -805,6 +821,7 @@ export default function MilestonesScreen() {
         onClose={() => setDetailVisible(false)}
         onEdit={handleEditMilestone}
         onDelete={handleDeleteMilestone}
+        onChat={handleChatMilestone}
       />
     </View>
   );

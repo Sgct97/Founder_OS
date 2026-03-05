@@ -13,6 +13,7 @@ class ConversationCreate(BaseModel):
     """Body for POST /conversations."""
 
     title: str = Field(default="New Conversation", min_length=1, max_length=255)
+    milestone_id: uuid.UUID | None = Field(default=None)
 
 
 class MessageCreate(BaseModel):
@@ -53,6 +54,7 @@ class ConversationResponse(BaseModel):
     workspace_id: uuid.UUID
     created_by: uuid.UUID
     title: str
+    milestone_id: uuid.UUID | None = None
     created_at: datetime
     updated_at: datetime
 

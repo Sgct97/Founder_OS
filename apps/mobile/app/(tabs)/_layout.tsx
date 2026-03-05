@@ -53,9 +53,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="milestones/index"
+        name="milestones"
         options={{
           title: "Milestones",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="flag-outline" size={size} color={color} />
           ),

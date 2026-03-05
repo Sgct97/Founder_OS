@@ -20,11 +20,17 @@ import type {
 const CONVERSATIONS_KEY = ["conversations"] as const;
 const REFETCH_INTERVAL_MS = 10000;
 
-/** Fetch all conversations for the workspace. */
-export function useConversations() {
+function conversationsQueryKey(milestoneId?: string) {
+  return milestoneId
+    ? [...CONVERSATIONS_KEY, "milestone", milestoneId]
+    : CONVERSATIONS_KEY;
+}
+
+/** Fetch conversations. Pass milestoneId to scope to a specific milestone. */
+export function useConversations(milestoneId?: string) {
   return useQuery<ConversationResponse[]>({
-    queryKey: CONVERSATIONS_KEY,
-    queryFn: chatService.listConversations,
+    queryKey: conversationsQueryKey(milestoneId),
+    queryFn: () => chatService.listConversations(milestoneId),
     refetchInterval: REFETCH_INTERVAL_MS,
   });
 }

@@ -3,7 +3,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
 
@@ -33,15 +33,16 @@ def _require_workspace(user: CurrentUser) -> uuid.UUID:
 @router.get(
     "/conversations",
     response_model=list[ConversationResponse],
-    summary="List all conversations",
+    summary="List conversations",
 )
 async def list_conversations(
     current_user: CurrentUser,
     db: Annotated[AsyncSession, Depends(get_db)],
+    milestone_id: uuid.UUID | None = Query(default=None),
 ) -> list[ConversationResponse]:
-    """Return all conversations for the user's workspace, newest first."""
+    """Return conversations for the workspace. Pass milestone_id to scope to a milestone."""
     workspace_id = _require_workspace(current_user)
-    conversations = await chat_service.list_conversations(db, workspace_id)
+    conversations = await chat_service.list_conversations(db, workspace_id, milestone_id)
     return [ConversationResponse.model_validate(c) for c in conversations]
 
 
@@ -56,10 +57,10 @@ async def create_conversation(
     current_user: CurrentUser,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> ConversationResponse:
-    """Start a new chat conversation in the workspace."""
+    """Start a new chat conversation, optionally scoped to a milestone."""
     workspace_id = _require_workspace(current_user)
     conversation = await chat_service.create_conversation(
-        db, workspace_id, current_user.id, payload.title
+        db, workspace_id, current_user.id, payload.title, payload.milestone_id
     )
     return ConversationResponse.model_validate(conversation)
 

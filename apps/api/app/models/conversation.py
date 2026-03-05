@@ -10,7 +10,7 @@ from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
-    """A chat conversation in the workspace's knowledge base."""
+    """A chat conversation — either workspace-wide (knowledge base) or milestone-scoped."""
 
     __tablename__ = "conversations"
 
@@ -25,6 +25,11 @@ class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         nullable=False,
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
+    milestone_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("milestones.id", ondelete="CASCADE"),
+        nullable=True,
+    )
 
     # Relationships
     messages: Mapped[list["Message"]] = relationship(  # noqa: F821
@@ -37,5 +42,5 @@ class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     creator: Mapped["User"] = relationship("User", lazy="selectin")  # noqa: F821
 
     def __repr__(self) -> str:
-        return f"<Conversation id={self.id} title={self.title!r}>"
+        return f"<Conversation id={self.id} title={self.title!r} milestone_id={self.milestone_id}>"
 
