@@ -10,6 +10,7 @@ import React, { useCallback, useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -151,23 +152,31 @@ export default function DocumentDetailScreen() {
     }
   }, [document?.title, navigation]);
 
-  const handleDelete = useCallback(() => {
+  const handleDelete = useCallback(async () => {
     if (!id) return;
-    Alert.alert(
-      "Delete Document",
-      "This will permanently delete this document and all its processed data. This cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            await deleteDocument.mutateAsync(id);
-            router.back();
+
+    if (Platform.OS === "web") {
+      if (window.confirm("This will permanently delete this document and all its processed data. This cannot be undone.")) {
+        await deleteDocument.mutateAsync(id);
+        router.back();
+      }
+    } else {
+      Alert.alert(
+        "Delete Document",
+        "This will permanently delete this document and all its processed data. This cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              await deleteDocument.mutateAsync(id);
+              router.back();
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   }, [id, deleteDocument, router]);
 
   // Use polled status if available, falling back to the document's status.

@@ -10,6 +10,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -135,15 +136,21 @@ function DocumentCard({ document, onPress, onDelete }: DocumentCardProps) {
   const iconName = FILE_TYPE_ICONS[document.file_type] ?? "document";
 
   const handleLongPress = useCallback(() => {
-    Alert.alert("Document", undefined, [
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => onDelete(document.id),
-      },
-      { text: "Cancel", style: "cancel" },
-    ]);
-  }, [document.id, onDelete]);
+    if (Platform.OS === "web") {
+      if (window.confirm(`Delete "${document.title}"?`)) {
+        onDelete(document.id);
+      }
+    } else {
+      Alert.alert("Document", undefined, [
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => onDelete(document.id),
+        },
+        { text: "Cancel", style: "cancel" },
+      ]);
+    }
+  }, [document.id, document.title, onDelete]);
 
   return (
     <Pressable
@@ -366,18 +373,24 @@ export default function KnowledgeScreen() {
 
   const handleDeleteDocument = useCallback(
     (documentId: string) => {
-      Alert.alert(
-        "Delete Document",
-        "This will permanently delete this document and all its processed data.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: () => deleteDocument.mutate(documentId),
-          },
-        ]
-      );
+      if (Platform.OS === "web") {
+        if (window.confirm("This will permanently delete this document and all its processed data.")) {
+          deleteDocument.mutate(documentId);
+        }
+      } else {
+        Alert.alert(
+          "Delete Document",
+          "This will permanently delete this document and all its processed data.",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Delete",
+              style: "destructive",
+              onPress: () => deleteDocument.mutate(documentId),
+            },
+          ]
+        );
+      }
     },
     [deleteDocument]
   );
