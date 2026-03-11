@@ -186,7 +186,7 @@ async def delete_document(
 # ── Document Processing Pipeline ────────────────────────────────
 
 
-async def process_document(document_id: uuid.UUID) -> None:
+async def process_document(document_id: uuid.UUID, openai_api_key: str | None = None) -> None:
     """Background task: parse document, chunk text, generate embeddings.
 
     This function creates its own database session since it runs as a
@@ -194,6 +194,7 @@ async def process_document(document_id: uuid.UUID) -> None:
 
     Args:
         document_id: The document to process.
+        openai_api_key: Resolved API key (workspace or server default).
     """
     from app.database import async_session
 
@@ -206,6 +207,12 @@ async def process_document(document_id: uuid.UUID) -> None:
             if document is None:
                 logger.error("Process: Document %s not found", document_id)
                 return
+
+            # Resolve workspace API key if not provided.
+            api_key = openai_api_key
+            if api_key is None and document.workspace_id:
+                from app.services.workspace_settings import get_openai_api_key
+                api_key = await get_openai_api_key(db, document.workspace_id)
 
             # Update status to processing.
             document.status = "processing"
@@ -232,7 +239,7 @@ async def process_document(document_id: uuid.UUID) -> None:
             )
 
             # 3. Generate embeddings for all chunks.
-            embeddings = await _generate_embeddings([c["text"] for c in chunks])
+            embeddings = await _generate_embeddings([c["text"] for c in chunks], openai_api_key=api_key)
 
             # 4. Store chunks in database.
             for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
@@ -389,20 +396,25 @@ def _chunk_text(
     return chunks
 
 
-async def _generate_embeddings(texts: list[str]) -> list[list[float]]:
+async def _generate_embeddings(
+    texts: list[str], openai_api_key: str | None = None
+) -> list[list[float]]:
     """Generate embeddings for a list of texts using OpenAI.
 
     Args:
         texts: List of text strings to embed.
+        openai_api_key: Resolved API key (workspace or server default).
 
     Returns:
         List of embedding vectors (1536 dimensions each).
     """
-    if not settings.openai_api_key:
-        logger.warning("OPENAI_API_KEY not configured — using zero vectors")
+    if not openai_api_key:
+        logger.warning("No OpenAI API key configured for workspace — using zero vectors")
         return [[0.0] * EMBEDDING_DIMENSION for _ in texts]
 
-    client = AsyncOpenAI(api_key=settings.openai_api_key)
+    api_key = openai_api_key
+
+    client = AsyncOpenAI(api_key=api_key)
 
     # OpenAI supports batching up to 2048 inputs. Process in batches.
     all_embeddings: list[list[float]] = []
@@ -420,15 +432,18 @@ async def _generate_embeddings(texts: list[str]) -> list[list[float]]:
     return all_embeddings
 
 
-async def generate_query_embedding(query: str) -> list[float]:
+async def generate_query_embedding(
+    query: str, openai_api_key: str | None = None
+) -> list[float]:
     """Generate an embedding for a single query string.
 
     Args:
         query: The user's question text.
+        openai_api_key: Resolved API key (workspace or server default).
 
     Returns:
         A 1536-dimension embedding vector.
     """
-    embeddings = await _generate_embeddings([query])
+    embeddings = await _generate_embeddings([query], openai_api_key=openai_api_key)
     return embeddings[0]
 

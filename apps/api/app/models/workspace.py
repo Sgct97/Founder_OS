@@ -1,8 +1,8 @@
-"""Workspace model — shared team container for all FounderOS data."""
+"""Workspace model — shared team container for all FoundersForge data."""
 
 from decimal import Decimal
 
-from sqlalchemy import Numeric, String
+from sqlalchemy import Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -20,10 +20,17 @@ class Workspace(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     commitment_hours: Mapped[Decimal | None] = mapped_column(
         Numeric(3, 1), nullable=True
     )
+    project_brief: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="Optional project description injected into AI system prompts"
+    )
 
-    # Relationships (back-populated from User)
+    # Relationships
     members: Mapped[list["User"]] = relationship(  # noqa: F821
         "User", back_populates="workspace", lazy="selectin"
+    )
+    api_keys: Mapped[list["WorkspaceApiKey"]] = relationship(  # noqa: F821
+        "WorkspaceApiKey", back_populates="workspace", lazy="selectin",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:

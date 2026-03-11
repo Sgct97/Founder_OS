@@ -64,11 +64,14 @@ Respond with ONLY valid JSON matching this exact schema:
 No markdown fences, no commentary — just the JSON object."""
 
 
-async def parse_text_with_ai(content: str) -> MilestoneImportPreview:
+async def parse_text_with_ai(
+    content: str, openai_api_key: str | None = None
+) -> MilestoneImportPreview:
     """Send raw text to GPT-5.2 and get back structured phases/milestones.
 
     Args:
         content: Raw markdown or plain text to parse.
+        openai_api_key: Resolved API key (workspace or server default).
 
     Returns:
         MilestoneImportPreview with extracted phases and milestones.
@@ -77,13 +80,14 @@ async def parse_text_with_ai(content: str) -> MilestoneImportPreview:
         HTTPException 502: If the AI call fails or returns invalid JSON.
         HTTPException 422: If no phases could be extracted.
     """
-    if not settings.openai_api_key:
+    if not openai_api_key:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="OpenAI API key not configured. Cannot parse milestones.",
+            detail="No OpenAI API key configured. Add one in Settings → Integrations.",
         )
+    api_key = openai_api_key
 
-    client = AsyncOpenAI(api_key=settings.openai_api_key)
+    client = AsyncOpenAI(api_key=api_key)
 
     try:
         response = await client.chat.completions.create(

@@ -12,6 +12,7 @@ from app.models.milestone_attachment import MilestoneAttachment
 from app.models.phase import Phase
 from app.models.user import User
 from app.models.workspace import Workspace
+from app.models.workspace_api_key import WorkspaceApiKey
 
 __all__ = [
     "Base",
@@ -27,4 +28,5 @@ __all__ = [
     "Phase",
     "User",
     "Workspace",
+    "WorkspaceApiKey",
 ]

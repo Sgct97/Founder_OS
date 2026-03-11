@@ -14,6 +14,7 @@ from app.schemas.documents import (
     DocumentStatusResponse,
 )
 from app.services import documents as documents_service
+from app.services.workspace_settings import get_openai_api_key
 
 router = APIRouter()
 
@@ -66,8 +67,11 @@ async def upload_document(
         db, workspace_id, current_user.id, file
     )
 
+    # Resolve workspace API key for embedding generation.
+    openai_key = await get_openai_api_key(db, workspace_id)
+
     # Kick off background processing.
-    background_tasks.add_task(documents_service.process_document, document.id)
+    background_tasks.add_task(documents_service.process_document, document.id, openai_key)
 
     return DocumentResponse.model_validate(document)
 

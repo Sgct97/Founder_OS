@@ -128,6 +128,20 @@ export async function apiPatch<T>(
   return handleResponse<T>(response);
 }
 
+/** Typed PUT request. */
+export async function apiPut<T>(
+  path: string,
+  body?: unknown
+): Promise<T> {
+  const headers = await buildHeaders();
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "PUT",
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  return handleResponse<T>(response);
+}
+
 /** Typed DELETE request. */
 export async function apiDelete<T = void>(path: string): Promise<T> {
   const headers = await buildHeaders();

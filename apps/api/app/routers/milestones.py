@@ -26,6 +26,7 @@ from app.schemas.milestones import (
 from app.services import milestone_attachments as attachments_service
 from app.services import milestones as milestones_service
 from app.services.milestone_import import create_phases_from_preview, parse_text_with_ai
+from app.services.workspace_settings import get_openai_api_key
 
 router = APIRouter()
 
@@ -175,11 +176,13 @@ async def delete_milestone(
 async def import_preview(
     payload: MilestoneImportRequest,
     current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> MilestoneImportPreview:
     """Send raw text to GPT-5.2 and return a structured preview of phases
     and milestones before committing anything to the database."""
-    _require_workspace(current_user)
-    return await parse_text_with_ai(payload.content)
+    workspace_id = _require_workspace(current_user)
+    openai_key = await get_openai_api_key(db, workspace_id)
+    return await parse_text_with_ai(payload.content, openai_api_key=openai_key)
 
 
 @router.post(
@@ -196,7 +199,8 @@ async def import_confirm(
     """Parse the text again and save the resulting phases/milestones to
     the database. Use `replace_existing=true` to clear all current phases."""
     workspace_id = _require_workspace(current_user)
-    preview = await parse_text_with_ai(payload.content)
+    openai_key = await get_openai_api_key(db, workspace_id)
+    preview = await parse_text_with_ai(payload.content, openai_api_key=openai_key)
     phases = await create_phases_from_preview(
         db, workspace_id, preview, payload.replace_existing
     )

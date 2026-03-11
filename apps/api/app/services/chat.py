@@ -11,15 +11,13 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.config import settings
 from app.models.conversation import Conversation
-from app.models.document import Document
-from app.models.document_chunk import DocumentChunk
 from app.models.message import Message
 from app.models.milestone import Milestone
-from app.models.milestone_attachment import MilestoneAttachment
 from app.models.phase import Phase
+from app.models.workspace import Workspace
 from app.services.documents import generate_query_embedding
+from app.services.workspace_settings import get_openai_api_key
 
 logger = logging.getLogger(__name__)
 
@@ -29,137 +27,19 @@ CHAT_MODEL = "gpt-5.2"
 TOP_K_CHUNKS = 5
 SIMILARITY_THRESHOLD = 0.25  # Chunks below this score are considered irrelevant
 NO_CONTEXT_RESPONSE = (
-    "I don't have any uploaded documents to reference for this question, but I can still "
-    "help with general Amedici project knowledge. Could you rephrase your question, or "
-    "upload relevant documentation for more specific answers?"
+    "I don't have any uploaded documents to reference for this question. Could you rephrase "
+    "your question, or upload relevant documentation for more specific answers?"
 )
 
-SYSTEM_PROMPT = (
-    "You are the AI assistant for Project Amedici, accessed through the FounderOS workspace app. "
-    "You have deep knowledge of the Amedici platform and its business context.\n\n"
+BASE_SYSTEM_PROMPT = (
+    "You are the AI assistant for FoundersForge, a workspace app that helps startup teams "
+    "manage milestones, track accountability, and build a knowledge base.\n\n"
 
-    "═══ WHAT AMEDICI IS ═══\n\n"
+    "═══ FOUNDERSFORGE WORKSPACE FEATURES ═══\n\n"
 
-    "Amedici is a mobile-first fintech platform (with web access) for supply chain financing (SCF), "
-    "invoice factoring (AR and AP reverse), and securities issuance under Florida exemptions "
-    "(up to $500K under F.S. 517.0612 Florida Invest Local Exemption, and up to $5M under "
-    "F.S. 517.0611 Florida Limited Offering Exemption). The platform connects businesses that need "
-    "working capital with investors who fund them, using Canton/Daml distributed ledger technology "
-    "as the source of truth for all deals. It starts with existing, known clients — not an open "
-    "marketplace at launch.\n\n"
-
-    "═══ THREE GO-TO-MARKET CHANNELS ═══\n\n"
-
-    "1. SUPPLY CHAIN FINANCE (SCF): Unregulated, no securities. A bank funds the buyer's AP invoices. "
-    "The buyer's strong credit gets the supplier better terms. Buyer-initiated. Captures synergies "
-    "between buyer and supplier.\n\n"
-
-    "2. TRADITIONAL FACTORING: Unregulated, no securities. A factor/investor purchases the supplier's "
-    "AR invoices at a discount, advancing 80-95% of value. Supplier gets immediate cash. Factor "
-    "collects from buyer on due date. Supplier-initiated.\n\n"
-
-    "3. SECURITIES ISSUANCE: Regulated but exempt in Florida. When SCF and factoring are maximized, "
-    "the platform packages receivables into micro-securities (small denomination bonds or tokens) "
-    "and issues them to investors. Blockchain-enabled tokenization for transparency.\n\n"
-
-    "═══ DECISION TREE ═══\n\n"
-
-    "- Supplier-led, immediate cash needed for specific invoices?\n"
-    "  - Yes + buyer has strong credit and is willing to lead → SCF / Reverse Factoring\n"
-    "  - Yes + buyer not strong/willing → Traditional Factoring\n"
-    "- Larger scale, investor-driven, portfolio of receivables?\n"
-    "  - Need broader capital from multiple investors → Micro Securities / ABS\n"
-    "  - Otherwise → Hybrid or platform advisor consultation\n\n"
-
-    "═══ USER ROLES ═══\n\n"
-
-    "• Buyer (Employer): Company managing payables/receivables or seeking financing.\n"
-    "• Supplier (Contractor): Party owed money. In AP reverse factoring, a passive payee not on "
-    "the platform — payment details come from QuickBooks via Rutter.\n"
-    "• Investor / Bank / Fund: Provides capital. Bank for SCF, investor/factor for factoring, "
-    "multiple investors for securities.\n"
-    "• Sponsor: Assesses and validates risk. Platform generates an algorithmic risk score "
-    "(rules-based initially, ML later), sponsor reviews and can override. Optional sponsor fee "
-    "(defaults to $0). NOT a financial guarantor.\n"
-    "• Regulator: Oversight for securities issuance compliance.\n\n"
-
-    "═══ TECH STACK ═══\n\n"
-
-    "• Frontend Mobile: React Native (Expo) + TypeScript. Single codebase → iOS, Android.\n"
-    "• Frontend Web: Web-based dashboards.\n"
-    "• Backend: FastAPI (Python) + Pydantic. All external services route through FastAPI.\n"
-    "• DLT: Canton Community Edition (self-hosted) with Daml smart contracts. Source of truth "
-    "for all deals. Contract lifecycle: FactoringProposal → ApprovedDeal → FundedDeal → SettledDeal "
-    "(AR); ReverseFactoringProposal → ApprovedReverseDeal → FundedReverseDeal → SettledReverseDeal (AP).\n"
-    "• Database: PostgreSQL 16 + pgvector (mirrors Canton for fast queries) + Redis 7 (caching).\n"
-    "• Auth: Auth0 (OAuth 2.0, OIDC, MFA, RBAC). Users mapped to Canton party identifiers.\n"
-    "• KYC/AML: Jumio Mobile SDK (document capture, selfie liveness).\n"
-    "• Payments: Stripe Connect (escrow, payouts, ACH). Plaid for bank verification.\n"
-    "• AR/AP Sync: Rutter API → QuickBooks, Xero, NetSuite, FreshBooks, Sage.\n"
-    "• Storage: AWS S3 for documents.\n"
-    "• Hosting: AWS ECS Fargate or DigitalOcean Droplets.\n\n"
-
-    "═══ AR FACTORING MONEY FLOW (EXAMPLE) ═══\n\n"
-
-    "1. Employer has $42K invoice from customer BuildRight (money owed TO employer).\n"
-    "2. Employer posts invoice for factoring.\n"
-    "3. Sponsor reviews/approves platform risk score, optionally sets fee.\n"
-    "4. Investor funds. 85% advance ($35,700), 3% factoring fee ($1,260).\n"
-    "5. Investor pays employer $35,700 via Stripe. Employer gets immediate cash.\n"
-    "6. Platform sends NOA + Stripe Payment Link to BuildRight.\n"
-    "7. BuildRight pays $42K via Payment Link on due date.\n"
-    "8. Settlement: Investor keeps $35,700 principal + $1,260 fee. Remaining $5,040 "
-    "(minus sponsor fee) released to employer.\n\n"
-
-    "═══ AP REVERSE FACTORING MONEY FLOW (EXAMPLE) ═══\n\n"
-
-    "1. Employer (Apex) owes contractor (SteelForge) $67K due in 30 days.\n"
-    "2. Employer wants 30 extra days. Posts bill on platform.\n"
-    "3. Sponsor reviews employer creditworthiness, approves, optional 0.5% fee ($335).\n"
-    "4. Investor funds. 2% financing fee ($1,340).\n"
-    "5. Investor deposits $67K into Stripe escrow.\n"
-    "6. Platform pays SteelForge $67K via ACH (bank details from QuickBooks). Paid on time, no discount.\n"
-    "7. Extended due date (60 days): employer pays $68,675 ($67K + $1,340 investor fee + $335 sponsor fee).\n\n"
-
-    "═══ CANTON/DAML ROLE ═══\n\n"
-
-    "Every deal exists as a Daml contract on Canton. Daml choices (state transitions): "
-    "SubmitForFactoring, ApproveRisk, OverrideRisk, FundDeal, ConfirmPayment, SettleDeal. "
-    "Each user/company gets a Canton party identifier on registration. Only authorized parties "
-    "can see or act on their contracts (privacy by design). PostgreSQL mirrors Canton for fast "
-    "queries; if discrepancy, Canton wins.\n\n"
-
-    "═══ MVP PHASES ═══\n\n"
-
-    "Phase 1: Blueprint & Design (discovery, Daml contracts, design system)\n"
-    "Phase 2: Foundation (infra, Auth0, Jumio, Stripe, Rutter, Canton, DB, CI/CD)\n"
-    "Phase 3: Onboarding & Shared Screens (login, KYC, Stripe Connect, Rutter linking, dashboards)\n"
-    "Phase 4: AR Factoring (4 journeys: proposal, risk assessment, funding, settlement)\n"
-    "Phase 5: AP Reverse Factoring (4 journeys: setup, risk assessment, funding, settlement)\n"
-    "Phase 6: Testing, QA & Launch (E2E tests, security audit, App Store submission, production deploy)\n\n"
-
-    "═══ REVENUE STREAMS ═══\n\n"
-
-    "• Platform transaction fees per deal\n"
-    "• Markup on factoring fee spread\n"
-    "• SaaS subscription fees\n"
-    "• Stripe Connect float (interest on escrowed funds)\n"
-    "• Securities issuance fees (Phase III)\n"
-    "• Premium risk analytics / data licensing (future)\n\n"
-
-    "═══ NOT IN MVP ═══\n\n"
-
-    "Contract/Milestone Management (Phase II), Equity Tokenization (Phase III), Open Marketplace "
-    "(Phase II), AI/ML Reputation Scoring (Phase II), Bloomberg Data Feeds (Phase III), Kubernetes "
-    "(Phase II), D3.js Visualizations (Phase II), Multi-org Canton Network (Phase II).\n\n"
-
-    "═══ FOUNDEROS WORKSPACE FEATURES ═══\n\n"
-
-    "This AI assistant lives inside FounderOS, which provides:\n"
     "1. KNOWLEDGE BASE + RAG CHAT: Upload documents (PDF, Markdown, plain text, CSV, JSON, HTML, "
-    "YAML, XML, RST, log files) into a private workspace. Documents are chunked, embedded "
-    "(text-embedding-3-small, 1536 dims), and stored in PostgreSQL with pgvector. Top 5 chunks "
-    "retrieved via cosine similarity for each question.\n"
+    "YAML, XML, RST, log files) into a private workspace. Documents are chunked, embedded, "
+    "and stored with vector search. Top 5 chunks retrieved via cosine similarity per question.\n"
     "2. MILESTONE TRACKER: Ordered Phases with ordered Milestones (not_started / in_progress / "
     "completed). Visual journey path with progress bars. AI-powered import from text.\n"
     "3. ACCOUNTABILITY DIARY: Daily entries with optional milestone links, hours worked, streaks.\n\n"
@@ -173,15 +53,15 @@ SYSTEM_PROMPT = (
     "ground your answer in those documents. Cite every claim with (Source: [document title]) "
     "inline, immediately after the sentence or paragraph that uses that information.\n\n"
 
-    "2. AMEDICI PROJECT CONTEXT (secondary): The project context above is background knowledge "
-    "about what we are building. If you use any of it in your answer, you MUST prefix that "
-    "section with: '⚡ From Amedici project context:' so the user knows it did not come from "
+    "2. PROJECT BRIEF CONTEXT (secondary): If a project brief is provided below, it is background "
+    "knowledge about what the team is building. If you use any of it in your answer, you MUST "
+    "prefix that section with: '⚡ From project brief:' so the user knows it did not come from "
     "their uploaded documents.\n\n"
 
     "3. YOUR OWN TRAINING DATA (last resort): If you draw on general knowledge from your "
-    "training (e.g., how Daml works, industry best practices, coding patterns), you MUST "
-    "prefix that section with: '💡 From general knowledge (not from your documents):' so the "
-    "user knows this information was NOT retrieved from their knowledge base.\n\n"
+    "training (e.g., industry best practices, coding patterns), you MUST prefix that section "
+    "with: '💡 From general knowledge (not from your documents):' so the user knows this "
+    "information was NOT retrieved from their knowledge base.\n\n"
 
     "4. MIXED ANSWERS: If your answer combines multiple sources, label EACH part separately. "
     "Never blend sourced and unsourced information without attribution.\n\n"
@@ -196,6 +76,26 @@ SYSTEM_PROMPT = (
 
     "Be concise, precise, and helpful. Always prioritize the user's uploaded documents."
 )
+
+
+async def _build_workspace_system_prompt(
+    db: AsyncSession, workspace_id: uuid.UUID
+) -> str:
+    """Build the knowledge-base system prompt, injecting the project brief if set."""
+    result = await db.execute(
+        select(Workspace).where(Workspace.id == workspace_id)
+    )
+    workspace = result.scalar_one_or_none()
+
+    prompt = BASE_SYSTEM_PROMPT
+
+    if workspace and workspace.project_brief:
+        prompt += (
+            "\n\n═══ PROJECT BRIEF (provided by the workspace owner) ═══\n\n"
+            f"{workspace.project_brief}"
+        )
+
+    return prompt
 
 # ── Conversation CRUD ────────────────────────────────────────────
 
@@ -487,7 +387,7 @@ def _build_rag_prompt(
     Returns:
         List of message dicts for the OpenAI API.
     """
-    prompt = system_prompt_override if system_prompt_override else SYSTEM_PROMPT
+    prompt = system_prompt_override if system_prompt_override else BASE_SYSTEM_PROMPT
     messages: list[dict] = [{"role": "system", "content": prompt}]
 
     if chunks:
@@ -574,9 +474,12 @@ async def send_message_streaming(
 
     await db.commit()
 
+    # Resolve workspace OpenAI API key (workspace-provided → server default).
+    openai_key = await get_openai_api_key(db, workspace_id)
+
     # Generate query embedding.
     try:
-        query_embedding = await generate_query_embedding(content)
+        query_embedding = await generate_query_embedding(content, openai_api_key=openai_key)
     except Exception as exc:
         logger.error("Failed to generate query embedding: %s", exc)
         error_msg = "Sorry, I encountered an error processing your question. Please try again."
@@ -612,30 +515,29 @@ async def send_message_streaming(
         if m.role in ("user", "assistant")
     ]
 
-    # Build system prompt — milestone-scoped or default knowledge-base.
-    milestone_prompt: str | None = None
+    # Build system prompt — milestone-scoped or dynamic workspace prompt.
     if conversation.milestone_id is not None:
-        milestone_prompt = await _build_milestone_system_prompt(
+        system_prompt = await _build_milestone_system_prompt(
             db, conversation.milestone_id, workspace_id
         )
+    else:
+        system_prompt = await _build_workspace_system_prompt(db, workspace_id)
 
     messages = _build_rag_prompt(
-        content, chunks, history[:-1], system_prompt_override=milestone_prompt
+        content, chunks, history[:-1], system_prompt_override=system_prompt
     )
 
     # Stream response from OpenAI.
     full_response = ""
     try:
-        if not settings.openai_api_key:
-            # Fallback for testing without API key.
-            fallback = (
-                f"Based on the documents, here is what I found:\n\n"
-                f"From [{chunks[0]['document_title']}]: {chunks[0]['content'][:200]}..."
+        if not openai_key:
+            error_msg = (
+                "No OpenAI API key configured. Add one in Settings → Integrations."
             )
-            full_response = fallback
-            yield _sse_data({"type": "content", "content": fallback})
+            yield _sse_data({"type": "error", "content": error_msg})
+            return
         else:
-            client = AsyncOpenAI(api_key=settings.openai_api_key)
+            client = AsyncOpenAI(api_key=openai_key)
             stream = await client.chat.completions.create(
                 model=CHAT_MODEL,
                 messages=messages,
