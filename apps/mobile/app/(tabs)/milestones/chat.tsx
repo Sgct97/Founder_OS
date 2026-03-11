@@ -345,6 +345,7 @@ export default function MilestoneChatScreen() {
   const [activeConversationId, setActiveConversationId] = useState<
     string | undefined
   >(undefined);
+  const [isNewChat, setIsNewChat] = useState(false);
   const [inputText, setInputText] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
   const flatListRef = useRef<FlatList>(null);
@@ -364,12 +365,12 @@ export default function MilestoneChatScreen() {
     resetStream,
   } = useStreamingChat(activeConversationId);
 
-  // Auto-select the most recent milestone conversation on mount.
+  // Auto-select the most recent milestone conversation on mount (not when user clicked "new chat").
   useEffect(() => {
-    if (!activeConversationId && conversations && conversations.length > 0) {
+    if (!activeConversationId && !isNewChat && conversations && conversations.length > 0) {
       setActiveConversationId(conversations[0]!.id);
     }
-  }, [conversations, activeConversationId]);
+  }, [conversations, activeConversationId, isNewChat]);
 
   // Auto-scroll on new messages / streaming.
   useEffect(() => {
@@ -393,6 +394,7 @@ export default function MilestoneChatScreen() {
           milestone_id: milestoneId,
         });
         setActiveConversationId(newConv.id);
+        setIsNewChat(false);
         setInputText("");
         await sendMessage(trimmed, newConv.id);
         return;
@@ -411,6 +413,7 @@ export default function MilestoneChatScreen() {
 
   const handleNewConversation = useCallback(() => {
     setActiveConversationId(undefined);
+    setIsNewChat(true);
     setInputText("");
     resetStream();
     setShowSidebar(false);
@@ -419,6 +422,7 @@ export default function MilestoneChatScreen() {
   const handleSelectConversation = useCallback(
     (conversationId: string) => {
       setActiveConversationId(conversationId);
+      setIsNewChat(false);
       resetStream();
       setShowSidebar(false);
     },
