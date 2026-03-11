@@ -22,7 +22,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
+import { LinearGradient } from "expo-linear-gradient";
+
 import { Button } from "@/components/ui/Button";
+import { GlowDivider } from "@/components/ui/GlowDivider";
 import ImportModal from "@/components/milestones/ImportModal";
 import MilestoneDetailSheet from "@/components/milestones/MilestoneDetailSheet";
 import { Skeleton, SkeletonPhaseCard } from "@/components/ui/Skeleton";
@@ -120,6 +123,15 @@ function JourneyNode({
     }).start();
   }, [anim, index]);
 
+  // Press scale feedback
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const handlePressIn = useCallback(() => {
+    Animated.timing(scaleAnim, { toValue: 0.97, duration: 120, useNativeDriver: true }).start();
+  }, [scaleAnim]);
+  const handlePressOut = useCallback(() => {
+    Animated.timing(scaleAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+  }, [scaleAnim]);
+
   // Pulsing ring for in-progress
   const pulseAnim = useRef(new Animated.Value(1)).current;
   useEffect(() => {
@@ -183,6 +195,7 @@ function JourneyNode({
       </View>
 
       {/* Card */}
+      <Animated.View style={{ flex: 1, transform: [{ scale: scaleAnim }] }}>
       <Pressable
         style={[
           styles.journeyCard,
@@ -190,6 +203,8 @@ function JourneyNode({
           isInProgress && styles.journeyCardInProgress,
         ]}
         onPress={() => onPress(milestone)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
       >
         <View style={styles.journeyCardHeader}>
           <Text
@@ -231,6 +246,7 @@ function JourneyNode({
           </View>
         ) : null}
       </Pressable>
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -328,7 +344,10 @@ function PhaseCard({
       {/* Progress Bar */}
       <View style={styles.progressBarContainer}>
         <View style={styles.progressBarTrack}>
-          <View
+          <LinearGradient
+            colors={["#FF6A2A", "#FFB36B"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
             style={[styles.progressBarFill, { width: `${progressPct}%` }]}
           />
         </View>
@@ -472,7 +491,12 @@ function EmptyState({
       </Text>
       <View style={styles.emptyProgressPreview}>
         <View style={styles.progressBarTrack}>
-          <View style={[styles.progressBarFill, { width: "0%" }]} />
+          <LinearGradient
+            colors={["#FF6A2A", "#FFB36B"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.progressBarFill, { width: "0%" }]}
+          />
         </View>
         <Text style={styles.emptyProgressLabel}>0 of 0 milestones</Text>
       </View>
@@ -744,13 +768,20 @@ export default function MilestonesScreen() {
           </View>
           <View style={styles.overallProgressBar}>
             <View style={styles.progressBarTrack}>
-              <View
+              <LinearGradient
+                colors={["#FF6A2A", "#FFB36B"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
                 style={[
                   styles.progressBarFill,
                   { width: `${overallProgress}%` },
                 ]}
               />
             </View>
+          </View>
+
+          <View style={{ paddingHorizontal: LAYOUT.screenPaddingH }}>
+            <GlowDivider />
           </View>
 
           {/* Phase List */}
@@ -772,6 +803,8 @@ export default function MilestonesScreen() {
                 onDeletePhase={handleDeletePhase}
               />
             ))}
+
+            <GlowDivider />
 
             {/* Action Buttons */}
             <View style={styles.actionRow}>
@@ -1003,7 +1036,6 @@ const styles = StyleSheet.create({
   progressBarFill: {
     height: "100%",
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primary,
   },
 
   // ── Journey Path ──────────────────────────────────────
@@ -1037,8 +1069,8 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: COLORS.warning,
-    opacity: 0.3,
+    borderColor: COLORS.primary,
+    opacity: 0.4,
   },
   journeyNodeCircle: {
     width: 18,
@@ -1055,14 +1087,14 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   journeyNodeCircleInProgress: {
-    borderColor: COLORS.warning,
+    borderColor: COLORS.primary,
     backgroundColor: COLORS.surface,
   },
   journeyNodeInnerDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: COLORS.warning,
+    backgroundColor: COLORS.primary,
   },
 
   // Journey cards
@@ -1079,12 +1111,12 @@ const styles = StyleSheet.create({
   },
   journeyCardCompleted: {
     borderColor: COLORS.successMuted,
-    backgroundColor: "rgba(46, 196, 160, 0.03)",
+    backgroundColor: "rgba(34, 197, 94, 0.06)",
   },
   journeyCardInProgress: {
-    borderColor: COLORS.warning,
-    backgroundColor: "rgba(243, 156, 18, 0.03)",
-    ...SHADOW.sm,
+    borderColor: "rgba(255, 106, 42, 0.5)",
+    backgroundColor: "rgba(255, 106, 42, 0.06)",
+    ...SHADOW.glow,
   },
   journeyCardHeader: {
     flexDirection: "row",

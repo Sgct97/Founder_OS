@@ -152,7 +152,7 @@ export default function SettingsScreen() {
         />
       </View>
 
-      <Text style={styles.versionText}>FounderOS v0.1.0</Text>
+      <Text style={styles.versionText}>FoundersForge v0.1.0</Text>
     </ScrollView>
   );
 }

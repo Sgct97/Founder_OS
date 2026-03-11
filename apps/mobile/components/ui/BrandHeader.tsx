@@ -29,7 +29,7 @@ export function BrandHeader({
           <Text style={styles.logoMarkText}>F</Text>
         </View>
         <Text style={styles.logoType}>
-          Founder<Text style={styles.logoAccent}>OS</Text>
+          Founders<Text style={styles.logoAccent}>Forge</Text>
         </Text>
       </View>
       <Text style={styles.tagline}>{tagline}</Text>
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   logoType: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.navy,
+    color: COLORS.white,
     letterSpacing: -0.5,
   },
   logoAccent: {

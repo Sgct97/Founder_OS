@@ -15,6 +15,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Link, router } from "expo-router";
 
 import { BrandHeader } from "@/components/ui/BrandHeader";
@@ -84,6 +85,15 @@ export default function SignupScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
+          <View style={styles.glowOrbWrap}>
+            <LinearGradient
+              colors={["rgba(255, 106, 42, 0.13)", "rgba(255, 106, 42, 0.04)", "transparent"]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={styles.glowOrb}
+            />
+          </View>
+
           <BrandHeader tagline="Your co-founder command center." />
 
           <View style={styles.card}>
@@ -172,6 +182,22 @@ const styles = StyleSheet.create({
   content: {
     width: "100%",
     maxWidth: LAYOUT.maxContentWidth,
+    position: "relative",
+  },
+  glowOrbWrap: {
+    position: "absolute",
+    top: -80,
+    left: "50%",
+    marginLeft: -220,
+    width: 440,
+    height: 440,
+    zIndex: 0,
+    pointerEvents: "none" as const,
+  },
+  glowOrb: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 220,
     alignSelf: "center",
   },
   card: {

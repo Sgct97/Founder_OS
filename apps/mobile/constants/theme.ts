@@ -1,55 +1,62 @@
 /**
- * FounderOS Design System — premium design tokens.
+ * FoundersForge Design System — premium dark theme.
  *
- * Inspired by Linear, Stripe, and Notion.
+ * Inspired by Linear, Stripe, and Vercel.
+ * Forge-inspired palette: deep charcoal + molten orange accents.
  * Every value is intentional; do not add arbitrary one-offs.
  */
 
 export const COLORS = {
-  // ── Brand ──────────────────────────────────────────
-  primary: "#2ec4a0",
-  primaryLight: "#3dd4b0",
-  primaryDark: "#25a88a",
-  primaryMuted: "rgba(46, 196, 160, 0.12)",
-  primaryGlow: "rgba(46, 196, 160, 0.25)",
+  // ── Brand (molten orange) ──────────────────────────
+  primary: "#FF6A2A",
+  primaryLight: "#FF8650",
+  primaryDark: "#E55A1B",
+  primaryMuted: "rgba(255, 106, 42, 0.12)",
+  primaryGlow: "rgba(255, 106, 42, 0.25)",
 
-  // ── Navy palette (dark UI surfaces) ────────────────
-  navy: "#0a1628",
-  navyLight: "#111d32",
-  navyMid: "#1a2a40",
-  navySoft: "#243650",
+  // ── Secondary accents ─────────────────────────────
+  accent: "#FFB36B",
+  accentMuted: "rgba(255, 179, 107, 0.12)",
+  highlight: "#FFD7A3",
+  indigo: "#4F46E5",
+
+  // ── Dark surfaces ─────────────────────────────────
+  navy: "#0B0B0C",
+  navyLight: "#111114",
+  navyMid: "#151518",
+  navySoft: "#1E1E22",
 
   // ── Neutrals ──────────────────────────────────────
   white: "#ffffff",
-  background: "#f7f8fa",
-  backgroundSubtle: "#f0f2f5",
-  surface: "#ffffff",
-  surfaceElevated: "#ffffff",
-  surfaceOverlay: "rgba(10, 22, 40, 0.5)",
+  background: "#0B0B0C",
+  backgroundSubtle: "#151518",
+  surface: "#151518",
+  surfaceElevated: "#1E1E22",
+  surfaceOverlay: "rgba(0, 0, 0, 0.65)",
 
   // ── Text hierarchy ────────────────────────────────
-  textPrimary: "#0a1628",
-  textSecondary: "#525b6a",
-  textTertiary: "#8e99a4",
-  textMuted: "#b0b8c1",
-  textInverse: "#ffffff",
-  textLink: "#2ec4a0",
+  textPrimary: "#F5F5F5",
+  textSecondary: "#9A9A9A",
+  textTertiary: "#6B6B6B",
+  textMuted: "#636363",
+  textInverse: "#0B0B0C",
+  textLink: "#FF6A2A",
 
   // ── Borders ───────────────────────────────────────
-  border: "#e5e7ec",
-  borderLight: "#f0f1f4",
-  borderFocus: "#2ec4a0",
-  divider: "#eceef2",
+  border: "rgba(255, 255, 255, 0.08)",
+  borderLight: "rgba(255, 255, 255, 0.04)",
+  borderFocus: "#FF6A2A",
+  divider: "rgba(255, 255, 255, 0.06)",
 
   // ── Semantic ──────────────────────────────────────
-  success: "#2ec4a0",
-  successMuted: "rgba(46, 196, 160, 0.10)",
-  error: "#e74c3c",
-  errorMuted: "rgba(231, 76, 60, 0.10)",
-  warning: "#f39c12",
-  warningMuted: "rgba(243, 156, 18, 0.10)",
-  info: "#3b82f6",
-  infoMuted: "rgba(59, 130, 246, 0.10)",
+  success: "#22C55E",
+  successMuted: "rgba(34, 197, 94, 0.12)",
+  error: "#EF4444",
+  errorMuted: "rgba(239, 68, 68, 0.12)",
+  warning: "#F59E0B",
+  warningMuted: "rgba(245, 158, 11, 0.12)",
+  info: "#3B82F6",
+  infoMuted: "rgba(59, 130, 246, 0.12)",
 } as const;
 
 export const SPACING = {
@@ -101,30 +108,30 @@ export const BORDER_RADIUS = {
 
 export const SHADOW = {
   sm: {
-    shadowColor: "#0a1628",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.3,
     shadowRadius: 3,
     elevation: 1,
   },
   md: {
-    shadowColor: "#0a1628",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 3,
   },
   lg: {
-    shadowColor: "#0a1628",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.5,
     shadowRadius: 24,
     elevation: 6,
   },
   glow: {
-    shadowColor: "#2ec4a0",
+    shadowColor: "#FF6A2A",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.35,
     shadowRadius: 16,
     elevation: 4,
   },

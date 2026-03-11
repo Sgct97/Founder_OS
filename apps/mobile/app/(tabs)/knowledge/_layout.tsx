@@ -6,8 +6,20 @@
  */
 
 import { Stack } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { COLORS, FONT_SIZE, FONT_WEIGHT } from "@/constants/theme";
+
+function GradientHeaderBackground() {
+  return (
+    <LinearGradient
+      colors={["#1A1000", COLORS.navy]}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
+      style={{ flex: 1 }}
+    />
+  );
+}
 
 export default function KnowledgeLayout() {
   return (
@@ -16,13 +28,14 @@ export default function KnowledgeLayout() {
         headerStyle: {
           backgroundColor: COLORS.navy,
         },
-        headerTintColor: COLORS.textInverse,
+        headerTintColor: COLORS.white,
         headerTitleStyle: {
           fontWeight: FONT_WEIGHT.semibold,
           fontSize: FONT_SIZE.lg,
           letterSpacing: -0.2,
         },
         headerShadowVisible: false,
+        headerBackground: () => <GradientHeaderBackground />,
       }}
     >
       <Stack.Screen
@@ -47,4 +60,3 @@ export default function KnowledgeLayout() {
     </Stack>
   );
 }
-

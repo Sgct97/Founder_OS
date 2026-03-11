@@ -15,6 +15,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Link, router } from "expo-router";
 
 import { BrandHeader } from "@/components/ui/BrandHeader";
@@ -71,6 +72,16 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
+          {/* Cinematic glow orb */}
+          <View style={styles.glowOrbWrap}>
+            <LinearGradient
+              colors={["rgba(255, 106, 42, 0.13)", "rgba(255, 106, 42, 0.04)", "transparent"]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={styles.glowOrb}
+            />
+          </View>
+
           <BrandHeader />
 
           <View style={styles.card}>
@@ -154,6 +165,22 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: LAYOUT.maxContentWidth,
     alignSelf: "center",
+    position: "relative",
+  },
+  glowOrbWrap: {
+    position: "absolute",
+    top: -80,
+    left: "50%",
+    marginLeft: -220,
+    width: 440,
+    height: 440,
+    zIndex: 0,
+    pointerEvents: "none" as const,
+  },
+  glowOrb: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 220,
   },
   card: {
     backgroundColor: COLORS.surface,

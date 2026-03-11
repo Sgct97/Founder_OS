@@ -44,8 +44,8 @@ import {
 // ── Author color assignment ─────────────────────────────────
 
 const AUTHOR_COLORS = [
-  { bg: "rgba(46, 196, 160, 0.12)", text: COLORS.primary, dot: COLORS.primary },
-  { bg: "rgba(59, 130, 246, 0.12)", text: COLORS.info, dot: COLORS.info },
+  { bg: COLORS.primaryMuted, text: COLORS.primary, dot: COLORS.primary },
+  { bg: COLORS.infoMuted, text: COLORS.info, dot: COLORS.info },
 ] as const;
 
 function getAuthorColor(authorId: string, currentUserId: string | undefined) {

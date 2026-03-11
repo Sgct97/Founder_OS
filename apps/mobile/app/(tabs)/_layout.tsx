@@ -1,14 +1,37 @@
 /**
- * Tab navigator — the four main sections of FounderOS.
+ * Tab navigator — the five main sections of FoundersForge.
  *
- * Premium tab bar: dark navy background, teal active state,
- * subtle border, balanced icon sizing. Feels like Linear.
+ * Premium tab bar with gradient background, orange active state,
+ * subtle border. Feels like Linear meets Vercel.
  */
 
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 
-import { COLORS, FONT_SIZE, FONT_WEIGHT, LAYOUT, SHADOW } from "@/constants/theme";
+import { COLORS, FONT_SIZE, FONT_WEIGHT, LAYOUT } from "@/constants/theme";
+
+function TabBarBackground() {
+  return (
+    <LinearGradient
+      colors={[COLORS.navyMid, COLORS.navy]}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
+      style={{ flex: 1 }}
+    />
+  );
+}
+
+function HeaderBackground() {
+  return (
+    <LinearGradient
+      colors={["#1A1000", COLORS.navy]}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
+      style={{ flex: 1 }}
+    />
+  );
+}
 
 export default function TabLayout() {
   return (
@@ -18,12 +41,13 @@ export default function TabLayout() {
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarStyle: {
           backgroundColor: COLORS.navy,
-          borderTopColor: COLORS.navyMid,
+          borderTopColor: "rgba(255, 255, 255, 0.06)",
           borderTopWidth: 0.5,
           height: LAYOUT.tabBarHeight,
           paddingBottom: 8,
           paddingTop: 6,
         },
+        tabBarBackground: () => <TabBarBackground />,
         tabBarLabelStyle: {
           fontSize: FONT_SIZE.caption,
           fontWeight: FONT_WEIGHT.medium,
@@ -34,12 +58,13 @@ export default function TabLayout() {
           shadowColor: "transparent",
           elevation: 0,
         },
-        headerTintColor: COLORS.textInverse,
+        headerTintColor: COLORS.white,
         headerTitleStyle: {
           fontWeight: FONT_WEIGHT.semibold,
           fontSize: FONT_SIZE.lg,
           letterSpacing: -0.2,
         },
+        headerBackground: () => <HeaderBackground />,
       }}
     >
       <Tabs.Screen
