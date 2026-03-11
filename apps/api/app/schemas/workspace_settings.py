@@ -46,8 +46,8 @@ class ProjectBriefUpdate(BaseModel):
     """Payload to update the workspace's project brief."""
 
     project_brief: str | None = Field(
-        None, max_length=10000,
-        description="Project description for AI context (max 10k chars). Set to null to clear.",
+        None, max_length=50000,
+        description="Project description for AI context (max 50k chars). Set to null to clear.",
     )
 
 

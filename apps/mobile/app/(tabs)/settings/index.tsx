@@ -359,7 +359,7 @@ export default function SettingsScreen() {
               textAlignVertical="top"
             />
             <Text style={styles.charCount}>
-              {briefDraft.length} / 10,000 characters
+              {briefDraft.length.toLocaleString()} / 50,000 characters
             </Text>
             <View style={styles.addKeyActions}>
               <Button
