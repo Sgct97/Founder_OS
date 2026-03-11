@@ -327,8 +327,17 @@ export default function MilestoneDetailSheet({
             style={[s.sheet, { transform: [{ translateY: slideAnim }] }]}
           >
             <Pressable onPress={() => {}} style={s.sheetInner}>
-              {/* Handle bar */}
-              <View style={s.handleBar} />
+              {/* Header row with handle bar and close button */}
+              <View style={s.sheetHeaderRow}>
+                <View style={s.handleBar} />
+                <Pressable
+                  style={s.closeButton}
+                  onPress={handleClose}
+                  hitSlop={12}
+                >
+                  <Ionicons name="close" size={20} color={COLORS.textSecondary} />
+                </Pressable>
+              </View>
 
               <ScrollView
                 showsVerticalScrollIndicator={false}
@@ -627,14 +636,31 @@ const s = StyleSheet.create({
   sheetInner: {
     flex: 1,
   },
+  sheetHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: SPACING.sm + 4,
+    paddingBottom: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    position: "relative",
+  },
   handleBar: {
     width: 36,
     height: 4,
     borderRadius: 2,
     backgroundColor: COLORS.borderLight,
-    alignSelf: "center",
-    marginTop: SPACING.sm + 4,
-    marginBottom: SPACING.sm,
+  },
+  closeButton: {
+    position: "absolute",
+    right: SPACING.md,
+    top: SPACING.sm,
+    width: 32,
+    height: 32,
+    borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.backgroundSubtle,
+    alignItems: "center",
+    justifyContent: "center",
   },
   scrollContent: {
     paddingHorizontal: LAYOUT.screenPaddingH,
