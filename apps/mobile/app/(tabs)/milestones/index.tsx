@@ -20,7 +20,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -516,6 +516,10 @@ function EmptyState({
 
 export default function MilestonesScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    reopenMilestoneId?: string;
+    reopenPhaseName?: string;
+  }>();
   const { data: phases, isLoading, error, refetch } = usePhases();
 
   const createPhase = useCreatePhase();
@@ -532,6 +536,22 @@ export default function MilestonesScreen() {
   const [detailMilestone, setDetailMilestone] = useState<MilestoneResponse | null>(null);
   const [detailPhaseName, setDetailPhaseName] = useState("");
   const [detailVisible, setDetailVisible] = useState(false);
+
+  // Re-open detail sheet when returning from milestone chat
+  useEffect(() => {
+    if (params.reopenMilestoneId && phases) {
+      for (const phase of phases) {
+        const ms = phase.milestones.find((m) => m.id === params.reopenMilestoneId);
+        if (ms) {
+          setDetailMilestone(ms);
+          setDetailPhaseName(params.reopenPhaseName ?? phase.title);
+          setDetailVisible(true);
+          router.setParams({ reopenMilestoneId: undefined, reopenPhaseName: undefined });
+          break;
+        }
+      }
+    }
+  }, [params.reopenMilestoneId, phases]);
 
   // Modal state
   const [modalVisible, setModalVisible] = useState(false);
