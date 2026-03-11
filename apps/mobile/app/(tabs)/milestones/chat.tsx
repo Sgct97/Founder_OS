@@ -471,13 +471,7 @@ export default function MilestoneChatScreen() {
         <View style={styles.headerLeftGroup}>
           <Pressable
             style={styles.headerButton}
-            onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace("/(tabs)/milestones");
-              }
-            }}
+            onPress={() => router.replace("/(tabs)/milestones")}
           >
             <Ionicons name="chevron-back" size={22} color={COLORS.primary} />
           </Pressable>
