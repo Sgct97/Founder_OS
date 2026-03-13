@@ -48,3 +48,13 @@ export interface JoinPayload {
   supabase_uid: string;
 }
 
+export interface WorkspaceMemberInfo {
+  id: string;
+  name: string;
+  invite_code: string | null;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+

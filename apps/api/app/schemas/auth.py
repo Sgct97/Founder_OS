@@ -83,3 +83,30 @@ class InviteResponse(BaseModel):
 
     invite_code: str
 
+
+# ── Workspace Management ─────────────────────────────────────────
+
+
+class CreateWorkspaceRequest(BaseModel):
+    """Body for POST /workspaces — create a new workspace."""
+
+    name: str = Field(..., min_length=1, max_length=100)
+
+
+class SwitchWorkspaceRequest(BaseModel):
+    """Body for PUT /workspaces/switch — change active workspace."""
+
+    workspace_id: uuid.UUID
+
+
+class WorkspaceMemberResponse(BaseModel):
+    """A workspace the user belongs to, including their role."""
+
+    id: uuid.UUID
+    name: str
+    invite_code: str | None
+    role: str
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+

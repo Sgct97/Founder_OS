@@ -33,7 +33,7 @@ async def health_check() -> dict[str, str]:
 
 
 # Router registration.
-from app.routers import auth, chat, diary, documents, feature_requests, milestones, workspace_settings
+from app.routers import auth, chat, diary, documents, feature_requests, milestones, workspace_settings, workspaces
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(milestones.router, prefix="/api/v1", tags=["milestones"])
@@ -42,4 +42,5 @@ app.include_router(documents.router, prefix="/api/v1/documents", tags=["document
 app.include_router(chat.router, prefix="/api/v1", tags=["chat"])
 app.include_router(feature_requests.router, prefix="/api/v1", tags=["feature-requests"])
 app.include_router(workspace_settings.router, prefix="/api/v1/workspace", tags=["workspace-settings"])
+app.include_router(workspaces.router, prefix="/api/v1/workspaces", tags=["workspaces"])
 

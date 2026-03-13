@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
 from app.models.workspace import Workspace
+from app.models.workspace_member import WorkspaceMember
 from app.schemas.auth import (
     JoinWorkspaceRequest,
     LoginRequest,
@@ -80,6 +81,10 @@ async def signup(db: AsyncSession, payload: SignupRequest) -> tuple[User, Worksp
     db.add(user)
     await db.flush()
 
+    # Create membership record.
+    db.add(WorkspaceMember(user_id=user.id, workspace_id=workspace.id, role="owner"))
+    await db.flush()
+
     logger.info("Signup: user=%s workspace=%s", user.id, workspace.id)
     return user, workspace
 
@@ -147,6 +152,9 @@ async def login(db: AsyncSession, payload: LoginRequest) -> tuple[User, Workspac
         db.add(user)
         await db.flush()
 
+        db.add(WorkspaceMember(user_id=user.id, workspace_id=workspace.id, role="owner"))
+        await db.flush()
+
         return user, workspace
 
     workspace: Workspace | None = None
@@ -166,6 +174,8 @@ async def login(db: AsyncSession, payload: LoginRequest) -> tuple[User, Workspac
         await db.flush()
         user.workspace_id = workspace.id
         db.add(user)
+        await db.flush()
+        db.add(WorkspaceMember(user_id=user.id, workspace_id=workspace.id, role="owner"))
         await db.flush()
 
     return user, workspace
@@ -225,6 +235,9 @@ async def join_workspace(
         workspace_id=workspace.id,
     )
     db.add(user)
+    await db.flush()
+
+    db.add(WorkspaceMember(user_id=user.id, workspace_id=workspace.id, role="member"))
     await db.flush()
 
     logger.info("Join: user=%s joined workspace=%s", user.id, workspace.id)

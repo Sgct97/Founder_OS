@@ -4,7 +4,9 @@
 
 import React, { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -14,6 +16,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -25,6 +28,11 @@ import {
   useProjectBrief,
   useUpdateProjectBrief,
 } from "@/hooks/use-workspace-settings";
+import {
+  useWorkspaces,
+  useCreateWorkspace,
+  useSwitchWorkspace,
+} from "@/hooks/use-workspaces";
 import {
   BORDER_RADIUS,
   COLORS,
@@ -57,6 +65,41 @@ export default function SettingsScreen() {
   const updateBriefMutation = useUpdateProjectBrief();
   const [editingBrief, setEditingBrief] = useState(false);
   const [briefDraft, setBriefDraft] = useState("");
+
+  // Workspace switcher state
+  const queryClient = useQueryClient();
+  const { data: workspaces, isLoading: workspacesLoading } = useWorkspaces();
+  const createWorkspaceMutation = useCreateWorkspace();
+  const switchWorkspaceMutation = useSwitchWorkspace();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState("");
+
+  const handleSwitchWorkspace = useCallback(
+    async (workspaceId: string) => {
+      try {
+        await switchWorkspaceMutation.mutateAsync(workspaceId);
+        queryClient.clear();
+        window?.location?.reload?.();
+      } catch (e: any) {
+        Alert.alert("Error", e.detail || e.message || "Failed to switch");
+      }
+    },
+    [switchWorkspaceMutation, queryClient]
+  );
+
+  const handleCreateWorkspace = useCallback(async () => {
+    const name = newWorkspaceName.trim();
+    if (!name) return;
+    try {
+      await createWorkspaceMutation.mutateAsync(name);
+      setShowCreateModal(false);
+      setNewWorkspaceName("");
+      queryClient.clear();
+      window?.location?.reload?.();
+    } catch (e: any) {
+      Alert.alert("Error", e.detail || e.message || "Failed to create workspace");
+    }
+  }, [newWorkspaceName, createWorkspaceMutation, queryClient]);
 
   const handleSignOut = useCallback(async () => {
     setSigningOut(true);
@@ -213,6 +256,122 @@ export default function SettingsScreen() {
           </Text>
         </View>
       </View>
+
+      {/* ── Workspace Switcher Card ─────────────────── */}
+      <View style={styles.card}>
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Your Workspaces</Text>
+            <Text style={styles.sectionSubtitle}>
+              Switch between workspaces or create a new one.
+            </Text>
+          </View>
+          <Pressable
+            style={styles.addWorkspaceBtn}
+            onPress={() => setShowCreateModal(true)}
+          >
+            <Ionicons name="add" size={18} color={COLORS.primary} />
+          </Pressable>
+        </View>
+
+        {workspacesLoading ? (
+          <>
+            <Skeleton width="100%" height={48} style={{ marginBottom: SPACING.sm }} />
+            <Skeleton width="100%" height={48} />
+          </>
+        ) : (
+          workspaces?.map((ws) => (
+            <Pressable
+              key={ws.id}
+              style={[
+                styles.workspaceRow,
+                ws.is_active && styles.workspaceRowActive,
+              ]}
+              onPress={() => {
+                if (!ws.is_active) handleSwitchWorkspace(ws.id);
+              }}
+              disabled={switchWorkspaceMutation.isPending}
+            >
+              <View style={[styles.wsIconWrap, ws.is_active && styles.wsIconWrapActive]}>
+                <Text style={[styles.wsIconText, ws.is_active && styles.wsIconTextActive]}>
+                  {ws.name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.wsInfo}>
+                <Text style={[styles.wsName, ws.is_active && styles.wsNameActive]}>
+                  {ws.name}
+                </Text>
+                <Text style={styles.wsRole}>{ws.role}</Text>
+              </View>
+              {ws.is_active && (
+                <View style={styles.wsActiveBadge}>
+                  <Ionicons name="checkmark-circle" size={16} color={COLORS.success} />
+                  <Text style={styles.wsActiveText}>Active</Text>
+                </View>
+              )}
+              {!ws.is_active && (
+                <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
+              )}
+            </Pressable>
+          ))
+        )}
+      </View>
+
+      {/* Create Workspace Modal */}
+      <Modal
+        visible={showCreateModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCreateModal(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowCreateModal(false)}
+        >
+          <View style={styles.modalSheet}>
+            <Pressable onPress={() => {}}>
+              <Text style={styles.modalTitle}>Create New Workspace</Text>
+              <Text style={styles.modalSubtitle}>
+                Start a fresh workspace for a new project or team.
+              </Text>
+              <TextInput
+                style={styles.modalInput}
+                value={newWorkspaceName}
+                onChangeText={setNewWorkspaceName}
+                placeholder="Workspace name"
+                placeholderTextColor={COLORS.textMuted}
+                autoFocus
+                maxLength={100}
+              />
+              <View style={styles.modalActions}>
+                <Pressable
+                  style={styles.modalCancelBtn}
+                  onPress={() => {
+                    setShowCreateModal(false);
+                    setNewWorkspaceName("");
+                  }}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.modalCreateBtn,
+                    !newWorkspaceName.trim() && styles.modalCreateBtnDisabled,
+                  ]}
+                  onPress={handleCreateWorkspace}
+                  disabled={!newWorkspaceName.trim() || createWorkspaceMutation.isPending}
+                >
+                  {createWorkspaceMutation.isPending ? (
+                    <ActivityIndicator size="small" color={COLORS.white} />
+                  ) : (
+                    <Text style={styles.modalCreateText}>Create</Text>
+                  )}
+                </Pressable>
+              </View>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
 
       {/* ── Integrations Card ────────────────────────── */}
       <View style={styles.card}>
@@ -644,6 +803,144 @@ const styles = StyleSheet.create({
     textAlign: "center",
     maxWidth: "80%",
     lineHeight: 20,
+  },
+
+  // ── Workspace Switcher ──────────────────────────
+  addWorkspaceBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.primaryMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  workspaceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: SPACING.sm + 2,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: BORDER_RADIUS.md,
+    marginBottom: SPACING.xs,
+  },
+  workspaceRowActive: {
+    backgroundColor: COLORS.primaryMuted,
+  },
+  wsIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: BORDER_RADIUS.sm,
+    backgroundColor: COLORS.backgroundSubtle,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: SPACING.md,
+  },
+  wsIconWrapActive: {
+    backgroundColor: COLORS.primary,
+  },
+  wsIconText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textSecondary,
+  },
+  wsIconTextActive: {
+    color: COLORS.white,
+  },
+  wsInfo: {
+    flex: 1,
+  },
+  wsName: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.textPrimary,
+  },
+  wsNameActive: {
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.primary,
+  },
+  wsRole: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textMuted,
+    marginTop: 1,
+  },
+  wsActiveBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.xxs,
+  },
+  wsActiveText: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.success,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+
+  // ── Create Workspace Modal ────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: SPACING.xl,
+  },
+  modalSheet: {
+    backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.xl,
+    width: "100%",
+    maxWidth: 400,
+    ...SHADOW.lg,
+  },
+  modalTitle: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.xs,
+  },
+  modalSubtitle: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.lg,
+    lineHeight: 20,
+  },
+  modalInput: {
+    backgroundColor: COLORS.background,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textPrimary,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: SPACING.sm,
+    marginTop: SPACING.lg,
+  },
+  modalCancelBtn: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.backgroundSubtle,
+  },
+  modalCancelText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.textSecondary,
+  },
+  modalCreateBtn: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.primary,
+  },
+  modalCreateBtnDisabled: {
+    opacity: 0.5,
+  },
+  modalCreateText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.white,
   },
 
   versionText: {
