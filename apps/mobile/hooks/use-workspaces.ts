@@ -37,3 +37,16 @@ export function useSwitchWorkspace() {
     },
   });
 }
+
+export function useJoinWorkspace() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (inviteCode: string) =>
+      apiPost<WorkspaceInfo>("/api/v1/workspaces/join", {
+        invite_code: inviteCode,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: WORKSPACES_KEY });
+    },
+  });
+}

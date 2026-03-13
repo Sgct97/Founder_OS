@@ -117,25 +117,47 @@ async def switch_workspace(
     return workspace
 
 
-async def add_member(
-    db: AsyncSession, user: User, workspace: Workspace, role: str = "member"
-) -> WorkspaceMember:
-    """Add a user to a workspace (idempotent)."""
+async def join_by_invite_code(
+    db: AsyncSession, user: User, invite_code: str
+) -> Workspace:
+    """Join a workspace using an invite code (for existing authenticated users).
+
+    Raises 404 if the invite code is invalid.
+    Raises 409 if the user is already a member of the workspace.
+    Automatically switches the user's active workspace to the joined one.
+    """
     result = await db.execute(
+        select(Workspace).where(Workspace.invite_code == invite_code)
+    )
+    workspace = result.scalar_one_or_none()
+    if workspace is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid invite code",
+        )
+
+    existing = await db.execute(
         select(WorkspaceMember).where(
             WorkspaceMember.user_id == user.id,
             WorkspaceMember.workspace_id == workspace.id,
         )
     )
-    existing = result.scalar_one_or_none()
-    if existing is not None:
-        return existing
+    if existing.scalar_one_or_none() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You are already a member of this workspace",
+        )
 
     membership = WorkspaceMember(
         user_id=user.id,
         workspace_id=workspace.id,
-        role=role,
+        role="member",
     )
     db.add(membership)
+
+    user.workspace_id = workspace.id
+    db.add(user)
     await db.flush()
-    return membership
+
+    logger.info("User=%s joined workspace=%s via invite code", user.id, workspace.id)
+    return workspace

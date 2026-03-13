@@ -32,6 +32,7 @@ import {
   useWorkspaces,
   useCreateWorkspace,
   useSwitchWorkspace,
+  useJoinWorkspace,
 } from "@/hooks/use-workspaces";
 import {
   BORDER_RADIUS,
@@ -71,8 +72,11 @@ export default function SettingsScreen() {
   const { data: workspaces, isLoading: workspacesLoading } = useWorkspaces();
   const createWorkspaceMutation = useCreateWorkspace();
   const switchWorkspaceMutation = useSwitchWorkspace();
+  const joinWorkspaceMutation = useJoinWorkspace();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
+  const [joinInviteCode, setJoinInviteCode] = useState("");
 
   const handleSwitchWorkspace = useCallback(
     async (workspaceId: string) => {
@@ -100,6 +104,20 @@ export default function SettingsScreen() {
       Alert.alert("Error", e.detail || e.message || "Failed to create workspace");
     }
   }, [newWorkspaceName, createWorkspaceMutation, queryClient]);
+
+  const handleJoinWorkspace = useCallback(async () => {
+    const code = joinInviteCode.trim();
+    if (!code) return;
+    try {
+      await joinWorkspaceMutation.mutateAsync(code);
+      setShowJoinModal(false);
+      setJoinInviteCode("");
+      queryClient.clear();
+      window?.location?.reload?.();
+    } catch (e: any) {
+      Alert.alert("Error", e.detail || e.message || "Failed to join workspace");
+    }
+  }, [joinInviteCode, joinWorkspaceMutation, queryClient]);
 
   const handleSignOut = useCallback(async () => {
     setSigningOut(true);
@@ -260,18 +278,26 @@ export default function SettingsScreen() {
       {/* ── Workspace Switcher Card ─────────────────── */}
       <View style={styles.card}>
         <View style={styles.sectionHeader}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.sectionTitle}>Your Workspaces</Text>
             <Text style={styles.sectionSubtitle}>
-              Switch between workspaces or create a new one.
+              Switch between workspaces, join one, or create a new one.
             </Text>
           </View>
-          <Pressable
-            style={styles.addWorkspaceBtn}
-            onPress={() => setShowCreateModal(true)}
-          >
-            <Ionicons name="add" size={18} color={COLORS.primary} />
-          </Pressable>
+          <View style={styles.wsActionBtns}>
+            <Pressable
+              style={styles.addWorkspaceBtn}
+              onPress={() => setShowJoinModal(true)}
+            >
+              <Ionicons name="enter-outline" size={16} color={COLORS.primary} />
+            </Pressable>
+            <Pressable
+              style={styles.addWorkspaceBtn}
+              onPress={() => setShowCreateModal(true)}
+            >
+              <Ionicons name="add" size={18} color={COLORS.primary} />
+            </Pressable>
+          </View>
         </View>
 
         {workspacesLoading ? (
@@ -365,6 +391,63 @@ export default function SettingsScreen() {
                     <ActivityIndicator size="small" color={COLORS.white} />
                   ) : (
                     <Text style={styles.modalCreateText}>Create</Text>
+                  )}
+                </Pressable>
+              </View>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Join Workspace Modal */}
+      <Modal
+        visible={showJoinModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowJoinModal(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowJoinModal(false)}
+        >
+          <View style={styles.modalSheet}>
+            <Pressable onPress={() => {}}>
+              <Text style={styles.modalTitle}>Join a Workspace</Text>
+              <Text style={styles.modalSubtitle}>
+                Enter the invite code shared by the workspace owner.
+              </Text>
+              <TextInput
+                style={[styles.modalInput, { textTransform: "uppercase", letterSpacing: 2 }]}
+                value={joinInviteCode}
+                onChangeText={setJoinInviteCode}
+                placeholder="e.g. A7KX3BN2"
+                placeholderTextColor={COLORS.textMuted}
+                autoFocus
+                maxLength={20}
+                autoCapitalize="characters"
+              />
+              <View style={styles.modalActions}>
+                <Pressable
+                  style={styles.modalCancelBtn}
+                  onPress={() => {
+                    setShowJoinModal(false);
+                    setJoinInviteCode("");
+                  }}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.modalCreateBtn,
+                    !joinInviteCode.trim() && styles.modalCreateBtnDisabled,
+                  ]}
+                  onPress={handleJoinWorkspace}
+                  disabled={!joinInviteCode.trim() || joinWorkspaceMutation.isPending}
+                >
+                  {joinWorkspaceMutation.isPending ? (
+                    <ActivityIndicator size="small" color={COLORS.white} />
+                  ) : (
+                    <Text style={styles.modalCreateText}>Join</Text>
                   )}
                 </Pressable>
               </View>
@@ -806,6 +889,10 @@ const styles = StyleSheet.create({
   },
 
   // ── Workspace Switcher ──────────────────────────
+  wsActionBtns: {
+    flexDirection: "row",
+    gap: SPACING.xs,
+  },
   addWorkspaceBtn: {
     width: 32,
     height: 32,

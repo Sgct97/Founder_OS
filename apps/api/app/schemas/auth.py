@@ -99,6 +99,12 @@ class SwitchWorkspaceRequest(BaseModel):
     workspace_id: uuid.UUID
 
 
+class JoinByInviteRequest(BaseModel):
+    """Body for POST /workspaces/join — join workspace with invite code."""
+
+    invite_code: str = Field(..., min_length=1, max_length=20)
+
+
 class WorkspaceMemberResponse(BaseModel):
     """A workspace the user belongs to, including their role."""
 
