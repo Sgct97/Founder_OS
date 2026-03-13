@@ -13,6 +13,7 @@ import React, {
   useMemo,
   useReducer,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import type { UserProfile, WorkspaceInfo } from "@/types/auth";
 import * as authService from "@/services/auth";
@@ -71,6 +72,7 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element {
+  const queryClient = useQueryClient();
   const [state, dispatch] = useReducer(authReducer, {
     isLoading: true,
     user: null,
@@ -102,6 +104,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       displayName: string,
       workspaceName: string
     ) => {
+      queryClient.clear();
       const { user, workspace } = await authService.signUp(
         email,
         password,
@@ -110,18 +113,20 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       );
       dispatch({ type: "SET_AUTH", user, workspace });
     },
-    []
+    [queryClient]
   );
 
   const logIn = useCallback(async (email: string, password: string) => {
+    queryClient.clear();
     const { user, workspace } = await authService.logIn(email, password);
     dispatch({ type: "SET_AUTH", user, workspace });
-  }, []);
+  }, [queryClient]);
 
   const signOut = useCallback(async () => {
     await authService.signOut();
+    queryClient.clear();
     dispatch({ type: "CLEAR_AUTH" });
-  }, []);
+  }, [queryClient]);
 
   const value = useMemo<AuthContextValue>(
     () => ({ ...state, signUp, logIn, signOut }),
