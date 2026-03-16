@@ -27,8 +27,6 @@ class DocumentFileType(str, Enum):
     TEXT = "txt"
     CSV = "csv"
     JSON = "json"
-    HTML = "html"
-    HTM = "htm"
     YAML = "yaml"
     YML = "yml"
     LOG = "log"
@@ -73,7 +71,6 @@ class DocumentDetailResponse(BaseModel):
     workspace_id: uuid.UUID
     uploader: DocumentUploaderResponse
     title: str
-    file_path: str
     file_size_bytes: int
     file_type: str
     chunk_count: int | None

@@ -2,8 +2,9 @@
 
 import logging
 import os
+import re
 import uuid
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import tiktoken
 from fastapi import HTTPException, UploadFile, status
@@ -17,12 +18,22 @@ from app.models.document_chunk import EMBEDDING_DIMENSION, DocumentChunk
 
 logger = logging.getLogger(__name__)
 
+_UNSAFE_CHARS = re.compile(r"[^\w\-. ]")
+
+
+def _sanitize_filename(raw: str) -> str:
+    """Strip path components and dangerous characters from a user-supplied filename."""
+    basename = PurePosixPath(raw).name or "untitled"
+    basename = basename.lstrip(".")
+    cleaned = _UNSAFE_CHARS.sub("_", basename)
+    return cleaned[:255] or "untitled"
+
 # ── Constants ─────────────────────────────────────────────────────
 
 EMBEDDING_MODEL = "text-embedding-3-small"
 CHUNK_TARGET_TOKENS = 512
 CHUNK_OVERLAP_TOKENS = 50
-ALLOWED_EXTENSIONS = {"pdf", "md", "txt", "csv", "json", "html", "htm", "yaml", "yml", "log", "rst", "xml"}
+ALLOWED_EXTENSIONS = {"pdf", "md", "txt", "csv", "json", "yaml", "yml", "log", "rst", "xml"}
 MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB
 
 # ── CRUD Operations ──────────────────────────────────────────────
@@ -97,7 +108,7 @@ async def create_document(
     Raises:
         HTTPException 400: If the file type is not supported or file is too large.
     """
-    filename = file.filename or "untitled"
+    filename = _sanitize_filename(file.filename or "untitled")
     extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
 
     if extension not in ALLOWED_EXTENSIONS:
@@ -273,7 +284,7 @@ async def process_document(document_id: uuid.UUID, openai_api_key: str | None = 
                 document = result.scalar_one_or_none()
                 if document:
                     document.status = "failed"
-                    document.error_message = str(exc)[:500]
+                    document.error_message = "Document processing failed"
                     db.add(document)
                     await db.commit()
             except Exception as inner_exc:

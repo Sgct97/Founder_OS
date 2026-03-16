@@ -99,10 +99,20 @@ async def update_feature_request(
     db: AsyncSession,
     request_id: uuid.UUID,
     workspace_id: uuid.UUID,
+    user_id: uuid.UUID,
     payload: FeatureRequestUpdate,
 ) -> FeatureRequest:
-    """Update a feature request's title, description, or status."""
+    """Update a feature request's title, description, or status.
+
+    Only the original author may update the request.
+    """
     fr = await get_feature_request(db, request_id, workspace_id)
+
+    if fr.author_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the author can update this feature request",
+        )
 
     if payload.title is not None:
         fr.title = payload.title
@@ -119,10 +129,20 @@ async def update_feature_request(
 
 
 async def delete_feature_request(
-    db: AsyncSession, request_id: uuid.UUID, workspace_id: uuid.UUID
+    db: AsyncSession, request_id: uuid.UUID, workspace_id: uuid.UUID, user_id: uuid.UUID
 ) -> None:
-    """Delete a feature request and all its votes (cascaded)."""
+    """Delete a feature request and all its votes (cascaded).
+
+    Only the original author may delete the request.
+    """
     fr = await get_feature_request(db, request_id, workspace_id)
+
+    if fr.author_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the author can delete this feature request",
+        )
+
     await db.delete(fr)
     await db.flush()
     logger.info("Feature request deleted: id=%s", request_id)

@@ -28,7 +28,6 @@ export interface DocumentDetailResponse {
   workspace_id: string;
   uploader: DocumentUploaderResponse;
   title: string;
-  file_path: string;
   file_size_bytes: number;
   file_type: string;
   chunk_count: number | null;

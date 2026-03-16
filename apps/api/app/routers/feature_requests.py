@@ -84,7 +84,7 @@ async def update_feature_request(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> FeatureRequestResponse:
     workspace_id = _require_workspace(current_user)
-    fr = await fr_service.update_feature_request(db, request_id, workspace_id, payload)
+    fr = await fr_service.update_feature_request(db, request_id, workspace_id, current_user.id, payload)
     has_voted = any(v.user_id == current_user.id for v in fr.votes)
     return FeatureRequestResponse(
         id=fr.id,
@@ -113,7 +113,7 @@ async def delete_feature_request(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> None:
     workspace_id = _require_workspace(current_user)
-    await fr_service.delete_feature_request(db, request_id, workspace_id)
+    await fr_service.delete_feature_request(db, request_id, workspace_id, current_user.id)
 
 
 @router.post(

@@ -1,8 +1,9 @@
 """Milestone attachment service — upload, list, and delete files for milestones."""
 
 import logging
+import re
 import uuid
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy import select
@@ -15,14 +16,23 @@ from app.models.phase import Phase
 
 logger = logging.getLogger(__name__)
 
+_UNSAFE_CHARS = re.compile(r"[^\w\-. ]")
+
+
+def _sanitize_filename(raw: str) -> str:
+    """Strip path components and dangerous characters from a user-supplied filename."""
+    basename = PurePosixPath(raw).name or "untitled"
+    basename = basename.lstrip(".")
+    cleaned = _UNSAFE_CHARS.sub("_", basename)
+    return cleaned[:255] or "untitled"
+
 # Max file size: 25 MB
 MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024
 
-# Allowed extensions (generous — these are supporting docs, not executable code)
 ALLOWED_EXTENSIONS = {
     "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
-    "txt", "md", "csv", "json", "html", "htm",
-    "png", "jpg", "jpeg", "gif", "webp", "svg",
+    "txt", "md", "csv", "json",
+    "png", "jpg", "jpeg", "gif", "webp",
     "yaml", "yml", "xml", "rst", "log",
 }
 
@@ -80,7 +90,7 @@ async def upload_attachment(
     """
     await _verify_milestone_access(db, milestone_id, workspace_id)
 
-    filename = file.filename or "untitled"
+    filename = _sanitize_filename(file.filename or "untitled")
     ext = _get_extension(filename)
 
     if ext not in ALLOWED_EXTENSIONS:

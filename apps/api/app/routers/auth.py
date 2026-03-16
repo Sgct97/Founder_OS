@@ -101,15 +101,31 @@ async def regenerate_invite(
 ) -> InviteResponse:
     """Generate a new invite code for the current user's workspace.
 
-    Requires authentication.
+    Only owners and admins may regenerate invite codes.
     """
-    if current_user.workspace is None:
-        from fastapi import HTTPException
+    from fastapi import HTTPException
+    from sqlalchemy import select
+    from app.models.workspace_member import WorkspaceMember
 
+    if current_user.workspace is None:
         raise HTTPException(
             status_code=400,
             detail="User does not belong to a workspace",
         )
+
+    result = await db.execute(
+        select(WorkspaceMember).where(
+            WorkspaceMember.user_id == current_user.id,
+            WorkspaceMember.workspace_id == current_user.workspace_id,
+        )
+    )
+    membership = result.scalar_one_or_none()
+    if membership is None or membership.role not in ("owner", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners and admins can regenerate invite codes",
+        )
+
     new_code = await auth_service.regenerate_invite_code(db, current_user.workspace)
     return InviteResponse(invite_code=new_code)
 
