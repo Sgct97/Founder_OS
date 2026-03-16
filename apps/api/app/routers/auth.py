@@ -1,12 +1,13 @@
 """Auth router — signup, login, invite, join workspace."""
 
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies import CurrentUser
+from app.dependencies import CurrentUser, VerifiedSupabaseUid
 from app.schemas.auth import (
     AuthResponse,
     InviteResponse,
@@ -17,6 +18,8 @@ from app.schemas.auth import (
     WorkspaceResponse,
 )
 from app.services import auth as auth_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -29,9 +32,15 @@ router = APIRouter()
 )
 async def signup(
     payload: SignupRequest,
+    verified_uid: VerifiedSupabaseUid,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> AuthResponse:
-    """Register a new user, create a workspace, and return both."""
+    """Register a new user, create a workspace, and return both.
+
+    The supabase_uid is extracted from the verified JWT — the value
+    in the request body is ignored to prevent spoofing.
+    """
+    payload.supabase_uid = verified_uid
     user, workspace = await auth_service.signup(db, payload)
     return AuthResponse(
         user=UserResponse.model_validate(user),
@@ -46,9 +55,11 @@ async def signup(
 )
 async def login(
     payload: LoginRequest,
+    verified_uid: VerifiedSupabaseUid,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> AuthResponse:
-    """Look up an existing user by Supabase UID and return their profile."""
+    """Look up an existing user by verified Supabase UID and return their profile."""
+    payload.supabase_uid = verified_uid
     user, workspace = await auth_service.login(db, payload)
     return AuthResponse(
         user=UserResponse.model_validate(user),
@@ -64,9 +75,14 @@ async def login(
 )
 async def join_workspace(
     payload: JoinWorkspaceRequest,
+    verified_uid: VerifiedSupabaseUid,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> AuthResponse:
-    """Create a new user and add them to a workspace using an invite code."""
+    """Create a new user and add them to a workspace using an invite code.
+
+    The supabase_uid is extracted from the verified JWT.
+    """
+    payload.supabase_uid = verified_uid
     user, workspace = await auth_service.join_workspace(db, payload)
     return AuthResponse(
         user=UserResponse.model_validate(user),

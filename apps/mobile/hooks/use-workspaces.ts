@@ -50,3 +50,14 @@ export function useJoinWorkspace() {
     },
   });
 }
+
+export function useRenameWorkspace() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) =>
+      apiPut<WorkspaceInfo>("/api/v1/workspaces/rename", { name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: WORKSPACES_KEY });
+    },
+  });
+}

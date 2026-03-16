@@ -33,7 +33,8 @@ interface AuthState {
 type AuthAction =
   | { type: "SET_LOADING" }
   | { type: "SET_AUTH"; user: UserProfile; workspace: WorkspaceInfo | null }
-  | { type: "CLEAR_AUTH" };
+  | { type: "CLEAR_AUTH" }
+  | { type: "SET_WORKSPACE"; workspace: WorkspaceInfo };
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
@@ -47,6 +48,8 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       };
     case "CLEAR_AUTH":
       return { isLoading: false, user: null, workspace: null };
+    case "SET_WORKSPACE":
+      return { ...state, workspace: action.workspace };
   }
 }
 
@@ -61,6 +64,7 @@ interface AuthContextValue extends AuthState {
   ) => Promise<void>;
   logIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  setWorkspace: (workspace: WorkspaceInfo) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -128,9 +132,13 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
     dispatch({ type: "CLEAR_AUTH" });
   }, [queryClient]);
 
+  const setWorkspace = useCallback((workspace: WorkspaceInfo) => {
+    dispatch({ type: "SET_WORKSPACE", workspace });
+  }, []);
+
   const value = useMemo<AuthContextValue>(
-    () => ({ ...state, signUp, logIn, signOut }),
-    [state, signUp, logIn, signOut]
+    () => ({ ...state, signUp, logIn, signOut, setWorkspace }),
+    [state, signUp, logIn, signOut, setWorkspace]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

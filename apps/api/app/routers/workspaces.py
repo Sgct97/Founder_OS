@@ -10,6 +10,7 @@ from app.dependencies import CurrentUser
 from app.schemas.auth import (
     CreateWorkspaceRequest,
     JoinByInviteRequest,
+    RenameWorkspaceRequest,
     SwitchWorkspaceRequest,
     WorkspaceMemberResponse,
     WorkspaceResponse,
@@ -72,4 +73,18 @@ async def join_workspace(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> WorkspaceResponse:
     workspace = await ws_service.join_by_invite_code(db, current_user, payload.invite_code)
+    return WorkspaceResponse.model_validate(workspace)
+
+
+@router.put(
+    "/rename",
+    response_model=WorkspaceResponse,
+    summary="Rename the active workspace (owner/admin only)",
+)
+async def rename_workspace(
+    payload: RenameWorkspaceRequest,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> WorkspaceResponse:
+    workspace = await ws_service.rename_workspace(db, current_user, payload.name)
     return WorkspaceResponse.model_validate(workspace)

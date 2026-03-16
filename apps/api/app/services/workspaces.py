@@ -161,3 +161,42 @@ async def join_by_invite_code(
 
     logger.info("User=%s joined workspace=%s via invite code", user.id, workspace.id)
     return workspace
+
+
+async def rename_workspace(
+    db: AsyncSession, user: User, new_name: str
+) -> Workspace:
+    """Rename the user's currently active workspace.
+
+    Only owners and admins may rename. Raises 403 for members.
+    """
+    if user.workspace_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User does not belong to a workspace",
+        )
+
+    result = await db.execute(
+        select(WorkspaceMember).where(
+            WorkspaceMember.user_id == user.id,
+            WorkspaceMember.workspace_id == user.workspace_id,
+        )
+    )
+    membership = result.scalar_one_or_none()
+    if membership is None or membership.role not in ("owner", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners and admins can rename the workspace",
+        )
+
+    ws_result = await db.execute(
+        select(Workspace).where(Workspace.id == user.workspace_id)
+    )
+    workspace = ws_result.scalar_one()
+    workspace.name = new_name.strip()
+    db.add(workspace)
+    await db.flush()
+    await db.refresh(workspace)
+
+    logger.info("User=%s renamed workspace=%s to %r", user.id, workspace.id, new_name)
+    return workspace

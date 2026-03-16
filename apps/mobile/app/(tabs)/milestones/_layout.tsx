@@ -8,6 +8,7 @@
 import { Stack } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 
+import { HeaderTitle } from "@/components/ui/HeaderTitle";
 import { COLORS, FONT_SIZE, FONT_WEIGHT } from "@/constants/theme";
 
 function GradientHeaderBackground() {
@@ -27,8 +28,10 @@ export default function MilestonesLayout() {
       screenOptions={{
         headerStyle: {
           backgroundColor: COLORS.navy,
+          height: 96,
         },
         headerTintColor: COLORS.white,
+        headerTitleAlign: "center",
         headerTitleStyle: {
           fontWeight: FONT_WEIGHT.semibold,
           fontSize: FONT_SIZE.lg,
@@ -41,7 +44,7 @@ export default function MilestonesLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: "Milestones",
+          headerTitle: () => <HeaderTitle pageName="Milestones" />,
         }}
       />
       <Stack.Screen

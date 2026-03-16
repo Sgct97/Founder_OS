@@ -1,10 +1,11 @@
 """FastAPI dependencies — auth, database session, etc."""
 
 import logging
+import time
 from typing import Annotated
 
 import httpx
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwk, jwt
 from sqlalchemy import select
@@ -18,19 +19,23 @@ logger = logging.getLogger(__name__)
 
 bearer_scheme = HTTPBearer()
 
-# Cache for Supabase JWKS — populated on first request.
+ALLOWED_JWKS_ALGORITHMS = ["ES256", "RS256", "RS384", "RS512", "PS256"]
+ALLOWED_HMAC_ALGORITHMS = ["HS256"]
+
+_JWKS_TTL_SECONDS = 3600  # re-fetch keys every hour
 _jwks_cache: dict | None = None
+_jwks_fetched_at: float = 0.0
 
 
 async def _get_supabase_jwks() -> dict:
     """Fetch Supabase JWKS (JSON Web Key Set) for JWT verification.
 
-    Results are cached in-memory so we only hit Supabase once per
-    process lifetime.  Newer Supabase projects sign tokens with ES256
-    (ECDSA P-256) and expose the public key at the JWKS endpoint.
+    Cached with a 1-hour TTL so key rotations are picked up automatically.
     """
-    global _jwks_cache
-    if _jwks_cache is not None:
+    global _jwks_cache, _jwks_fetched_at
+
+    now = time.monotonic()
+    if _jwks_cache is not None and (now - _jwks_fetched_at) < _JWKS_TTL_SECONDS:
         return _jwks_cache
 
     if not settings.supabase_url:
@@ -47,6 +52,7 @@ async def _get_supabase_jwks() -> dict:
             resp = await client.get(jwks_url)
             resp.raise_for_status()
             _jwks_cache = resp.json()
+            _jwks_fetched_at = now
             logger.info(
                 "Supabase JWKS loaded — %d key(s)",
                 len(_jwks_cache.get("keys", [])),
@@ -54,8 +60,8 @@ async def _get_supabase_jwks() -> dict:
             return _jwks_cache
     except Exception as exc:
         logger.warning("Failed to fetch Supabase JWKS: %s — falling back to JWT secret", exc)
-        # Fall back to HS256 with the JWT secret
         _jwks_cache = {"keys": [], "_fallback": True}
+        _jwks_fetched_at = now
         return _jwks_cache
 
 
@@ -63,8 +69,11 @@ def _decode_supabase_jwt(token: str, jwks: dict) -> dict[str, object]:
     """Decode and validate a Supabase-issued JWT.
 
     Supports both:
-      • ES256 (newer Supabase projects) — verified with JWKS public key
-      • HS256 (legacy Supabase projects) — verified with JWT secret
+      - ES256/RS256 (newer Supabase projects) — verified with JWKS public key
+      - HS256 (legacy Supabase projects) — verified with JWT secret
+
+    Algorithm is validated against an explicit whitelist to prevent
+    algorithm confusion attacks.
     """
     try:
         unverified_header = jwt.get_unverified_header(token)
@@ -80,28 +89,37 @@ def _decode_supabase_jwt(token: str, jwks: dict) -> dict[str, object]:
         ) from exc
 
     keys = jwks.get("keys", [])
-    is_fallback = jwks.get("_fallback", False)
 
-    # ── Strategy 1: JWKS public key verification (ES256 / RS256 etc.) ──
+    # ── Strategy 1: JWKS public key verification ──
     if keys and token_kid:
-        matching_key = None
-        for k in keys:
-            if k.get("kid") == token_kid:
-                matching_key = k
-                break
+        if token_alg not in ALLOWED_JWKS_ALGORITHMS:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Unsupported token algorithm",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        matching_key = next((k for k in keys if k.get("kid") == token_kid), None)
 
         if matching_key:
+            key_alg = matching_key.get("alg", token_alg)
+            if key_alg != token_alg:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token algorithm does not match key",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
             try:
-                public_key = jwk.construct(matching_key, algorithm=token_alg)
+                public_key = jwk.construct(matching_key, algorithm=key_alg)
                 payload: dict[str, object] = jwt.decode(
                     token,
                     public_key,
-                    algorithms=[token_alg],
+                    algorithms=[key_alg],
                     audience="authenticated",
                 )
                 return payload
             except JWTError as exc:
-                logger.warning("JWT JWKS decode failed: %s (alg=%s)", exc, token_alg)
+                logger.warning("JWT JWKS decode failed: %s (alg=%s)", exc, key_alg)
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid or expired token",
@@ -114,7 +132,7 @@ def _decode_supabase_jwt(token: str, jwks: dict) -> dict[str, object]:
             payload = jwt.decode(
                 token,
                 settings.supabase_jwt_secret,
-                algorithms=["HS256", "HS384", "HS512"],
+                algorithms=ALLOWED_HMAC_ALGORITHMS,
                 audience="authenticated",
             )
             return payload
@@ -132,6 +150,38 @@ def _decode_supabase_jwt(token: str, jwks: dict) -> dict[str, object]:
         detail="Cannot verify token — no matching key",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+
+async def verify_supabase_token(request: Request) -> str:
+    """Lightweight dependency that verifies the Supabase JWT and returns the sub claim.
+
+    Use on public-facing auth endpoints (signup, login, join) so the
+    supabase_uid is extracted from the cryptographically verified token
+    rather than trusted from the request body.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid Authorization header",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    token = auth_header[7:]
+
+    jwks = await _get_supabase_jwks()
+    payload = _decode_supabase_jwt(token, jwks)
+
+    sub = payload.get("sub")
+    if not sub or not isinstance(sub, str):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token missing subject claim",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return sub
+
+
+VerifiedSupabaseUid = Annotated[str, Depends(verify_supabase_token)]
 
 
 async def get_current_user(

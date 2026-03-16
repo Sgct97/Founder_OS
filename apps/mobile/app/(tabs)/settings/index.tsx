@@ -33,6 +33,7 @@ import {
   useCreateWorkspace,
   useSwitchWorkspace,
   useJoinWorkspace,
+  useRenameWorkspace,
 } from "@/hooks/use-workspaces";
 import {
   BORDER_RADIUS,
@@ -50,7 +51,7 @@ const SUPPORTED_SERVICES = [
 ] as const;
 
 export default function SettingsScreen() {
-  const { user, workspace, isLoading, signOut } = useAuth();
+  const { user, workspace, isLoading, signOut, setWorkspace } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
 
   // API Keys state
@@ -73,10 +74,13 @@ export default function SettingsScreen() {
   const createWorkspaceMutation = useCreateWorkspace();
   const switchWorkspaceMutation = useSwitchWorkspace();
   const joinWorkspaceMutation = useJoinWorkspace();
+  const renameWorkspaceMutation = useRenameWorkspace();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [joinInviteCode, setJoinInviteCode] = useState("");
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
 
   const handleSwitchWorkspace = useCallback(
     async (workspaceId: string) => {
@@ -119,6 +123,31 @@ export default function SettingsScreen() {
     }
   }, [joinInviteCode, joinWorkspaceMutation, queryClient]);
 
+  const handleStartEditName = useCallback(() => {
+    setNameDraft(workspace?.name ?? "");
+    setEditingName(true);
+  }, [workspace]);
+
+  const handleSaveName = useCallback(async () => {
+    const trimmed = nameDraft.trim();
+    if (!trimmed || trimmed === workspace?.name) {
+      setEditingName(false);
+      return;
+    }
+    try {
+      const updated = await renameWorkspaceMutation.mutateAsync(trimmed);
+      setWorkspace(updated);
+      setEditingName(false);
+    } catch (e: any) {
+      const msg = e?.detail || e?.message || "Failed to rename workspace";
+      if (Platform.OS === "web") {
+        window.alert(msg);
+      } else {
+        Alert.alert("Error", msg);
+      }
+    }
+  }, [nameDraft, workspace, renameWorkspaceMutation, setWorkspace]);
+
   const handleSignOut = useCallback(async () => {
     setSigningOut(true);
     try {
@@ -128,12 +157,18 @@ export default function SettingsScreen() {
     }
   }, [signOut]);
 
+  const [copiedInvite, setCopiedInvite] = useState(false);
+
   const handleCopyInvite = useCallback(() => {
     if (!workspace?.invite_code) return;
     if (Platform.OS === "web") {
-      navigator.clipboard.writeText(workspace.invite_code);
+      navigator.clipboard.writeText(workspace.invite_code).then(() => {
+        setCopiedInvite(true);
+        setTimeout(() => setCopiedInvite(false), 2000);
+      });
+    } else {
+      Alert.alert("Invite Code", workspace.invite_code, [{ text: "OK" }]);
     }
-    Alert.alert("Invite Code", workspace.invite_code, [{ text: "OK" }]);
   }, [workspace]);
 
   const handleAddKey = useCallback(async () => {
@@ -245,21 +280,63 @@ export default function SettingsScreen() {
       {/* ── Workspace Card ────────────────────────────── */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Workspace</Text>
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>Name</Text>
-          <Text style={styles.rowValue}>{workspace?.name ?? "—"}</Text>
-        </View>
+        {editingName ? (
+          <View style={styles.row}>
+            <Text style={styles.rowLabel}>Name</Text>
+            <View style={styles.editNameRow}>
+              <TextInput
+                style={styles.editNameInput}
+                value={nameDraft}
+                onChangeText={setNameDraft}
+                autoFocus
+                maxLength={100}
+                placeholderTextColor={COLORS.textMuted}
+                onSubmitEditing={handleSaveName}
+                returnKeyType="done"
+              />
+              <Pressable onPress={handleSaveName} style={styles.editNameSaveBtn}>
+                {renameWorkspaceMutation.isPending ? (
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                ) : (
+                  <Ionicons name="checkmark" size={18} color={COLORS.primary} />
+                )}
+              </Pressable>
+              <Pressable onPress={() => setEditingName(false)} style={styles.editNameCancelBtn}>
+                <Ionicons name="close" size={18} color={COLORS.textMuted} />
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+          <Pressable
+            style={styles.row}
+            onPress={handleStartEditName}
+            // @ts-ignore
+            title="Click to rename this workspace"
+          >
+            <Text style={styles.rowLabel}>Name</Text>
+            <View style={styles.editableValue}>
+              <Text style={styles.rowValue}>{workspace?.name ?? "—"}</Text>
+              <Ionicons name="pencil-outline" size={14} color={COLORS.textMuted} style={{ marginLeft: 6 }} />
+            </View>
+          </Pressable>
+        )}
         <View style={styles.divider} />
-        <Pressable style={styles.row} onPress={handleCopyInvite}>
+        <Pressable
+          style={styles.row}
+          onPress={handleCopyInvite}
+          accessibilityLabel="Copy invite code"
+          // @ts-ignore
+          title="Click to copy invite code — share with teammates so they can join"
+        >
           <Text style={styles.rowLabel}>Invite Code</Text>
           <View style={styles.codeBadge}>
             <Text style={styles.codeText}>
-              {workspace?.invite_code ?? "—"}
+              {copiedInvite ? "Copied!" : (workspace?.invite_code ?? "—")}
             </Text>
             <Ionicons
-              name="copy-outline"
+              name={copiedInvite ? "checkmark" : "copy-outline"}
               size={14}
-              color={COLORS.primary}
+              color={copiedInvite ? COLORS.success : COLORS.primary}
               style={styles.copyIcon}
             />
           </View>
@@ -288,14 +365,22 @@ export default function SettingsScreen() {
             <Pressable
               style={styles.addWorkspaceBtn}
               onPress={() => setShowJoinModal(true)}
+              // @ts-ignore — React Native Web passes title as HTML title attr
+              title="Join a workspace using an invite code"
+              accessibilityLabel="Join workspace"
             >
-              <Ionicons name="enter-outline" size={16} color={COLORS.primary} />
+              <Ionicons name="enter-outline" size={14} color={COLORS.primary} />
+              <Text style={styles.wsActionLabel}>Join</Text>
             </Pressable>
             <Pressable
               style={styles.addWorkspaceBtn}
               onPress={() => setShowCreateModal(true)}
+              // @ts-ignore — React Native Web passes title as HTML title attr
+              title="Create a brand new workspace"
+              accessibilityLabel="Create workspace"
             >
-              <Ionicons name="add" size={18} color={COLORS.primary} />
+              <Ionicons name="add" size={15} color={COLORS.primary} />
+              <Text style={styles.wsActionLabel}>Create</Text>
             </Pressable>
           </View>
         </View>
@@ -317,6 +402,8 @@ export default function SettingsScreen() {
                 if (!ws.is_active) handleSwitchWorkspace(ws.id);
               }}
               disabled={switchWorkspaceMutation.isPending}
+              // @ts-ignore
+              title={ws.is_active ? "Currently active workspace" : `Switch to ${ws.name}`}
             >
               <View style={[styles.wsIconWrap, ws.is_active && styles.wsIconWrapActive]}>
                 <Text style={[styles.wsIconText, ws.is_active && styles.wsIconTextActive]}>
@@ -488,6 +575,8 @@ export default function SettingsScreen() {
                 <Pressable
                   onPress={() => handleDeleteKey(key.id, key.service)}
                   hitSlop={12}
+                  // @ts-ignore
+                  title="Remove this API key"
                 >
                   <Ionicons name="trash-outline" size={18} color={COLORS.error} />
                 </Pressable>
@@ -741,6 +830,33 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     fontWeight: FONT_WEIGHT.semibold,
   },
+  editableValue: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+  },
+  editNameRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 6,
+    flex: 1,
+    maxWidth: 220,
+  },
+  editNameInput: {
+    flex: 1,
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textPrimary,
+    fontWeight: FONT_WEIGHT.semibold,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.primary,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+  },
+  editNameSaveBtn: {
+    padding: 4,
+  },
+  editNameCancelBtn: {
+    padding: 4,
+  },
   divider: {
     height: 1,
     backgroundColor: COLORS.divider,
@@ -894,12 +1010,20 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   addWorkspaceBtn: {
-    width: 32,
-    height: 32,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    height: 30,
+    paddingHorizontal: SPACING.sm,
     borderRadius: BORDER_RADIUS.full,
     backgroundColor: COLORS.primaryMuted,
-    alignItems: "center",
     justifyContent: "center",
+  },
+  wsActionLabel: {
+    fontSize: 12,
+    fontWeight: "600" as const,
+    color: COLORS.primary,
+    letterSpacing: 0.3,
   },
   workspaceRow: {
     flexDirection: "row",

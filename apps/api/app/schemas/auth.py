@@ -105,6 +105,12 @@ class JoinByInviteRequest(BaseModel):
     invite_code: str = Field(..., min_length=1, max_length=20)
 
 
+class RenameWorkspaceRequest(BaseModel):
+    """Body for PUT /workspaces/rename — rename the active workspace."""
+
+    name: str = Field(..., min_length=1, max_length=100)
+
+
 class WorkspaceMemberResponse(BaseModel):
     """A workspace the user belongs to, including their role."""
 

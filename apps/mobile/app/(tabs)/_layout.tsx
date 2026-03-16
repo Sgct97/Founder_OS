@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 
+import { HeaderTitle } from "@/components/ui/HeaderTitle";
 import { COLORS, FONT_SIZE, FONT_WEIGHT, LAYOUT } from "@/constants/theme";
 
 function TabBarBackground() {
@@ -57,8 +58,10 @@ export default function TabLayout() {
           backgroundColor: COLORS.navy,
           shadowColor: "transparent",
           elevation: 0,
+          height: 96,
         },
         headerTintColor: COLORS.white,
+        headerTitleAlign: "center",
         headerTitleStyle: {
           fontWeight: FONT_WEIGHT.semibold,
           fontSize: FONT_SIZE.lg,
@@ -90,7 +93,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="features/index"
         options={{
-          title: "Requests",
+          headerTitle: () => <HeaderTitle pageName="Requests" />,
+          tabBarLabel: "Requests",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="bulb-outline" size={size} color={color} />
           ),
@@ -109,7 +113,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings/index"
         options={{
-          title: "Settings",
+          headerTitle: () => <HeaderTitle pageName="Settings" />,
+          tabBarLabel: "Settings",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings-outline" size={size} color={color} />
           ),
