@@ -2,8 +2,8 @@
  * Tour step definitions for the guided onboarding experience.
  *
  * Each step targets a specific UI element (by key) and includes
- * the copy shown in the tooltip. Steps are ordered linearly
- * across all pages.
+ * educational copy that teaches the user what the feature does
+ * and why it matters.
  */
 
 export type TourPage =
@@ -18,42 +18,49 @@ export interface TourStep {
   page: TourPage;
   title: string;
   description: string;
-  /** Preferred tooltip position relative to the target */
   position: "top" | "bottom" | "left" | "right";
 }
+
+export const PAGE_ROUTES: Record<TourPage, string> = {
+  milestones: "/(tabs)/milestones",
+  requests: "/(tabs)/features",
+  diary: "/(tabs)/diary",
+  knowledge: "/(tabs)/knowledge",
+  settings: "/(tabs)/settings",
+};
 
 export const TOUR_STEPS: TourStep[] = [
   // ── Milestones ────────────────────────────────────────────
   {
     targetKey: "milestones-journey",
     page: "milestones",
-    title: "Your Journey Path",
+    title: "Welcome to Your Milestone Map",
     description:
-      "This is your project roadmap. Each phase represents a major chapter of your build — expand them to see individual milestones.",
+      "This is the heart of FoundersForge. Your milestone map breaks your entire project into Phases (big chapters) and Milestones (individual tasks). Think of it as your founder's roadmap — you'll always know exactly where you stand and what's next.",
     position: "bottom",
   },
   {
     targetKey: "milestones-phase-card",
     page: "milestones",
-    title: "Phase Progress",
+    title: "Phases & Progress Tracking",
     description:
-      "Track completion at a glance. The progress bar fills as you complete milestones within each phase.",
+      "Each phase card shows your completion percentage. Tap a phase to expand it and see every milestone inside. As you mark milestones complete, the progress bar fills automatically — giving you a real-time view of momentum.",
     position: "bottom",
   },
   {
     targetKey: "milestones-status-toggle",
     page: "milestones",
-    title: "Update Status",
+    title: "Update Milestone Status",
     description:
-      "Tap any milestone's status icon to cycle through: Not Started, In Progress, and Completed.",
+      "Tap any milestone to cycle its status: Not Started → In Progress → Completed. This is how you track your build day-by-day. Each milestone also has its own AI-powered chat — tap into a milestone to ask questions, brainstorm, or get help specific to that task.",
     position: "bottom",
   },
   {
     targetKey: "milestones-import",
     page: "milestones",
-    title: "AI Import",
+    title: "Create Your Map with AI",
     description:
-      "Paste your project plan or markdown and let AI automatically create phases and milestones for you.",
+      "Don't build your roadmap manually. Tap here to paste a project plan, pitch deck outline, or even a rough description — our AI will automatically generate a complete milestone map with phases and tasks. You can edit everything after import.",
     position: "top",
   },
 
@@ -61,51 +68,51 @@ export const TOUR_STEPS: TourStep[] = [
   {
     targetKey: "requests-list",
     page: "requests",
-    title: "Feature Requests",
+    title: "Feature Request Board",
     description:
-      "Your team's idea board. Anyone in the workspace can submit feature ideas and track their status.",
+      "This is your team's idea hub. Anyone in the workspace can submit feature requests and track their status. Use this to capture user feedback, prioritize your backlog, and keep your team aligned on what to build next.",
     position: "bottom",
   },
   {
     targetKey: "requests-vote",
     page: "requests",
-    title: "Vote on Ideas",
+    title: "Prioritize with Votes",
     description:
-      "Tap the upvote arrow to signal which features matter most. Requests are ranked by vote count.",
+      "Tap the upvote arrow on any request to signal what matters most. Requests are ranked by vote count, so the most-wanted features rise to the top. This gives you data-driven prioritization without meetings.",
     position: "bottom",
   },
   {
     targetKey: "requests-create",
     page: "requests",
-    title: "Submit a Request",
+    title: "Submit New Ideas",
     description:
-      "Tap here to propose a new feature. Add a title and description to get the conversation started.",
+      "Tap here to propose a new feature request. Add a clear title and description so your team can evaluate and vote. Great for capturing ideas before they get lost.",
     position: "top",
   },
 
   // ── Diary ─────────────────────────────────────────────────
   {
-    targetKey: "diary-timeline",
+    targetKey: "diary-streak",
     page: "diary",
-    title: "Build Diary",
+    title: "Your Build Diary",
     description:
-      "A reverse-chronological timeline of your work. Log what you built, learned, or decided each day.",
+      "The Build Diary is your founder's journal. It tracks your daily progress in a timeline format and rewards consistency with streaks. Logging regularly helps you spot patterns, reflect on decisions, and build a history of your journey that you'll be glad you kept.",
     position: "bottom",
   },
   {
-    targetKey: "diary-streak",
+    targetKey: "diary-timeline",
     page: "diary",
-    title: "Streaks",
+    title: "Daily Timeline",
     description:
-      "Stay consistent. Your streak tracks consecutive days of diary entries — build momentum.",
+      "Every entry you write appears here in reverse-chronological order. Each entry captures what you accomplished, what blocked you, and what's next. Over time, this becomes an invaluable record of your build process.",
     position: "bottom",
   },
   {
     targetKey: "diary-add",
     page: "diary",
-    title: "New Entry",
+    title: "Log Today's Progress",
     description:
-      "Tap here to log today's progress. Include what you accomplished, blockers, and next steps.",
+      "Tap here to write today's diary entry. Include what you built, decisions you made, and any blockers. Even a quick 2-3 sentence entry keeps your streak alive and your progress documented.",
     position: "top",
   },
 
@@ -113,9 +120,9 @@ export const TOUR_STEPS: TourStep[] = [
   {
     targetKey: "knowledge-docs",
     page: "knowledge",
-    title: "Knowledge Base",
+    title: "Your AI-Powered Knowledge Base",
     description:
-      "Upload your project documents — specs, research, notes. They become searchable context for the AI assistant.",
+      "This is where FoundersForge becomes truly powerful. Upload your project documents — specs, research, pitch decks, notes — and they're automatically processed, chunked, and embedded. This creates a private knowledge base that your AI assistant can search and reference in every conversation.",
     position: "bottom",
   },
   {
@@ -123,15 +130,15 @@ export const TOUR_STEPS: TourStep[] = [
     page: "knowledge",
     title: "Upload Documents",
     description:
-      "Drag or tap to upload PDFs, markdown, text files and more. Documents are chunked and embedded for AI retrieval.",
+      "Tap here to upload PDFs, markdown files, text documents, and more. Each file is broken into searchable chunks using RAG (Retrieval-Augmented Generation) — this means the AI doesn't just guess, it pulls real information from YOUR documents to give accurate answers.",
     position: "top",
   },
   {
     targetKey: "knowledge-chat",
     page: "knowledge",
-    title: "AI Assistant",
+    title: "Chat with Your Knowledge Base",
     description:
-      "Chat with an AI that has read all your uploaded documents. Ask questions, get summaries, brainstorm ideas.",
+      "This is your AI research assistant. It has read every document you've uploaded. Ask it questions like \"What did our user research say about onboarding?\" or \"Summarize the competitive analysis\" — and it will answer using your actual documents as sources.",
     position: "top",
   },
 
@@ -139,25 +146,25 @@ export const TOUR_STEPS: TourStep[] = [
   {
     targetKey: "settings-workspace",
     page: "settings",
-    title: "Workspace Settings",
+    title: "Workspace & Team",
     description:
-      "Manage your workspace name, invite team members, and switch between workspaces.",
+      "Rename your workspace, share the invite code with teammates, or switch between workspaces. The workspace name appears in the header of every page — make it your company or project name.",
     position: "bottom",
   },
   {
     targetKey: "settings-api-keys",
     page: "settings",
-    title: "API Keys",
+    title: "Connect Your AI Keys",
     description:
-      "Connect your own OpenAI or Anthropic API key to power the AI features. Keys are encrypted at rest.",
+      "Add your own OpenAI or Anthropic API key to power all AI features — milestone chat, knowledge base chat, and AI import. Your keys are encrypted with AES-256-GCM and never leave your workspace. Without a key, AI features won't work.",
     position: "bottom",
   },
   {
     targetKey: "settings-brief",
     page: "settings",
-    title: "Project Brief",
+    title: "Project Brief — Critical for AI Quality",
     description:
-      "Give the AI context about your project. This brief is injected into every AI conversation for better answers.",
+      "This is the single most important setting for AI quality. Write a brief description of your project — what it does, who it's for, what stage it's at. This brief is injected into EVERY AI conversation, so the AI always understands your context instead of giving generic answers.",
     position: "top",
   },
 ];

@@ -1,8 +1,8 @@
 /**
  * TourProvider — manages guided onboarding tour state.
  *
- * Tracks current step, registered element positions, and exposes
- * navigation actions. Automatically starts for new users.
+ * Auto-navigates between tabs, measures target elements with
+ * retry logic, and exposes step navigation actions.
  */
 
 import React, {
@@ -15,10 +15,16 @@ import React, {
   useState,
 } from "react";
 import { Platform, type View } from "react-native";
+import { useRouter, usePathname } from "expo-router";
 
 import { useAuth } from "@/hooks/use-auth";
 import { apiPost } from "@/services/api";
-import { TOUR_STEPS, type TourStep, type TourPage } from "./tourSteps";
+import {
+  TOUR_STEPS,
+  PAGE_ROUTES,
+  type TourStep,
+  type TourPage,
+} from "./tourSteps";
 
 export interface ElementLayout {
   x: number;
@@ -42,21 +48,27 @@ interface TourContextValue {
 
 const TourContext = createContext<TourContextValue | null>(null);
 
+const MEASURE_RETRY_MS = 200;
+const MEASURE_MAX_RETRIES = 15;
+
 export function TourProvider({
   children,
 }: {
   children: React.ReactNode;
 }): React.JSX.Element {
   const { user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
   const [isActive, setIsActive] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [targetLayout, setTargetLayout] = useState<ElementLayout | null>(null);
   const refs = useRef<Map<string, View>>(new Map());
-  const measureTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const retryRef = useRef<ReturnType<typeof setTimeout>>();
+  const retryCountRef = useRef(0);
 
   useEffect(() => {
     if (user && !user.has_completed_tour) {
-      const timer = setTimeout(() => setIsActive(true), 800);
+      const timer = setTimeout(() => setIsActive(true), 1000);
       return () => clearTimeout(timer);
     }
   }, [user]);
@@ -67,7 +79,10 @@ export function TourProvider({
   const measureElement = useCallback((key: string) => {
     const ref = refs.current.get(key);
     if (!ref) {
-      setTargetLayout(null);
+      if (retryCountRef.current < MEASURE_MAX_RETRIES) {
+        retryCountRef.current += 1;
+        retryRef.current = setTimeout(() => measureElement(key), MEASURE_RETRY_MS);
+      }
       return;
     }
 
@@ -75,36 +90,62 @@ export function TourProvider({
       const node = ref as unknown as HTMLElement;
       if (node?.getBoundingClientRect) {
         const rect = node.getBoundingClientRect();
-        setTargetLayout({
-          x: rect.left,
-          y: rect.top,
-          width: rect.width,
-          height: rect.height,
-        });
+        if (rect.width > 0 && rect.height > 0) {
+          setTargetLayout({
+            x: rect.left,
+            y: rect.top,
+            width: rect.width,
+            height: rect.height,
+          });
+          return;
+        }
+      }
+      if (retryCountRef.current < MEASURE_MAX_RETRIES) {
+        retryCountRef.current += 1;
+        retryRef.current = setTimeout(() => measureElement(key), MEASURE_RETRY_MS);
       }
     } else {
       ref.measureInWindow((x, y, width, height) => {
         if (width > 0 && height > 0) {
           setTargetLayout({ x, y, width, height });
+        } else if (retryCountRef.current < MEASURE_MAX_RETRIES) {
+          retryCountRef.current += 1;
+          retryRef.current = setTimeout(() => measureElement(key), MEASURE_RETRY_MS);
         }
       });
     }
   }, []);
 
+  // Auto-navigate to the correct tab when the step's page changes.
+  useEffect(() => {
+    if (!currentStep) return;
+
+    const targetRoute = PAGE_ROUTES[currentStep.page];
+    if (targetRoute && !pathname.includes(currentStep.page === "requests" ? "features" : currentStep.page)) {
+      router.navigate(targetRoute as any);
+    }
+  }, [currentStep, pathname, router]);
+
+  // Measure the target element after navigation settles.
   useEffect(() => {
     if (!currentStep) {
       setTargetLayout(null);
       return;
     }
-    if (measureTimeoutRef.current) clearTimeout(measureTimeoutRef.current);
-    measureTimeoutRef.current = setTimeout(
+
+    if (retryRef.current) clearTimeout(retryRef.current);
+    retryCountRef.current = 0;
+    setTargetLayout(null);
+
+    retryRef.current = setTimeout(
       () => measureElement(currentStep.targetKey),
-      300
+      400,
     );
+
     return () => {
-      if (measureTimeoutRef.current) clearTimeout(measureTimeoutRef.current);
+      if (retryRef.current) clearTimeout(retryRef.current);
     };
-  }, [currentStep, measureElement]);
+  }, [currentStep, measureElement, pathname]);
 
   const completeTour = useCallback(async () => {
     setIsActive(false);
@@ -164,7 +205,7 @@ export function TourProvider({
       nextStep,
       prevStep,
       skipTour,
-    ]
+    ],
   );
 
   return <TourContext.Provider value={value}>{children}</TourContext.Provider>;
@@ -186,6 +227,6 @@ export function useTourRef(stepKey: string) {
   const { registerStep } = useTour();
   return useCallback(
     (ref: View | null) => registerStep(stepKey, ref),
-    [registerStep, stepKey]
+    [registerStep, stepKey],
   );
 }

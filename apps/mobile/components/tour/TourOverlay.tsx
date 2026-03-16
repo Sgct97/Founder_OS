@@ -1,8 +1,9 @@
 /**
  * TourOverlay — premium spotlight + tooltip overlay for guided onboarding.
  *
- * Renders a full-screen dark backdrop with a rounded spotlight cutout
- * around the target element, plus a glass-style tooltip with navigation.
+ * Full-screen dark backdrop with a bright spotlight cutout around
+ * the target element, animated tooltip with educational content,
+ * and step-by-step navigation.
  */
 
 import React, { useEffect, useRef } from "react";
@@ -11,6 +12,7 @@ import {
   Dimensions,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -26,20 +28,10 @@ import {
   SPACING,
 } from "@/constants/theme";
 import { useTour, type ElementLayout } from "./TourProvider";
-import type { TourPage } from "./tourSteps";
 
-const SPOTLIGHT_PADDING = 8;
-const SPOTLIGHT_RADIUS = 12;
-const TOOLTIP_WIDTH = 300;
-const ARROW_SIZE = 8;
-
-const PAGE_LABELS: Record<TourPage, { label: string; icon: string }> = {
-  milestones: { label: "Milestones", icon: "flag-outline" },
-  requests: { label: "Requests", icon: "bulb-outline" },
-  diary: { label: "Diary", icon: "journal-outline" },
-  knowledge: { label: "Knowledge", icon: "library-outline" },
-  settings: { label: "Settings", icon: "settings-outline" },
-};
+const SPOTLIGHT_PADDING = 10;
+const SPOTLIGHT_RADIUS = 14;
+const TOOLTIP_WIDTH = 320;
 
 export function TourOverlay(): React.JSX.Element | null {
   const {
@@ -47,7 +39,6 @@ export function TourOverlay(): React.JSX.Element | null {
     currentStep,
     currentStepIndex,
     totalSteps,
-    currentPage,
     targetLayout,
     nextStep,
     prevStep,
@@ -55,23 +46,24 @@ export function TourOverlay(): React.JSX.Element | null {
   } = useTour();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const tooltipSlide = useRef(new Animated.Value(20)).current;
+  const tooltipSlide = useRef(new Animated.Value(30)).current;
   const pulseAnim = useRef(new Animated.Value(0)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (isActive && currentStep) {
       fadeAnim.setValue(0);
-      tooltipSlide.setValue(20);
+      tooltipSlide.setValue(30);
 
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
-          duration: 300,
+          duration: 350,
           useNativeDriver: true,
         }),
         Animated.timing(tooltipSlide, {
           toValue: 0,
-          duration: 350,
+          duration: 400,
           useNativeDriver: true,
         }),
       ]).start();
@@ -80,30 +72,46 @@ export function TourOverlay(): React.JSX.Element | null {
         Animated.sequence([
           Animated.timing(pulseAnim, {
             toValue: 1,
-            duration: 1200,
+            duration: 1400,
             useNativeDriver: true,
           }),
           Animated.timing(pulseAnim, {
             toValue: 0,
-            duration: 1200,
+            duration: 1400,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       );
       pulse.start();
 
-      return () => pulse.stop();
+      const glow = Animated.loop(
+        Animated.sequence([
+          Animated.timing(glowAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: false,
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 0,
+            duration: 800,
+            useNativeDriver: false,
+          }),
+        ]),
+      );
+      glow.start();
+
+      return () => {
+        pulse.stop();
+        glow.stop();
+      };
     }
-  }, [isActive, currentStep, currentStepIndex, fadeAnim, tooltipSlide, pulseAnim]);
+  }, [isActive, currentStep, currentStepIndex, fadeAnim, tooltipSlide, pulseAnim, glowAnim]);
 
   if (!isActive || !currentStep) return null;
 
   const { width: screenW, height: screenH } = Dimensions.get("window");
   const isLastStep = currentStepIndex === totalSteps - 1;
   const isFirstStep = currentStepIndex === 0;
-
-  const pageInfo = currentPage ? PAGE_LABELS[currentPage] : null;
-  const showNavigatePrompt = !targetLayout && currentStep;
 
   const spotlightStyle = targetLayout
     ? {
@@ -119,17 +127,22 @@ export function TourOverlay(): React.JSX.Element | null {
     targetLayout,
     currentStep.position,
     screenW,
-    screenH
+    screenH,
   );
 
   const pulseScale = pulseAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [1, 1.06],
+    outputRange: [1, 1.08],
   });
 
   const pulseOpacity = pulseAnim.interpolate({
     inputRange: [0, 0.5, 1],
-    outputRange: [0.6, 1, 0.6],
+    outputRange: [0.5, 1, 0.5],
+  });
+
+  const ringBorderColor = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [COLORS.primary, "#FFD700"],
   });
 
   return (
@@ -137,25 +150,35 @@ export function TourOverlay(): React.JSX.Element | null {
       style={[styles.overlay, { opacity: fadeAnim }]}
       pointerEvents="box-none"
     >
-      {/* Dark backdrop — tappable to advance */}
-      <Pressable style={styles.backdrop} onPress={nextStep}>
-        <View style={StyleSheet.absoluteFill} />
-      </Pressable>
+      {/* Dark backdrop */}
+      <View style={styles.backdrop} pointerEvents="none" />
 
       {/* Spotlight cutout */}
       {spotlightStyle && (
         <>
+          {/* Outer pulse ring */}
           <Animated.View
             style={[
-              styles.spotlightRing,
+              styles.spotlightOuter,
               spotlightStyle,
               {
                 transform: [{ scale: pulseScale }],
                 opacity: pulseOpacity,
+                borderColor: ringBorderColor,
               },
             ]}
             pointerEvents="none"
           />
+          {/* Inner bright ring */}
+          <Animated.View
+            style={[
+              styles.spotlightRing,
+              spotlightStyle,
+              { borderColor: ringBorderColor },
+            ]}
+            pointerEvents="none"
+          />
+          {/* Transparent cutout */}
           <View
             style={[styles.spotlightCutout, spotlightStyle]}
             pointerEvents="none"
@@ -163,100 +186,81 @@ export function TourOverlay(): React.JSX.Element | null {
         </>
       )}
 
-      {/* Navigate-to-tab prompt (when element isn't on current page) */}
-      {showNavigatePrompt && pageInfo && (
-        <Animated.View
-          style={[
-            styles.navigatePrompt,
-            { opacity: fadeAnim, transform: [{ translateY: tooltipSlide }] },
-          ]}
-        >
-          <Ionicons
-            name={pageInfo.icon as any}
-            size={28}
-            color={COLORS.primary}
-          />
-          <Text style={styles.navigateText}>
-            Tap the{" "}
-            <Text style={styles.navigateHighlight}>{pageInfo.label}</Text> tab
-            below to continue
-          </Text>
-        </Animated.View>
-      )}
-
       {/* Tooltip */}
-      {(targetLayout || !showNavigatePrompt) && (
-        <Animated.View
-          style={[
-            styles.tooltip,
-            tooltipPosition,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: tooltipSlide }],
-            },
-          ]}
+      <Animated.View
+        style={[
+          styles.tooltip,
+          tooltipPosition,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: tooltipSlide }],
+          },
+        ]}
+      >
+        {/* Header: step counter + skip */}
+        <View style={styles.tooltipHeader}>
+          <View style={styles.stepBadge}>
+            <Text style={styles.stepBadgeText}>
+              Step {currentStepIndex + 1} of {totalSteps}
+            </Text>
+          </View>
+          <Pressable onPress={skipTour} hitSlop={16}>
+            <Text style={styles.skipText}>Skip Tour</Text>
+          </Pressable>
+        </View>
+
+        {/* Title */}
+        <Text style={styles.tooltipTitle}>{currentStep.title}</Text>
+
+        {/* Scrollable description for longer text */}
+        <ScrollView
+          style={styles.descScroll}
+          showsVerticalScrollIndicator={false}
         >
-          {/* Step badge */}
-          <View style={styles.tooltipHeader}>
-            <View style={styles.stepBadge}>
-              <Text style={styles.stepBadgeText}>
-                {currentStepIndex + 1} of {totalSteps}
-              </Text>
-            </View>
-            <Pressable onPress={skipTour} hitSlop={12}>
-              <Text style={styles.skipText}>Skip Tour</Text>
-            </Pressable>
-          </View>
-
-          {/* Content */}
-          <Text style={styles.tooltipTitle}>{currentStep.title}</Text>
           <Text style={styles.tooltipDesc}>{currentStep.description}</Text>
+        </ScrollView>
 
-          {/* Progress dots */}
-          <View style={styles.dotsRow}>
-            {Array.from({ length: totalSteps }).map((_, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.dot,
-                  i === currentStepIndex && styles.dotActive,
-                ]}
+        {/* Progress dots */}
+        <View style={styles.dotsRow}>
+          {Array.from({ length: totalSteps }).map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.dot,
+                i === currentStepIndex && styles.dotActive,
+              ]}
+            />
+          ))}
+        </View>
+
+        {/* Navigation buttons */}
+        <View style={styles.navRow}>
+          {!isFirstStep ? (
+            <Pressable style={styles.backBtn} onPress={prevStep}>
+              <Ionicons
+                name="chevron-back"
+                size={16}
+                color={COLORS.textSecondary}
               />
-            ))}
-          </View>
-
-          {/* Navigation buttons */}
-          <View style={styles.navRow}>
-            {!isFirstStep ? (
-              <Pressable style={styles.backBtn} onPress={prevStep}>
-                <Ionicons
-                  name="chevron-back"
-                  size={16}
-                  color={COLORS.textSecondary}
-                />
-                <Text style={styles.backBtnText}>Back</Text>
-              </Pressable>
-            ) : (
-              <View />
-            )}
-            <Pressable
-              style={styles.nextBtn}
-              onPress={nextStep}
-            >
-              <Text style={styles.nextBtnText}>
-                {isLastStep ? "Finish" : "Next"}
-              </Text>
-              {!isLastStep && (
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={COLORS.white}
-                />
-              )}
+              <Text style={styles.backBtnText}>Back</Text>
             </Pressable>
-          </View>
-        </Animated.View>
-      )}
+          ) : (
+            <View />
+          )}
+          <Pressable style={styles.nextBtn} onPress={nextStep}>
+            <Text style={styles.nextBtnText}>
+              {isLastStep ? "Get Started" : "Next"}
+            </Text>
+            {!isLastStep && (
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={COLORS.white}
+              />
+            )}
+          </Pressable>
+        </View>
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -265,32 +269,34 @@ function computeTooltipPosition(
   target: ElementLayout | null,
   preferredPosition: string,
   screenW: number,
-  screenH: number
+  screenH: number,
 ) {
   if (!target) {
     return {
       left: (screenW - TOOLTIP_WIDTH) / 2,
-      top: screenH * 0.35,
+      top: screenH * 0.3,
     };
   }
 
   const centerX = target.x + target.width / 2;
   let left = centerX - TOOLTIP_WIDTH / 2;
-  left = Math.max(16, Math.min(left, screenW - TOOLTIP_WIDTH - 16));
+  left = Math.max(12, Math.min(left, screenW - TOOLTIP_WIDTH - 12));
 
-  const below = target.y + target.height + SPOTLIGHT_PADDING + ARROW_SIZE + 8;
-  const above = target.y - SPOTLIGHT_PADDING - ARROW_SIZE - 8;
+  const gap = SPOTLIGHT_PADDING + 12;
+  const below = target.y + target.height + gap;
+  const above = target.y - gap;
+  const tooltipEstHeight = 260;
 
-  if (preferredPosition === "bottom" && below + 200 < screenH) {
+  if (preferredPosition === "bottom" && below + tooltipEstHeight < screenH - 80) {
     return { left, top: below };
   }
-  if (preferredPosition === "top" && above > 100) {
-    return { left, top: above - 180 };
+  if (preferredPosition === "top" && above - tooltipEstHeight > 20) {
+    return { left, top: above - tooltipEstHeight };
   }
-  if (below + 200 < screenH) {
+  if (below + tooltipEstHeight < screenH - 80) {
     return { left, top: below };
   }
-  return { left, top: Math.max(80, above - 180) };
+  return { left, top: Math.max(40, above - tooltipEstHeight) };
 }
 
 const styles = StyleSheet.create({
@@ -300,60 +306,51 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.78)",
+    backgroundColor: "rgba(0, 0, 0, 0.82)",
   },
 
   spotlightCutout: {
     position: "absolute",
     backgroundColor: "transparent",
-    borderWidth: 2,
-    borderColor: COLORS.primaryGlow,
     ...(Platform.OS === "web"
-      ? { boxShadow: `0 0 0 9999px rgba(0,0,0,0.78), 0 0 20px ${COLORS.primaryGlow}` }
+      ? {
+          boxShadow: `0 0 0 9999px rgba(0,0,0,0.82), 0 0 30px ${COLORS.primary}, 0 0 60px rgba(255,106,42,0.3)`,
+        }
       : {}),
   },
   spotlightRing: {
     position: "absolute",
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: COLORS.primary,
     backgroundColor: "transparent",
   },
-
-  navigatePrompt: {
+  spotlightOuter: {
     position: "absolute",
-    bottom: 120,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    paddingHorizontal: SPACING.xl,
-  },
-  navigateText: {
-    color: COLORS.textSecondary,
-    fontSize: FONT_SIZE.md,
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  navigateHighlight: {
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.bold,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    backgroundColor: "transparent",
+    margin: -6,
+    padding: 6,
   },
 
   tooltip: {
     position: "absolute",
     width: TOOLTIP_WIDTH,
-    backgroundColor: COLORS.surfaceElevated,
+    backgroundColor: "#1A1A1E",
     borderRadius: BORDER_RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderTopWidth: 2,
+    borderColor: "rgba(255, 106, 42, 0.3)",
+    borderTopWidth: 3,
     borderTopColor: COLORS.primary,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     ...SHADOW.glow,
     ...(Platform.OS === "web"
-      ? { backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }
+      ? {
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(255,106,42,0.15)`,
+        }
       : {}),
   },
 
@@ -364,35 +361,39 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   stepBadge: {
-    backgroundColor: COLORS.primaryMuted,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 3,
+    backgroundColor: "rgba(255, 106, 42, 0.15)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: BORDER_RADIUS.full,
   },
   stepBadgeText: {
     color: COLORS.primary,
     fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    letterSpacing: 0.3,
+    fontWeight: FONT_WEIGHT.bold,
+    letterSpacing: 0.5,
   },
   skipText: {
     color: COLORS.textTertiary,
     fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.medium,
+    textDecorationLine: "underline",
   },
 
   tooltipTitle: {
     color: COLORS.textPrimary,
-    fontSize: FONT_SIZE.lg,
+    fontSize: 18,
     fontWeight: FONT_WEIGHT.bold,
     letterSpacing: -0.3,
-    marginBottom: 6,
+    marginBottom: 8,
+  },
+  descScroll: {
+    maxHeight: 120,
+    marginBottom: SPACING.sm,
   },
   tooltipDesc: {
     color: COLORS.textSecondary,
     fontSize: FONT_SIZE.sm,
-    lineHeight: 20,
-    marginBottom: SPACING.md,
+    lineHeight: 21,
   },
 
   dotsRow: {
@@ -405,10 +406,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: COLORS.navySoft,
+    backgroundColor: "rgba(255,255,255,0.15)",
   },
   dotActive: {
-    width: 18,
+    width: 20,
     borderRadius: 3,
     backgroundColor: COLORS.primary,
   },
@@ -422,11 +423,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: BORDER_RADIUS.sm,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: "rgba(255,255,255,0.12)",
   },
   backBtnText: {
     color: COLORS.textSecondary,
@@ -438,8 +439,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     backgroundColor: COLORS.primary,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
     borderRadius: BORDER_RADIUS.full,
     ...SHADOW.glow,
   },
@@ -447,6 +448,6 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.bold,
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
 });
