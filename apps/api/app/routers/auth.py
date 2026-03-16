@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import CurrentUser, VerifiedSupabaseUid
+from app.models.user import User
 from app.schemas.auth import (
     AuthResponse,
     InviteResponse,
@@ -146,6 +147,103 @@ async def complete_tour(
     await db.refresh(current_user)
     logger.info("Tour completed for user=%s", current_user.id)
     return UserResponse.model_validate(current_user)
+
+
+@router.delete(
+    "/users/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a user from the internal database",
+)
+async def delete_user(
+    user_id: str,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> None:
+    """Remove a user and all their related data from the internal DB.
+
+    Only workspace owners can delete members of their workspace.
+    Users can also delete themselves.
+    """
+    import uuid as _uuid
+
+    from fastapi import HTTPException
+    from sqlalchemy import delete, select
+
+    from app.models.conversation import Conversation
+    from app.models.diary_entry import DiaryEntry
+    from app.models.document import Document
+    from app.models.document_chunk import DocumentChunk
+    from app.models.feature_request import FeatureRequest, FeatureVote
+    from app.models.message import Message
+    from app.models.workspace_api_key import WorkspaceApiKey
+    from app.models.workspace_member import WorkspaceMember
+
+    try:
+        target_id = _uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+
+    is_self = target_id == current_user.id
+    if not is_self:
+        mem_result = await db.execute(
+            select(WorkspaceMember).where(
+                WorkspaceMember.user_id == current_user.id,
+                WorkspaceMember.workspace_id == current_user.workspace_id,
+            )
+        )
+        membership = mem_result.scalar_one_or_none()
+        if membership is None or membership.role != "owner":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only workspace owners can delete other users",
+            )
+
+    target_result = await db.execute(select(User).where(User.id == target_id))
+    target_user = target_result.scalar_one_or_none()
+    if target_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    convos = await db.execute(
+        select(Conversation.id).where(Conversation.user_id == target_id)
+    )
+    convo_ids = [row[0] for row in convos.all()]
+    if convo_ids:
+        await db.execute(
+            delete(Message).where(Message.conversation_id.in_(convo_ids))
+        )
+        await db.execute(
+            delete(Conversation).where(Conversation.id.in_(convo_ids))
+        )
+
+    docs = await db.execute(
+        select(Document.id).where(Document.uploaded_by == target_id)
+    )
+    doc_ids = [row[0] for row in docs.all()]
+    if doc_ids:
+        await db.execute(
+            delete(DocumentChunk).where(DocumentChunk.document_id.in_(doc_ids))
+        )
+        await db.execute(delete(Document).where(Document.id.in_(doc_ids)))
+
+    await db.execute(
+        delete(FeatureVote).where(FeatureVote.user_id == target_id)
+    )
+    await db.execute(
+        delete(FeatureRequest).where(FeatureRequest.author_id == target_id)
+    )
+    await db.execute(
+        delete(DiaryEntry).where(DiaryEntry.author_id == target_id)
+    )
+    await db.execute(
+        delete(WorkspaceApiKey).where(WorkspaceApiKey.added_by == target_id)
+    )
+    await db.execute(
+        delete(WorkspaceMember).where(WorkspaceMember.user_id == target_id)
+    )
+    await db.execute(delete(User).where(User.id == target_id))
+    await db.flush()
+
+    logger.info("User deleted: target=%s by=%s", target_id, current_user.id)
 
 
 @router.get(

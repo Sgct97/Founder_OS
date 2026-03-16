@@ -69,7 +69,7 @@ async def signup(db: AsyncSession, payload: SignupRequest) -> tuple[User, Worksp
         invite_code=_generate_invite_code(),
     )
     db.add(workspace)
-    await db.flush()  # Populate workspace.id before FK reference.
+    await db.flush()
 
     # Create user.
     user = User(
