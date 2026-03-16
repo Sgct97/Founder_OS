@@ -31,6 +31,7 @@ import {
   SPACING,
 } from "@/constants/theme";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { useTourRef } from "@/components/tour/TourProvider";
 import {
   useFeatureRequests,
   useCreateFeatureRequest,
@@ -277,6 +278,10 @@ export default function FeaturesScreen() {
   const deleteMutation = useDeleteFeatureRequest();
   const voteMutation = useToggleVote();
 
+  const listRef = useTourRef("requests-list");
+  const voteRef = useTourRef("requests-vote");
+  const createRef = useTourRef("requests-create");
+
   const [modalVisible, setModalVisible] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -348,7 +353,7 @@ export default function FeaturesScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.headerBar}>
+      <View ref={listRef} collapsable={false} style={styles.headerBar}>
         <View>
           <Text style={styles.headerTitle}>Feature Requests</Text>
           <Text style={styles.headerSubtitle}>
@@ -356,6 +361,8 @@ export default function FeaturesScreen() {
           </Text>
         </View>
         <Pressable
+          ref={createRef}
+          collapsable={false}
           style={[styles.addBtn, SHADOW.glow]}
           onPress={() => setModalVisible(true)}
         >
@@ -371,13 +378,15 @@ export default function FeaturesScreen() {
         <FlatList
           data={sortedRequests}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <FeatureCard
-              item={item}
-              onVote={handleVote}
-              onDelete={handleDelete}
-              isVoting={voteMutation.isPending}
-            />
+          renderItem={({ item, index }) => (
+            <View ref={index === 0 ? voteRef : undefined} collapsable={false}>
+              <FeatureCard
+                item={item}
+                onVote={handleVote}
+                onDelete={handleDelete}
+                isVoting={voteMutation.isPending}
+              />
+            </View>
           )}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

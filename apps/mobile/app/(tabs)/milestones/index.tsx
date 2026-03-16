@@ -29,6 +29,7 @@ import { GlowDivider } from "@/components/ui/GlowDivider";
 import ImportModal from "@/components/milestones/ImportModal";
 import MilestoneDetailSheet from "@/components/milestones/MilestoneDetailSheet";
 import { Skeleton, SkeletonPhaseCard } from "@/components/ui/Skeleton";
+import { useTourRef } from "@/components/tour/TourProvider";
 import {
   useCreateMilestone,
   useCreatePhase,
@@ -566,6 +567,12 @@ export default function MilestonesScreen() {
   >({ type: "add-phase" });
   const [modalLoading, setModalLoading] = useState(false);
 
+  // Tour refs
+  const journeyRef = useTourRef("milestones-journey");
+  const phaseCardRef = useTourRef("milestones-phase-card");
+  const statusToggleRef = useTourRef("milestones-status-toggle");
+  const importRef = useTourRef("milestones-import");
+
   // Summary stats
   const totalMilestones = useMemo(
     () => (phases ?? []).reduce((sum, p) => sum + p.milestones.length, 0),
@@ -775,7 +782,7 @@ export default function MilestonesScreen() {
       {hasPhases ? (
         <>
           {/* Overall Progress Header */}
-          <View style={styles.overallHeader}>
+          <View ref={journeyRef} collapsable={false} style={styles.overallHeader}>
             <View style={styles.overallHeaderLeft}>
               <Text style={styles.overallLabel}>Overall Progress</Text>
               <Text style={styles.overallCount}>
@@ -786,7 +793,7 @@ export default function MilestonesScreen() {
               {Math.round(overallProgress)}%
             </Text>
           </View>
-          <View style={styles.overallProgressBar}>
+          <View ref={statusToggleRef} collapsable={false} style={styles.overallProgressBar}>
             <View style={styles.progressBarTrack}>
               <LinearGradient
                 colors={["#FF6A2A", "#FFB36B"]}
@@ -811,17 +818,18 @@ export default function MilestonesScreen() {
             showsVerticalScrollIndicator={false}
           >
             {phases.map((phase, idx) => (
-              <PhaseCard
-                key={phase.id}
-                phase={phase}
-                phaseIndex={idx}
-                totalPhases={phases.length}
-                onToggleMilestoneStatus={handleToggleMilestoneStatus}
-                onMilestonePress={handleMilestonePress}
-                onAddMilestone={handleAddMilestone}
-                onEditPhase={handleEditPhase}
-                onDeletePhase={handleDeletePhase}
-              />
+              <View key={phase.id} ref={idx === 0 ? phaseCardRef : undefined} collapsable={false}>
+                <PhaseCard
+                  phase={phase}
+                  phaseIndex={idx}
+                  totalPhases={phases.length}
+                  onToggleMilestoneStatus={handleToggleMilestoneStatus}
+                  onMilestonePress={handleMilestonePress}
+                  onAddMilestone={handleAddMilestone}
+                  onEditPhase={handleEditPhase}
+                  onDeletePhase={handleDeletePhase}
+                />
+              </View>
             ))}
 
             <GlowDivider />
@@ -833,6 +841,8 @@ export default function MilestonesScreen() {
                 <Text style={styles.addPhaseBtnText}>Add Phase</Text>
               </Pressable>
               <Pressable
+                ref={importRef}
+                collapsable={false}
                 style={styles.importBtn}
                 onPress={() => setImportModalVisible(true)}
               >

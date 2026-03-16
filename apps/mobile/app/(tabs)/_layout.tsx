@@ -7,9 +7,12 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { HeaderTitle } from "@/components/ui/HeaderTitle";
+import { TourProvider } from "@/components/tour/TourProvider";
+import { TourOverlay } from "@/components/tour/TourOverlay";
 import { COLORS, FONT_SIZE, FONT_WEIGHT, LAYOUT } from "@/constants/theme";
 
 function TabBarBackground() {
@@ -36,6 +39,8 @@ function HeaderBackground() {
 
 export default function TabLayout() {
   return (
+    <TourProvider>
+    <View style={{ flex: 1 }}>
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: COLORS.primary,
@@ -121,5 +126,8 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    <TourOverlay />
+    </View>
+    </TourProvider>
   );
 }

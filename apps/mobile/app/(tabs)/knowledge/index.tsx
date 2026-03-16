@@ -40,6 +40,7 @@ import {
   useDocuments,
   useUploadDocument,
 } from "@/hooks/use-documents";
+import { useTourRef } from "@/components/tour/TourProvider";
 import type { DocumentResponse, DocumentStatus } from "@/types/documents";
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -285,6 +286,10 @@ export default function KnowledgeScreen() {
   } = useDocuments();
   const uploadDocument = useUploadDocument();
   const deleteDocument = useDeleteDocument();
+  const docsRef = useTourRef("knowledge-docs");
+  const uploadRef = useTourRef("knowledge-upload");
+  const chatRef = useTourRef("knowledge-chat");
+
   const [refreshing, setRefreshing] = useState(false);
 
   const sortedDocuments = useMemo(() => {
@@ -448,7 +453,7 @@ export default function KnowledgeScreen() {
           }
         >
           {/* Stats Row */}
-          <View style={styles.statsRow}>
+          <View ref={docsRef} collapsable={false} style={styles.statsRow}>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>{stats.total}</Text>
               <Text style={styles.statLabel}>Documents</Text>
@@ -470,7 +475,9 @@ export default function KnowledgeScreen() {
           </View>
 
           {/* Upload Button */}
-          <UploadButton onPress={handleUpload} />
+          <View ref={uploadRef} collapsable={false}>
+            <UploadButton onPress={handleUpload} />
+          </View>
 
           {/* Uploading indicator */}
           {uploadDocument.isPending && (
@@ -499,6 +506,8 @@ export default function KnowledgeScreen() {
 
       {/* FAB — AI Chat */}
       <Pressable
+        ref={chatRef}
+        collapsable={false}
         style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85 }]}
         onPress={handleOpenChat}
       >

@@ -20,6 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { useTourRef } from "@/components/tour/TourProvider";
 import { useAuth } from "@/hooks/use-auth";
 import {
   useApiKeys,
@@ -52,6 +53,10 @@ const SUPPORTED_SERVICES = [
 
 export default function SettingsScreen() {
   const { user, workspace, isLoading, signOut, setWorkspace } = useAuth();
+  const workspaceRef = useTourRef("settings-workspace");
+  const apiKeysRef = useTourRef("settings-api-keys");
+  const briefRef = useTourRef("settings-brief");
+
   const [signingOut, setSigningOut] = useState(false);
 
   // API Keys state
@@ -278,7 +283,7 @@ export default function SettingsScreen() {
       </View>
 
       {/* ── Workspace Card ────────────────────────────── */}
-      <View style={styles.card}>
+      <View ref={workspaceRef} collapsable={false} style={styles.card}>
         <Text style={styles.sectionTitle}>Workspace</Text>
         {editingName ? (
           <View style={styles.row}>
@@ -544,7 +549,7 @@ export default function SettingsScreen() {
       </Modal>
 
       {/* ── Integrations Card ────────────────────────── */}
-      <View style={styles.card}>
+      <View ref={apiKeysRef} collapsable={false} style={styles.card}>
         <View style={styles.sectionHeader}>
           <View>
             <Text style={styles.sectionTitle}>Integrations</Text>
@@ -664,7 +669,7 @@ export default function SettingsScreen() {
       </View>
 
       {/* ── Project Brief Card ───────────────────────── */}
-      <View style={styles.card}>
+      <View ref={briefRef} collapsable={false} style={styles.card}>
         <View style={styles.sectionHeader}>
           <View>
             <Text style={styles.sectionTitle}>Project Brief</Text>

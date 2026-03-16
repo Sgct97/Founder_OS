@@ -2,7 +2,7 @@
 
 import uuid
 
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import Boolean, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -26,6 +26,9 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     supabase_uid: Mapped[str | None] = mapped_column(
         String(255), unique=True, nullable=True
+    )
+    has_completed_tour: Mapped[bool] = mapped_column(
+        Boolean, server_default="false", nullable=False
     )
 
     # Relationships

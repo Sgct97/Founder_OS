@@ -130,6 +130,24 @@ async def regenerate_invite(
     return InviteResponse(invite_code=new_code)
 
 
+@router.post(
+    "/complete-tour",
+    response_model=UserResponse,
+    summary="Mark the onboarding tour as completed",
+)
+async def complete_tour(
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> UserResponse:
+    """Set has_completed_tour=true for the authenticated user."""
+    current_user.has_completed_tour = True
+    db.add(current_user)
+    await db.flush()
+    await db.refresh(current_user)
+    logger.info("Tour completed for user=%s", current_user.id)
+    return UserResponse.model_validate(current_user)
+
+
 @router.get(
     "/me",
     response_model=AuthResponse,

@@ -65,6 +65,7 @@ class UserResponse(BaseModel):
     display_name: str
     avatar_url: str | None
     workspace_id: uuid.UUID | None
+    has_completed_tour: bool
     created_at: datetime
     updated_at: datetime
 

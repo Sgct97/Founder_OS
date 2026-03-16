@@ -30,6 +30,7 @@ import {
   SkeletonStreakRow,
   SkeletonTimelineEntry,
 } from "@/components/ui/Skeleton";
+import { useTourRef } from "@/components/tour/TourProvider";
 import type { DiaryEntryResponse, StreakInfo } from "@/types/diary";
 import {
   BORDER_RADIUS,
@@ -261,6 +262,10 @@ export default function DiaryScreen() {
   const { data: streaksData, isLoading: streaksLoading } = useStreaks();
   const deleteEntry = useDeleteDiaryEntry();
 
+  const timelineRef = useTourRef("diary-timeline");
+  const streakRef = useTourRef("diary-streak");
+  const addRef = useTourRef("diary-add");
+
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = useCallback(async () => {
@@ -366,7 +371,7 @@ export default function DiaryScreen() {
         >
           {/* Streaks Section */}
           {streaksData && streaksData.streaks.length > 0 && (
-            <View style={styles.streaksSection}>
+            <View ref={streakRef} collapsable={false} style={styles.streaksSection}>
               <Text style={styles.sectionTitle}>Streaks</Text>
               <View style={styles.streaksRow}>
                 {streaksData.streaks.map((streak) => (
@@ -381,7 +386,9 @@ export default function DiaryScreen() {
           )}
 
           {/* Timeline */}
+          <View ref={timelineRef} collapsable={false}>
           <Text style={styles.sectionTitle}>Timeline</Text>
+          </View>
           {groupedEntries.map((group) => (
             <View key={group.date}>
               <Text style={styles.dateSectionHeader}>{group.label}</Text>
@@ -401,7 +408,7 @@ export default function DiaryScreen() {
       )}
 
       {/* FAB — New Entry */}
-      <Pressable style={styles.fab} onPress={handleNewEntry}>
+      <Pressable ref={addRef} collapsable={false} style={styles.fab} onPress={handleNewEntry}>
         <Ionicons name="add" size={28} color={COLORS.white} />
       </Pressable>
     </View>

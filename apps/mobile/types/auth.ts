@@ -8,6 +8,7 @@ export interface UserProfile {
   display_name: string;
   avatar_url: string | null;
   workspace_id: string | null;
+  has_completed_tour: boolean;
   created_at: string;
   updated_at: string;
 }
