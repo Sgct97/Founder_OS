@@ -782,6 +782,7 @@ export default function MilestonesScreen() {
       {hasPhases ? (
         <>
           {/* Overall Progress Header */}
+          <View ref={statusToggleRef} collapsable={false}>
           <View ref={journeyRef} collapsable={false} style={styles.overallHeader}>
             <View style={styles.overallHeaderLeft}>
               <Text style={styles.overallLabel}>Overall Progress</Text>
@@ -793,7 +794,7 @@ export default function MilestonesScreen() {
               {Math.round(overallProgress)}%
             </Text>
           </View>
-          <View ref={statusToggleRef} collapsable={false} style={styles.overallProgressBar}>
+          <View style={styles.overallProgressBar}>
             <View style={styles.progressBarTrack}>
               <LinearGradient
                 colors={["#FF6A2A", "#FFB36B"]}
@@ -805,6 +806,7 @@ export default function MilestonesScreen() {
                 ]}
               />
             </View>
+          </View>
           </View>
 
           <View style={{ paddingHorizontal: LAYOUT.screenPaddingH }}>

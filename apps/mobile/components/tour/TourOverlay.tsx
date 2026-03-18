@@ -114,51 +114,12 @@ export function TourOverlay(): React.JSX.Element | null {
 
   const progressPct = ((currentStepIndex + 1) / totalSteps) * 100;
 
-  // Compute the 4 blur panels around the target (or full-screen if no target)
-  const sp = SPOTLIGHT_PADDING;
-  const cutout = targetLayout
-    ? {
-        x: targetLayout.x - sp,
-        y: targetLayout.y - sp,
-        w: targetLayout.width + sp * 2,
-        h: targetLayout.height + sp * 2,
-      }
-    : null;
-
   return (
     <Animated.View
       style={[styles.overlay, { opacity: fadeAnim }]}
       pointerEvents="box-none"
     >
-      {/* 4 blur panels surrounding the target — target stays crisp */}
-      {cutout ? (
-        <>
-          {/* Top panel */}
-          <View
-            style={[styles.blurPanel, { top: 0, left: 0, right: 0, height: cutout.y }]}
-            pointerEvents="none"
-          />
-          {/* Bottom panel */}
-          <View
-            style={[styles.blurPanel, { top: cutout.y + cutout.h, left: 0, right: 0, bottom: 0 }]}
-            pointerEvents="none"
-          />
-          {/* Left panel */}
-          <View
-            style={[styles.blurPanel, { top: cutout.y, left: 0, width: cutout.x, height: cutout.h }]}
-            pointerEvents="none"
-          />
-          {/* Right panel */}
-          <View
-            style={[styles.blurPanel, { top: cutout.y, left: cutout.x + cutout.w, right: 0, height: cutout.h }]}
-            pointerEvents="none"
-          />
-        </>
-      ) : (
-        <View style={[styles.blurPanel, StyleSheet.absoluteFillObject]} pointerEvents="none" />
-      )}
-
-      {/* Soft glow ring around target */}
+      {/* Glow ring around target */}
       {spotlightStyle && (
         <Animated.View
           style={[
@@ -277,19 +238,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     zIndex: 9999,
   },
-  blurPanel: {
-    position: "absolute",
-    backgroundColor: "transparent",
-    ...(Platform.OS === "web"
-      ? {
-          backdropFilter: "blur(8px) brightness(0.7)",
-          WebkitBackdropFilter: "blur(8px) brightness(0.7)",
-        }
-      : {
-          backgroundColor: "rgba(0, 0, 0, 0.25)",
-        }),
-  },
-
   spotlightGlow: {
     position: "absolute",
     borderWidth: 2,

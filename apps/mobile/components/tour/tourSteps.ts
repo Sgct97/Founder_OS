@@ -36,7 +36,7 @@ export const TOUR_STEPS: TourStep[] = [
     page: "milestones",
     title: "Welcome to Your Milestone Map",
     description:
-      "This is the heart of FoundersForge. Your milestone map breaks your entire project into Phases (big chapters) and Milestones (individual tasks). Think of it as your founder's roadmap — you'll always know exactly where you stand and what's next.",
+      "This is the heart of FoundersForge. Your milestone map breaks your entire project into Phases (big chapters) and Milestones (individual tasks). Think of it as your founder's roadmap. You'll always know exactly where you stand and what's next.",
     position: "bottom",
   },
   {
@@ -44,7 +44,7 @@ export const TOUR_STEPS: TourStep[] = [
     page: "milestones",
     title: "Phases & Progress Tracking",
     description:
-      "Each phase card shows your completion percentage. Tap a phase to expand it and see every milestone inside. As you mark milestones complete, the progress bar fills automatically — giving you a real-time view of momentum.",
+      "Each phase card shows your completion percentage. Tap a phase to expand it and see every milestone inside. As you mark milestones complete, the progress bar fills automatically, giving you a real-time view of momentum.",
     position: "bottom",
   },
   {
@@ -52,7 +52,7 @@ export const TOUR_STEPS: TourStep[] = [
     page: "milestones",
     title: "Update Milestone Status",
     description:
-      "Tap any milestone to cycle its status: Not Started → In Progress → Completed. This is how you track your build day-by-day. Each milestone also has its own AI-powered chat — tap into a milestone to ask questions, brainstorm, or get help specific to that task.",
+      "Tap any milestone to cycle its status: Not Started, In Progress, and Completed. This is how you track your build day-by-day. Each milestone also has its own AI-powered chat. Tap into a milestone to ask questions, brainstorm, or get help specific to that task.",
     position: "bottom",
   },
   {
@@ -60,7 +60,7 @@ export const TOUR_STEPS: TourStep[] = [
     page: "milestones",
     title: "Create Your Map with AI",
     description:
-      "Don't build your roadmap manually. Tap here to paste a project plan, pitch deck outline, or even a rough description — our AI will automatically generate a complete milestone map with phases and tasks. You can edit everything after import.",
+      "Don't build your roadmap manually. Tap here to paste a project plan, pitch deck outline, or even a rough description. Our AI will automatically generate a complete milestone map with phases and tasks. You can edit everything after import.",
     position: "top",
   },
 
@@ -122,7 +122,7 @@ export const TOUR_STEPS: TourStep[] = [
     page: "knowledge",
     title: "Your AI-Powered Knowledge Base",
     description:
-      "This is where FoundersForge becomes truly powerful. Upload your project documents — specs, research, pitch decks, notes — and they're automatically processed, chunked, and embedded. This creates a private knowledge base that your AI assistant can search and reference in every conversation.",
+      "This is where FoundersForge becomes truly powerful. Upload your project documents (specs, research, pitch decks, notes) and they're automatically processed, chunked, and embedded. This creates a private knowledge base that your AI assistant can search and reference in every conversation.",
     position: "bottom",
   },
   {
@@ -130,7 +130,7 @@ export const TOUR_STEPS: TourStep[] = [
     page: "knowledge",
     title: "Upload Documents",
     description:
-      "Tap here to upload PDFs, markdown files, text documents, and more. Each file is broken into searchable chunks using RAG (Retrieval-Augmented Generation) — this means the AI doesn't just guess, it pulls real information from YOUR documents to give accurate answers.",
+      "Tap here to upload PDFs, markdown files, text documents, and more. Each file is broken into searchable chunks using RAG (Retrieval-Augmented Generation). This means the AI doesn't just guess, it pulls real information from YOUR documents to give accurate answers.",
     position: "top",
   },
   {
@@ -138,7 +138,7 @@ export const TOUR_STEPS: TourStep[] = [
     page: "knowledge",
     title: "Chat with Your Knowledge Base",
     description:
-      "This is your AI research assistant. It has read every document you've uploaded. Ask it questions like \"What did our user research say about onboarding?\" or \"Summarize the competitive analysis\" — and it will answer using your actual documents as sources.",
+      "This is your AI research assistant. It has read every document you've uploaded. Ask it questions like \"What did our user research say about onboarding?\" or \"Summarize the competitive analysis\" and it will answer using your actual documents as sources.",
     position: "top",
   },
 
@@ -148,7 +148,7 @@ export const TOUR_STEPS: TourStep[] = [
     page: "settings",
     title: "Workspace & Team",
     description:
-      "Rename your workspace, share the invite code with teammates, or switch between workspaces. The workspace name appears in the header of every page — make it your company or project name.",
+      "Rename your workspace, share the invite code with teammates, or switch between workspaces. The workspace name appears in the header of every page. Make it your company or project name.",
     position: "bottom",
   },
   {
@@ -156,15 +156,15 @@ export const TOUR_STEPS: TourStep[] = [
     page: "settings",
     title: "Connect Your AI Keys",
     description:
-      "Add your own OpenAI or Anthropic API key to power all AI features — milestone chat, knowledge base chat, and AI import. Your keys are encrypted with AES-256-GCM and never leave your workspace. Without a key, AI features won't work.",
+      "Add your own OpenAI or Anthropic API key to power all AI features: milestone chat, knowledge base chat, and AI import. Your keys are encrypted with AES-256-GCM and never leave your workspace. Without a key, AI features won't work.",
     position: "bottom",
   },
   {
     targetKey: "settings-brief",
     page: "settings",
-    title: "Project Brief — Critical for AI Quality",
+    title: "Project Brief: Critical for AI Quality",
     description:
-      "This is the single most important setting for AI quality. Write a brief description of your project — what it does, who it's for, what stage it's at. This brief is injected into EVERY AI conversation, so the AI always understands your context instead of giving generic answers.",
+      "This is the single most important setting for AI quality. Write a brief description of your project: what it does, who it's for, what stage it's at. This brief is injected into EVERY AI conversation, so the AI always understands your context instead of giving generic answers.",
     position: "top",
   },
 ];
