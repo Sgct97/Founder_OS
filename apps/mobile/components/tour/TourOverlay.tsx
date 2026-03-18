@@ -1,9 +1,8 @@
 /**
- * TourOverlay — premium spotlight + tooltip overlay for guided onboarding.
+ * TourOverlay — ultra-premium onboarding spotlight + tooltip.
  *
- * Full-screen dark backdrop with a bright spotlight cutout around
- * the target element, animated tooltip with educational content,
- * and step-by-step navigation.
+ * Full-screen dark backdrop with a glowing spotlight cutout,
+ * and a large, soft, frosted-glass tooltip card with rich content.
  */
 
 import React, { useEffect, useRef } from "react";
@@ -19,19 +18,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-import {
-  BORDER_RADIUS,
-  COLORS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-  SHADOW,
-  SPACING,
-} from "@/constants/theme";
+import { COLORS, FONT_WEIGHT, SPACING } from "@/constants/theme";
 import { useTour, type ElementLayout } from "./TourProvider";
 
-const SPOTLIGHT_PADDING = 10;
-const SPOTLIGHT_RADIUS = 14;
-const TOOLTIP_WIDTH = 320;
+const SPOTLIGHT_PADDING = 12;
+const TOOLTIP_MAX_WIDTH = 420;
 
 export function TourOverlay(): React.JSX.Element | null {
   const {
@@ -46,24 +37,32 @@ export function TourOverlay(): React.JSX.Element | null {
   } = useTour();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const tooltipSlide = useRef(new Animated.Value(30)).current;
+  const cardScale = useRef(new Animated.Value(0.95)).current;
+  const cardOpacity = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(0)).current;
-  const glowAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (isActive && currentStep) {
       fadeAnim.setValue(0);
-      tooltipSlide.setValue(30);
+      cardScale.setValue(0.95);
+      cardOpacity.setValue(0);
 
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
-          duration: 350,
+          duration: 400,
           useNativeDriver: true,
         }),
-        Animated.timing(tooltipSlide, {
-          toValue: 0,
-          duration: 400,
+        Animated.spring(cardScale, {
+          toValue: 1,
+          tension: 60,
+          friction: 9,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardOpacity, {
+          toValue: 1,
+          duration: 500,
+          delay: 100,
           useNativeDriver: true,
         }),
       ]).start();
@@ -72,40 +71,20 @@ export function TourOverlay(): React.JSX.Element | null {
         Animated.sequence([
           Animated.timing(pulseAnim, {
             toValue: 1,
-            duration: 1400,
+            duration: 1600,
             useNativeDriver: true,
           }),
           Animated.timing(pulseAnim, {
             toValue: 0,
-            duration: 1400,
+            duration: 1600,
             useNativeDriver: true,
           }),
         ]),
       );
       pulse.start();
-
-      const glow = Animated.loop(
-        Animated.sequence([
-          Animated.timing(glowAnim, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver: false,
-          }),
-          Animated.timing(glowAnim, {
-            toValue: 0,
-            duration: 800,
-            useNativeDriver: false,
-          }),
-        ]),
-      );
-      glow.start();
-
-      return () => {
-        pulse.stop();
-        glow.stop();
-      };
+      return () => pulse.stop();
     }
-  }, [isActive, currentStep, currentStepIndex, fadeAnim, tooltipSlide, pulseAnim, glowAnim]);
+  }, [isActive, currentStep, currentStepIndex, fadeAnim, cardScale, cardOpacity, pulseAnim]);
 
   if (!isActive || !currentStep) return null;
 
@@ -119,7 +98,7 @@ export function TourOverlay(): React.JSX.Element | null {
         top: targetLayout.y - SPOTLIGHT_PADDING,
         width: targetLayout.width + SPOTLIGHT_PADDING * 2,
         height: targetLayout.height + SPOTLIGHT_PADDING * 2,
-        borderRadius: SPOTLIGHT_RADIUS,
+        borderRadius: 16,
       }
     : null;
 
@@ -132,53 +111,38 @@ export function TourOverlay(): React.JSX.Element | null {
 
   const pulseScale = pulseAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [1, 1.08],
+    outputRange: [1, 1.06],
   });
 
   const pulseOpacity = pulseAnim.interpolate({
     inputRange: [0, 0.5, 1],
-    outputRange: [0.5, 1, 0.5],
+    outputRange: [0.4, 0.9, 0.4],
   });
 
-  const ringBorderColor = glowAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [COLORS.primary, "#FFD700"],
-  });
+  const progressPercent = ((currentStepIndex + 1) / totalSteps) * 100;
 
   return (
     <Animated.View
       style={[styles.overlay, { opacity: fadeAnim }]}
       pointerEvents="box-none"
     >
-      {/* Dark backdrop */}
+      {/* Backdrop */}
       <View style={styles.backdrop} pointerEvents="none" />
 
-      {/* Spotlight cutout */}
+      {/* Spotlight */}
       {spotlightStyle && (
         <>
-          {/* Outer pulse ring */}
           <Animated.View
             style={[
-              styles.spotlightOuter,
+              styles.spotlightGlow,
               spotlightStyle,
               {
                 transform: [{ scale: pulseScale }],
                 opacity: pulseOpacity,
-                borderColor: ringBorderColor,
               },
             ]}
             pointerEvents="none"
           />
-          {/* Inner bright ring */}
-          <Animated.View
-            style={[
-              styles.spotlightRing,
-              spotlightStyle,
-              { borderColor: ringBorderColor },
-            ]}
-            pointerEvents="none"
-          />
-          {/* Transparent cutout */}
           <View
             style={[styles.spotlightCutout, spotlightStyle]}
             pointerEvents="none"
@@ -186,77 +150,85 @@ export function TourOverlay(): React.JSX.Element | null {
         </>
       )}
 
-      {/* Tooltip */}
+      {/* Tooltip Card */}
       <Animated.View
         style={[
-          styles.tooltip,
+          styles.card,
           tooltipPosition,
           {
-            opacity: fadeAnim,
-            transform: [{ translateY: tooltipSlide }],
+            opacity: cardOpacity,
+            transform: [{ scale: cardScale }],
+            maxWidth: Math.min(TOOLTIP_MAX_WIDTH, screenW - 32),
           },
         ]}
       >
-        {/* Header: step counter + skip */}
-        <View style={styles.tooltipHeader}>
-          <View style={styles.stepBadge}>
-            <Text style={styles.stepBadgeText}>
-              Step {currentStepIndex + 1} of {totalSteps}
+        {/* Top accent gradient line */}
+        <View style={styles.accentBar} />
+
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.stepIndicator}>
+            <View style={styles.stepDot} />
+            <Text style={styles.stepLabel}>
+              {currentStepIndex + 1} / {totalSteps}
             </Text>
           </View>
-          <Pressable onPress={skipTour} hitSlop={16}>
-            <Text style={styles.skipText}>Skip Tour</Text>
+          <Pressable onPress={skipTour} hitSlop={20} style={styles.skipBtn}>
+            <Text style={styles.skipText}>Skip</Text>
+            <Ionicons name="close" size={14} color="rgba(255,255,255,0.35)" />
           </Pressable>
         </View>
 
         {/* Title */}
-        <Text style={styles.tooltipTitle}>{currentStep.title}</Text>
+        <Text style={styles.title}>{currentStep.title}</Text>
 
-        {/* Scrollable description for longer text */}
+        {/* Description */}
         <ScrollView
           style={styles.descScroll}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.tooltipDesc}>{currentStep.description}</Text>
+          <Text style={styles.description}>{currentStep.description}</Text>
         </ScrollView>
 
-        {/* Progress dots */}
-        <View style={styles.dotsRow}>
-          {Array.from({ length: totalSteps }).map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.dot,
-                i === currentStepIndex && styles.dotActive,
-              ]}
-            />
-          ))}
+        {/* Progress bar */}
+        <View style={styles.progressTrack}>
+          <View
+            style={[styles.progressFill, { width: `${progressPercent}%` }]}
+          />
         </View>
 
-        {/* Navigation buttons */}
+        {/* Navigation */}
         <View style={styles.navRow}>
           {!isFirstStep ? (
-            <Pressable style={styles.backBtn} onPress={prevStep}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.backBtn,
+                pressed && styles.btnPressed,
+              ]}
+              onPress={prevStep}
+            >
               <Ionicons
-                name="chevron-back"
+                name="arrow-back"
                 size={16}
-                color={COLORS.textSecondary}
+                color="rgba(255,255,255,0.6)"
               />
-              <Text style={styles.backBtnText}>Back</Text>
+              <Text style={styles.backText}>Back</Text>
             </Pressable>
           ) : (
             <View />
           )}
-          <Pressable style={styles.nextBtn} onPress={nextStep}>
-            <Text style={styles.nextBtnText}>
-              {isLastStep ? "Get Started" : "Next"}
+          <Pressable
+            style={({ pressed }) => [
+              styles.nextBtn,
+              pressed && styles.nextBtnPressed,
+            ]}
+            onPress={nextStep}
+          >
+            <Text style={styles.nextText}>
+              {isLastStep ? "Get Started" : "Continue"}
             </Text>
             {!isLastStep && (
-              <Ionicons
-                name="chevron-forward"
-                size={16}
-                color={COLORS.white}
-              />
+              <Ionicons name="arrow-forward" size={16} color="#fff" />
             )}
           </Pressable>
         </View>
@@ -271,32 +243,34 @@ function computeTooltipPosition(
   screenW: number,
   screenH: number,
 ) {
+  const cardWidth = Math.min(TOOLTIP_MAX_WIDTH, screenW - 32);
+
   if (!target) {
     return {
-      left: (screenW - TOOLTIP_WIDTH) / 2,
-      top: screenH * 0.3,
+      left: (screenW - cardWidth) / 2,
+      top: screenH * 0.25,
     };
   }
 
   const centerX = target.x + target.width / 2;
-  let left = centerX - TOOLTIP_WIDTH / 2;
-  left = Math.max(12, Math.min(left, screenW - TOOLTIP_WIDTH - 12));
+  let left = centerX - cardWidth / 2;
+  left = Math.max(16, Math.min(left, screenW - cardWidth - 16));
 
-  const gap = SPOTLIGHT_PADDING + 12;
+  const gap = SPOTLIGHT_PADDING + 16;
   const below = target.y + target.height + gap;
   const above = target.y - gap;
-  const tooltipEstHeight = 260;
+  const cardEstHeight = 320;
 
-  if (preferredPosition === "bottom" && below + tooltipEstHeight < screenH - 80) {
+  if (preferredPosition === "bottom" && below + cardEstHeight < screenH - 90) {
     return { left, top: below };
   }
-  if (preferredPosition === "top" && above - tooltipEstHeight > 20) {
-    return { left, top: above - tooltipEstHeight };
+  if (preferredPosition === "top" && above - cardEstHeight > 10) {
+    return { left, top: above - cardEstHeight };
   }
-  if (below + tooltipEstHeight < screenH - 80) {
+  if (below + cardEstHeight < screenH - 90) {
     return { left, top: below };
   }
-  return { left, top: Math.max(40, above - tooltipEstHeight) };
+  return { left, top: Math.max(20, above - cardEstHeight) };
 }
 
 const styles = StyleSheet.create({
@@ -306,112 +280,151 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.82)",
+    backgroundColor: "rgba(0, 0, 0, 0.80)",
   },
 
   spotlightCutout: {
     position: "absolute",
     backgroundColor: "transparent",
+    borderWidth: 2,
+    borderColor: "rgba(255, 106, 42, 0.6)",
     ...(Platform.OS === "web"
       ? {
-          boxShadow: `0 0 0 9999px rgba(0,0,0,0.82), 0 0 30px ${COLORS.primary}, 0 0 60px rgba(255,106,42,0.3)`,
+          boxShadow: [
+            "0 0 0 9999px rgba(0,0,0,0.80)",
+            "0 0 40px rgba(255,106,42,0.4)",
+            "0 0 80px rgba(255,106,42,0.15)",
+            "inset 0 0 20px rgba(255,106,42,0.08)",
+          ].join(", "),
         }
       : {}),
   },
-  spotlightRing: {
-    position: "absolute",
-    borderWidth: 3,
-    borderColor: COLORS.primary,
-    backgroundColor: "transparent",
-  },
-  spotlightOuter: {
+  spotlightGlow: {
     position: "absolute",
     borderWidth: 2,
-    borderColor: COLORS.primary,
+    borderColor: "rgba(255, 165, 80, 0.5)",
     backgroundColor: "transparent",
-    margin: -6,
-    padding: 6,
+    margin: -8,
+    padding: 8,
+    borderRadius: 22,
   },
 
-  tooltip: {
+  card: {
     position: "absolute",
-    width: TOOLTIP_WIDTH,
-    backgroundColor: "#1A1A1E",
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255, 106, 42, 0.3)",
-    borderTopWidth: 3,
-    borderTopColor: COLORS.primary,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    ...SHADOW.glow,
+    width: TOOLTIP_MAX_WIDTH,
+    backgroundColor: "rgba(22, 22, 26, 0.95)",
+    borderRadius: 24,
+    overflow: "hidden",
+    paddingTop: 0,
+    paddingHorizontal: 28,
+    paddingBottom: 24,
     ...(Platform.OS === "web"
       ? {
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(255,106,42,0.15)`,
+          backdropFilter: "blur(40px) saturate(180%)",
+          WebkitBackdropFilter: "blur(40px) saturate(180%)",
+          boxShadow: [
+            "0 24px 80px rgba(0,0,0,0.5)",
+            "0 0 1px rgba(255,255,255,0.08)",
+            "0 0 40px rgba(255,106,42,0.06)",
+          ].join(", "),
+        }
+      : {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 16 },
+          shadowOpacity: 0.5,
+          shadowRadius: 40,
+          elevation: 24,
+        }),
+  },
+
+  accentBar: {
+    height: 3,
+    marginHorizontal: -28,
+    marginBottom: 20,
+    backgroundColor: COLORS.primary,
+    ...(Platform.OS === "web"
+      ? {
+          background: `linear-gradient(90deg, ${COLORS.primary}, #FFB366, ${COLORS.primary})`,
         }
       : {}),
   },
 
-  tooltipHeader: {
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: SPACING.sm,
+    marginBottom: 16,
   },
-  stepBadge: {
-    backgroundColor: "rgba(255, 106, 42, 0.15)",
+  stepIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  stepDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.primary,
+  },
+  stepLabel: {
+    color: "rgba(255,255,255,0.45)",
+    fontSize: 13,
+    fontWeight: FONT_WEIGHT.semibold,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  skipBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 6,
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.full,
-  },
-  stepBadgeText: {
-    color: COLORS.primary,
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    letterSpacing: 0.5,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.05)",
   },
   skipText: {
-    color: COLORS.textTertiary,
-    fontSize: FONT_SIZE.xs,
+    color: "rgba(255,255,255,0.35)",
+    fontSize: 12,
     fontWeight: FONT_WEIGHT.medium,
-    textDecorationLine: "underline",
   },
 
-  tooltipTitle: {
-    color: COLORS.textPrimary,
-    fontSize: 18,
-    fontWeight: FONT_WEIGHT.bold,
-    letterSpacing: -0.3,
-    marginBottom: 8,
+  title: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: -0.4,
+    lineHeight: 28,
+    marginBottom: 12,
   },
+
   descScroll: {
-    maxHeight: 120,
-    marginBottom: SPACING.sm,
+    maxHeight: 130,
+    marginBottom: 20,
   },
-  tooltipDesc: {
-    color: COLORS.textSecondary,
-    fontSize: FONT_SIZE.sm,
-    lineHeight: 21,
+  description: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 15,
+    lineHeight: 24,
+    letterSpacing: 0.1,
   },
 
-  dotsRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 4,
-    marginBottom: SPACING.md,
+  progressTrack: {
+    height: 3,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: 2,
+    marginBottom: 20,
+    overflow: "hidden",
   },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.15)",
-  },
-  dotActive: {
-    width: 20,
-    borderRadius: 3,
+  progressFill: {
+    height: "100%",
+    borderRadius: 2,
     backgroundColor: COLORS.primary,
+    ...(Platform.OS === "web"
+      ? {
+          background: `linear-gradient(90deg, ${COLORS.primary}, #FFB366)`,
+          transition: "width 0.4s ease",
+        }
+      : {}),
   },
 
   navRow: {
@@ -422,32 +435,50 @@ const styles = StyleSheet.create({
   backBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: BORDER_RADIUS.sm,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.06)",
   },
-  backBtnText: {
-    color: COLORS.textSecondary,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
+  backText: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 14,
+    fontWeight: FONT_WEIGHT.semibold,
   },
   nextBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    borderRadius: 14,
     backgroundColor: COLORS.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: BORDER_RADIUS.full,
-    ...SHADOW.glow,
+    ...(Platform.OS === "web"
+      ? {
+          boxShadow: "0 4px 20px rgba(255,106,42,0.35), 0 1px 3px rgba(0,0,0,0.2)",
+          transition: "transform 0.15s ease, box-shadow 0.15s ease",
+        }
+      : {
+          shadowColor: COLORS.primary,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.4,
+          shadowRadius: 12,
+        }),
   },
-  nextBtnText: {
-    color: COLORS.white,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.bold,
-    letterSpacing: 0.3,
+  nextBtnPressed: {
+    opacity: 0.9,
+    ...(Platform.OS === "web"
+      ? { transform: [{ scale: 0.97 }] }
+      : {}),
+  },
+  btnPressed: {
+    opacity: 0.7,
+  },
+  nextText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: 0.2,
   },
 });
