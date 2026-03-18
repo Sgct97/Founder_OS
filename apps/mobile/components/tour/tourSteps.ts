@@ -96,23 +96,15 @@ export const TOUR_STEPS: TourStep[] = [
     page: "diary",
     title: "Your Build Diary",
     description:
-      "The Build Diary is your founder's journal. It tracks your daily progress in a timeline format and rewards consistency with streaks. Logging regularly helps you spot patterns, reflect on decisions, and build a history of your journey that you'll be glad you kept.",
-    position: "bottom",
-  },
-  {
-    targetKey: "diary-timeline",
-    page: "diary",
-    title: "Daily Timeline",
-    description:
-      "Every entry you write appears here in reverse-chronological order. Each entry captures what you accomplished, what blocked you, and what's next. Over time, this becomes an invaluable record of your build process.",
+      "The Build Diary is your founder's journal. It tracks your daily progress in a reverse-chronological timeline and rewards consistency with streaks. Log what you built, decisions you made, and any blockers. Even a quick 2-3 sentence entry keeps your streak alive and your progress documented.",
     position: "bottom",
   },
   {
     targetKey: "diary-add",
     page: "diary",
-    title: "Log Today's Progress",
+    title: "Add a Diary Entry",
     description:
-      "Tap here to write today's diary entry. Include what you built, decisions you made, and any blockers. Even a quick 2-3 sentence entry keeps your streak alive and your progress documented.",
+      "Tap here to write today's entry. Over time, your diary becomes an invaluable record of your build process that helps you spot patterns, reflect on decisions, and share progress with your team.",
     position: "top",
   },
 
@@ -131,7 +123,7 @@ export const TOUR_STEPS: TourStep[] = [
     title: "Upload Documents",
     description:
       "Tap here to upload PDFs, markdown files, text documents, and more. Each file is broken into searchable chunks using RAG (Retrieval-Augmented Generation). This means the AI doesn't just guess, it pulls real information from YOUR documents to give accurate answers.",
-    position: "top",
+    position: "bottom",
   },
   {
     targetKey: "knowledge-chat",
