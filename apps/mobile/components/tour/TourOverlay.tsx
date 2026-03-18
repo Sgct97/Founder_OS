@@ -119,25 +119,19 @@ export function TourOverlay(): React.JSX.Element | null {
       style={[styles.overlay, { opacity: fadeAnim }]}
       pointerEvents="box-none"
     >
-      {/* Semi-transparent backdrop — content stays visible */}
+      {/* Frosted blur backdrop — no darkening, just blur */}
       <View style={styles.backdrop} pointerEvents="none" />
 
-      {/* Soft spotlight glow around target */}
+      {/* Soft glow ring around target */}
       {spotlightStyle && (
-        <>
-          <View
-            style={[styles.spotlightClear, spotlightStyle]}
-            pointerEvents="none"
-          />
-          <Animated.View
-            style={[
-              styles.spotlightGlow,
-              spotlightStyle,
-              { opacity: pulseOpacity },
-            ]}
-            pointerEvents="none"
-          />
-        </>
+        <Animated.View
+          style={[
+            styles.spotlightGlow,
+            spotlightStyle,
+            { opacity: pulseOpacity },
+          ]}
+          pointerEvents="none"
+        />
       )}
 
       {/* Floating tooltip card */}
@@ -249,26 +243,25 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    backgroundColor: "transparent",
+    ...(Platform.OS === "web"
+      ? {
+          backdropFilter: "blur(6px) brightness(0.85)",
+          WebkitBackdropFilter: "blur(6px) brightness(0.85)",
+        }
+      : {
+          backgroundColor: "rgba(0, 0, 0, 0.15)",
+        }),
   },
 
-  spotlightClear: {
-    position: "absolute",
-    backgroundColor: "transparent",
-    ...(Platform.OS === "web"
-      ? {
-          boxShadow: `0 0 0 9999px rgba(0,0,0,0.45)`,
-        }
-      : {}),
-  },
   spotlightGlow: {
     position: "absolute",
-    borderWidth: 1.5,
-    borderColor: "rgba(255, 106, 42, 0.5)",
+    borderWidth: 2,
+    borderColor: "rgba(255, 106, 42, 0.6)",
     backgroundColor: "transparent",
     ...(Platform.OS === "web"
       ? {
-          boxShadow: `0 0 24px rgba(255, 106, 42, 0.25), 0 0 48px rgba(255, 106, 42, 0.1), inset 0 0 12px rgba(255, 106, 42, 0.05)`,
+          boxShadow: `0 0 20px rgba(255, 106, 42, 0.35), 0 0 50px rgba(255, 106, 42, 0.15), inset 0 0 16px rgba(255, 106, 42, 0.06)`,
         }
       : {}),
   },
