@@ -1,8 +1,9 @@
 /**
- * TourOverlay — ultra-premium onboarding spotlight + tooltip.
+ * TourOverlay — premium onboarding overlay inspired by Linear/Notion.
  *
- * Full-screen dark backdrop with a glowing spotlight cutout,
- * and a large, soft, frosted-glass tooltip card with rich content.
+ * Semi-transparent backdrop (content stays visible), soft floating
+ * tooltip card with glassmorphism, gentle spotlight glow around
+ * target elements.
  */
 
 import React, { useEffect, useRef } from "react";
@@ -18,11 +19,17 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-import { COLORS, FONT_WEIGHT, SPACING } from "@/constants/theme";
+import {
+  BORDER_RADIUS,
+  COLORS,
+  FONT_SIZE,
+  FONT_WEIGHT,
+  SPACING,
+} from "@/constants/theme";
 import { useTour, type ElementLayout } from "./TourProvider";
 
 const SPOTLIGHT_PADDING = 12;
-const TOOLTIP_MAX_WIDTH = 420;
+const TOOLTIP_WIDTH = 360;
 
 export function TourOverlay(): React.JSX.Element | null {
   const {
@@ -37,15 +44,13 @@ export function TourOverlay(): React.JSX.Element | null {
   } = useTour();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const cardScale = useRef(new Animated.Value(0.95)).current;
-  const cardOpacity = useRef(new Animated.Value(0)).current;
+  const tooltipSlide = useRef(new Animated.Value(16)).current;
   const pulseAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (isActive && currentStep) {
       fadeAnim.setValue(0);
-      cardScale.setValue(0.95);
-      cardOpacity.setValue(0);
+      tooltipSlide.setValue(16);
 
       Animated.parallel([
         Animated.timing(fadeAnim, {
@@ -53,16 +58,9 @@ export function TourOverlay(): React.JSX.Element | null {
           duration: 400,
           useNativeDriver: true,
         }),
-        Animated.spring(cardScale, {
-          toValue: 1,
-          tension: 60,
-          friction: 9,
-          useNativeDriver: true,
-        }),
-        Animated.timing(cardOpacity, {
-          toValue: 1,
-          duration: 500,
-          delay: 100,
+        Animated.timing(tooltipSlide, {
+          toValue: 0,
+          duration: 450,
           useNativeDriver: true,
         }),
       ]).start();
@@ -71,12 +69,12 @@ export function TourOverlay(): React.JSX.Element | null {
         Animated.sequence([
           Animated.timing(pulseAnim, {
             toValue: 1,
-            duration: 1600,
+            duration: 2000,
             useNativeDriver: true,
           }),
           Animated.timing(pulseAnim, {
             toValue: 0,
-            duration: 1600,
+            duration: 2000,
             useNativeDriver: true,
           }),
         ]),
@@ -84,7 +82,7 @@ export function TourOverlay(): React.JSX.Element | null {
       pulse.start();
       return () => pulse.stop();
     }
-  }, [isActive, currentStep, currentStepIndex, fadeAnim, cardScale, cardOpacity, pulseAnim]);
+  }, [isActive, currentStep, currentStepIndex, fadeAnim, tooltipSlide, pulseAnim]);
 
   if (!isActive || !currentStep) return null;
 
@@ -109,107 +107,84 @@ export function TourOverlay(): React.JSX.Element | null {
     screenH,
   );
 
-  const pulseScale = pulseAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 1.06],
-  });
-
   const pulseOpacity = pulseAnim.interpolate({
     inputRange: [0, 0.5, 1],
-    outputRange: [0.4, 0.9, 0.4],
+    outputRange: [0.4, 0.8, 0.4],
   });
 
-  const progressPercent = ((currentStepIndex + 1) / totalSteps) * 100;
+  const progressPct = ((currentStepIndex + 1) / totalSteps) * 100;
 
   return (
     <Animated.View
       style={[styles.overlay, { opacity: fadeAnim }]}
       pointerEvents="box-none"
     >
-      {/* Backdrop */}
+      {/* Semi-transparent backdrop — content stays visible */}
       <View style={styles.backdrop} pointerEvents="none" />
 
-      {/* Spotlight */}
+      {/* Soft spotlight glow around target */}
       {spotlightStyle && (
         <>
+          <View
+            style={[styles.spotlightClear, spotlightStyle]}
+            pointerEvents="none"
+          />
           <Animated.View
             style={[
               styles.spotlightGlow,
               spotlightStyle,
-              {
-                transform: [{ scale: pulseScale }],
-                opacity: pulseOpacity,
-              },
+              { opacity: pulseOpacity },
             ]}
-            pointerEvents="none"
-          />
-          <View
-            style={[styles.spotlightCutout, spotlightStyle]}
             pointerEvents="none"
           />
         </>
       )}
 
-      {/* Tooltip Card */}
+      {/* Floating tooltip card */}
       <Animated.View
         style={[
-          styles.card,
+          styles.tooltip,
           tooltipPosition,
           {
-            opacity: cardOpacity,
-            transform: [{ scale: cardScale }],
-            maxWidth: Math.min(TOOLTIP_MAX_WIDTH, screenW - 32),
+            opacity: fadeAnim,
+            transform: [{ translateY: tooltipSlide }],
           },
         ]}
       >
-        {/* Top accent gradient line */}
-        <View style={styles.accentBar} />
-
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.stepIndicator}>
-            <View style={styles.stepDot} />
-            <Text style={styles.stepLabel}>
-              {currentStepIndex + 1} / {totalSteps}
+        {/* Top bar: progress + skip */}
+        <View style={styles.topBar}>
+          <View style={styles.progressContainer}>
+            <View style={styles.progressTrack}>
+              <View
+                style={[styles.progressFill, { width: `${progressPct}%` }]}
+              />
+            </View>
+            <Text style={styles.progressLabel}>
+              {currentStepIndex + 1} of {totalSteps}
             </Text>
           </View>
-          <Pressable onPress={skipTour} hitSlop={20} style={styles.skipBtn}>
+          <Pressable onPress={skipTour} hitSlop={16} style={styles.skipBtn}>
             <Text style={styles.skipText}>Skip</Text>
-            <Ionicons name="close" size={14} color="rgba(255,255,255,0.35)" />
+            <Ionicons name="close" size={14} color="rgba(255,255,255,0.4)" />
           </Pressable>
         </View>
 
-        {/* Title */}
+        {/* Content */}
         <Text style={styles.title}>{currentStep.title}</Text>
-
-        {/* Description */}
         <ScrollView
           style={styles.descScroll}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.description}>{currentStep.description}</Text>
+          <Text style={styles.desc}>{currentStep.description}</Text>
         </ScrollView>
-
-        {/* Progress bar */}
-        <View style={styles.progressTrack}>
-          <View
-            style={[styles.progressFill, { width: `${progressPercent}%` }]}
-          />
-        </View>
 
         {/* Navigation */}
         <View style={styles.navRow}>
           {!isFirstStep ? (
-            <Pressable
-              style={({ pressed }) => [
-                styles.backBtn,
-                pressed && styles.btnPressed,
-              ]}
-              onPress={prevStep}
-            >
+            <Pressable style={styles.backBtn} onPress={prevStep}>
               <Ionicons
                 name="arrow-back"
-                size={16}
+                size={15}
                 color="rgba(255,255,255,0.6)"
               />
               <Text style={styles.backText}>Back</Text>
@@ -217,19 +192,15 @@ export function TourOverlay(): React.JSX.Element | null {
           ) : (
             <View />
           )}
-          <Pressable
-            style={({ pressed }) => [
-              styles.nextBtn,
-              pressed && styles.nextBtnPressed,
-            ]}
-            onPress={nextStep}
-          >
+          <Pressable style={styles.nextBtn} onPress={nextStep}>
             <Text style={styles.nextText}>
               {isLastStep ? "Get Started" : "Continue"}
             </Text>
-            {!isLastStep && (
-              <Ionicons name="arrow-forward" size={16} color="#fff" />
-            )}
+            <Ionicons
+              name={isLastStep ? "checkmark" : "arrow-forward"}
+              size={15}
+              color="#fff"
+            />
           </Pressable>
         </View>
       </Animated.View>
@@ -243,34 +214,32 @@ function computeTooltipPosition(
   screenW: number,
   screenH: number,
 ) {
-  const cardWidth = Math.min(TOOLTIP_MAX_WIDTH, screenW - 32);
-
   if (!target) {
     return {
-      left: (screenW - cardWidth) / 2,
-      top: screenH * 0.25,
+      left: (screenW - TOOLTIP_WIDTH) / 2,
+      top: screenH * 0.3,
     };
   }
 
   const centerX = target.x + target.width / 2;
-  let left = centerX - cardWidth / 2;
-  left = Math.max(16, Math.min(left, screenW - cardWidth - 16));
+  let left = centerX - TOOLTIP_WIDTH / 2;
+  left = Math.max(16, Math.min(left, screenW - TOOLTIP_WIDTH - 16));
 
   const gap = SPOTLIGHT_PADDING + 16;
   const below = target.y + target.height + gap;
   const above = target.y - gap;
-  const cardEstHeight = 320;
+  const tooltipEstHeight = 280;
 
-  if (preferredPosition === "bottom" && below + cardEstHeight < screenH - 90) {
+  if (preferredPosition === "bottom" && below + tooltipEstHeight < screenH - 80) {
     return { left, top: below };
   }
-  if (preferredPosition === "top" && above - cardEstHeight > 10) {
-    return { left, top: above - cardEstHeight };
+  if (preferredPosition === "top" && above - tooltipEstHeight > 20) {
+    return { left, top: above - tooltipEstHeight };
   }
-  if (below + cardEstHeight < screenH - 90) {
+  if (below + tooltipEstHeight < screenH - 80) {
     return { left, top: below };
   }
-  return { left, top: Math.max(20, above - cardEstHeight) };
+  return { left, top: Math.max(40, above - tooltipEstHeight) };
 }
 
 const styles = StyleSheet.create({
@@ -280,53 +249,46 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.80)",
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
   },
 
-  spotlightCutout: {
+  spotlightClear: {
     position: "absolute",
     backgroundColor: "transparent",
-    borderWidth: 2,
-    borderColor: "rgba(255, 106, 42, 0.6)",
     ...(Platform.OS === "web"
       ? {
-          boxShadow: [
-            "0 0 0 9999px rgba(0,0,0,0.80)",
-            "0 0 40px rgba(255,106,42,0.4)",
-            "0 0 80px rgba(255,106,42,0.15)",
-            "inset 0 0 20px rgba(255,106,42,0.08)",
-          ].join(", "),
+          boxShadow: `0 0 0 9999px rgba(0,0,0,0.45)`,
         }
       : {}),
   },
   spotlightGlow: {
     position: "absolute",
-    borderWidth: 2,
-    borderColor: "rgba(255, 165, 80, 0.5)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 106, 42, 0.5)",
     backgroundColor: "transparent",
-    margin: -8,
-    padding: 8,
-    borderRadius: 22,
+    ...(Platform.OS === "web"
+      ? {
+          boxShadow: `0 0 24px rgba(255, 106, 42, 0.25), 0 0 48px rgba(255, 106, 42, 0.1), inset 0 0 12px rgba(255, 106, 42, 0.05)`,
+        }
+      : {}),
   },
 
-  card: {
+  tooltip: {
     position: "absolute",
-    width: TOOLTIP_MAX_WIDTH,
-    backgroundColor: "rgba(22, 22, 26, 0.95)",
-    borderRadius: 24,
-    overflow: "hidden",
-    paddingTop: 0,
-    paddingHorizontal: 28,
-    paddingBottom: 24,
+    width: TOOLTIP_WIDTH,
+    backgroundColor: "rgba(28, 28, 32, 0.92)",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 20,
     ...(Platform.OS === "web"
       ? {
           backdropFilter: "blur(40px) saturate(180%)",
           WebkitBackdropFilter: "blur(40px) saturate(180%)",
-          boxShadow: [
-            "0 24px 80px rgba(0,0,0,0.5)",
-            "0 0 1px rgba(255,255,255,0.08)",
-            "0 0 40px rgba(255,106,42,0.06)",
-          ].join(", "),
+          boxShadow:
+            "0 24px 80px rgba(0,0,0,0.5), 0 2px 16px rgba(0,0,0,0.3), 0 0 1px rgba(255,255,255,0.1)",
         }
       : {
           shadowColor: "#000",
@@ -337,94 +299,69 @@ const styles = StyleSheet.create({
         }),
   },
 
-  accentBar: {
-    height: 3,
-    marginHorizontal: -28,
-    marginBottom: 20,
-    backgroundColor: COLORS.primary,
-    ...(Platform.OS === "web"
-      ? {
-          background: `linear-gradient(90deg, ${COLORS.primary}, #FFB366, ${COLORS.primary})`,
-        }
-      : {}),
-  },
-
-  header: {
+  topBar: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 16,
   },
-  stepIndicator: {
+  progressContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
+    flex: 1,
+    marginRight: 12,
   },
-  stepDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  progressTrack: {
+    height: 3,
+    flex: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
     backgroundColor: COLORS.primary,
+    borderRadius: 2,
   },
-  stepLabel: {
-    color: "rgba(255,255,255,0.45)",
-    fontSize: 13,
-    fontWeight: FONT_WEIGHT.semibold,
-    letterSpacing: 1,
-    textTransform: "uppercase",
+  progressLabel: {
+    color: "rgba(255, 255, 255, 0.35)",
+    fontSize: 12,
+    fontWeight: FONT_WEIGHT.medium,
+    letterSpacing: 0.3,
   },
   skipBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
   skipText: {
-    color: "rgba(255,255,255,0.35)",
+    color: "rgba(255, 255, 255, 0.4)",
     fontSize: 12,
     fontWeight: FONT_WEIGHT.medium,
   },
 
   title: {
-    color: "#FFFFFF",
-    fontSize: 22,
+    color: "#fff",
+    fontSize: 20,
     fontWeight: "700",
     letterSpacing: -0.4,
-    lineHeight: 28,
-    marginBottom: 12,
+    marginBottom: 10,
+    lineHeight: 26,
   },
-
   descScroll: {
-    maxHeight: 130,
-    marginBottom: 20,
+    maxHeight: 110,
+    marginBottom: 18,
   },
-  description: {
-    color: "rgba(255,255,255,0.6)",
-    fontSize: 15,
-    lineHeight: 24,
+  desc: {
+    color: "rgba(255, 255, 255, 0.55)",
+    fontSize: 14,
+    lineHeight: 22,
     letterSpacing: 0.1,
-  },
-
-  progressTrack: {
-    height: 3,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderRadius: 2,
-    marginBottom: 20,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 2,
-    backgroundColor: COLORS.primary,
-    ...(Platform.OS === "web"
-      ? {
-          background: `linear-gradient(90deg, ${COLORS.primary}, #FFB366)`,
-          transition: "width 0.4s ease",
-        }
-      : {}),
   },
 
   navRow: {
@@ -436,49 +373,39 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
   },
   backText: {
-    color: "rgba(255,255,255,0.6)",
+    color: "rgba(255, 255, 255, 0.6)",
     fontSize: 14,
-    fontWeight: FONT_WEIGHT.semibold,
+    fontWeight: FONT_WEIGHT.medium,
   },
   nextBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-    borderRadius: 14,
     backgroundColor: COLORS.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 12,
     ...(Platform.OS === "web"
       ? {
-          boxShadow: "0 4px 20px rgba(255,106,42,0.35), 0 1px 3px rgba(0,0,0,0.2)",
-          transition: "transform 0.15s ease, box-shadow 0.15s ease",
+          boxShadow: `0 4px 16px rgba(255, 106, 42, 0.3), 0 1px 4px rgba(255, 106, 42, 0.2)`,
         }
       : {
           shadowColor: COLORS.primary,
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.4,
+          shadowOpacity: 0.3,
           shadowRadius: 12,
         }),
   },
-  nextBtnPressed: {
-    opacity: 0.9,
-    ...(Platform.OS === "web"
-      ? { transform: [{ scale: 0.97 }] }
-      : {}),
-  },
-  btnPressed: {
-    opacity: 0.7,
-  },
   nextText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
     letterSpacing: 0.2,
   },
 });
