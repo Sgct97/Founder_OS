@@ -14,7 +14,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Platform, type View } from "react-native";
+import { Dimensions, Platform, type View } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -48,8 +48,8 @@ interface TourContextValue {
 
 const TourContext = createContext<TourContextValue | null>(null);
 
-const MEASURE_RETRY_MS = 200;
-const MEASURE_MAX_RETRIES = 15;
+const MEASURE_RETRY_MS = 250;
+const MEASURE_MAX_RETRIES = 20;
 
 export function TourProvider({
   children,
@@ -86,11 +86,16 @@ export function TourProvider({
       return;
     }
 
+    const { height: screenH, width: screenW } = Dimensions.get("window");
+
+    const isOnScreen = (x: number, y: number, w: number, h: number) =>
+      w > 0 && h > 0 && y + h > 0 && y < screenH && x + w > 0 && x < screenW;
+
     if (Platform.OS === "web") {
       const node = ref as unknown as HTMLElement;
       if (node?.getBoundingClientRect) {
         const rect = node.getBoundingClientRect();
-        if (rect.width > 0 && rect.height > 0) {
+        if (isOnScreen(rect.left, rect.top, rect.width, rect.height)) {
           setTargetLayout({
             x: rect.left,
             y: rect.top,
@@ -106,7 +111,7 @@ export function TourProvider({
       }
     } else {
       ref.measureInWindow((x, y, width, height) => {
-        if (width > 0 && height > 0) {
+        if (isOnScreen(x, y, width, height)) {
           setTargetLayout({ x, y, width, height });
         } else if (retryCountRef.current < MEASURE_MAX_RETRIES) {
           retryCountRef.current += 1;
