@@ -157,7 +157,7 @@ export function TourProvider({
     return () => {
       if (retryRef.current) clearTimeout(retryRef.current);
     };
-  }, [currentStep, measureElement, pathname]);
+  }, [currentStep, measureElement]);
 
   const completeTour = useCallback(async () => {
     setIsActive(false);

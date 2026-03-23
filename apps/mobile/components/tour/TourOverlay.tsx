@@ -124,6 +124,12 @@ export function TourOverlay(): React.JSX.Element | null {
       style={[styles.overlay, { opacity: fadeAnim }]}
       pointerEvents="box-none"
     >
+      {/* Full-screen touch blocker — prevents clicks passing to page content */}
+      <Pressable
+        style={StyleSheet.absoluteFill}
+        onPress={() => {}}
+      />
+
       {/* Glow ring around target */}
       {spotlightStyle && (
         <Animated.View
