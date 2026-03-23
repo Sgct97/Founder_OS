@@ -16,6 +16,7 @@ from app.schemas.auth import (
     LoginRequest,
     SignupRequest,
 )
+from app.services.milestones import seed_mock_milestones
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +85,10 @@ async def signup(db: AsyncSession, payload: SignupRequest) -> tuple[User, Worksp
     # Create membership record.
     db.add(WorkspaceMember(user_id=user.id, workspace_id=workspace.id, role="owner"))
     await db.flush()
+
+    # Seed the new workspace with sample milestones so the onboarding
+    # tour can demonstrate features on real data.
+    await seed_mock_milestones(db, workspace.id)
 
     logger.info("Signup: user=%s workspace=%s", user.id, workspace.id)
     return user, workspace
@@ -154,6 +159,8 @@ async def login(db: AsyncSession, payload: LoginRequest) -> tuple[User, Workspac
 
         db.add(WorkspaceMember(user_id=user.id, workspace_id=workspace.id, role="owner"))
         await db.flush()
+
+        await seed_mock_milestones(db, workspace.id)
 
         return user, workspace
 

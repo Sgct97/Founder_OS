@@ -20,6 +20,114 @@ from app.schemas.milestones import (
 logger = logging.getLogger(__name__)
 
 
+# ── Seed data for new workspaces ─────────────────────────────────
+
+MOCK_PHASES: list[dict] = [
+    {
+        "title": "Foundation & Research",
+        "description": "Validate your idea and understand the market before building.",
+        "sort_order": 0,
+        "milestones": [
+            {
+                "title": "Define your mission and vision statement",
+                "description": "Clarify what your product solves and for whom. A strong mission keeps every decision aligned.",
+                "status": "completed",
+                "sort_order": 0,
+            },
+            {
+                "title": "Research your target market",
+                "description": "Identify your ideal customer profile, their pain points, and how they currently solve the problem.",
+                "status": "in_progress",
+                "sort_order": 1,
+            },
+            {
+                "title": "Analyze competitors and differentiators",
+                "description": "Map the competitive landscape. Identify gaps you can own and advantages you can defend.",
+                "sort_order": 2,
+            },
+        ],
+    },
+    {
+        "title": "Product Development",
+        "description": "Design, build, and test your minimum viable product.",
+        "sort_order": 1,
+        "milestones": [
+            {
+                "title": "Create wireframes and mockups",
+                "description": "Design the core user experience before writing code. Validate with potential users early.",
+                "sort_order": 0,
+            },
+            {
+                "title": "Build your MVP core features",
+                "description": "Focus on the minimum set of features that deliver real value to your target users.",
+                "sort_order": 1,
+            },
+            {
+                "title": "Set up analytics and tracking",
+                "description": "Instrument your app to measure usage, engagement, and conversion from day one.",
+                "sort_order": 2,
+            },
+            {
+                "title": "Internal QA and testing",
+                "description": "Test thoroughly before putting your product in front of real users.",
+                "sort_order": 3,
+            },
+        ],
+    },
+    {
+        "title": "Launch & Growth",
+        "description": "Get your product into users' hands and iterate based on feedback.",
+        "sort_order": 2,
+        "milestones": [
+            {
+                "title": "Recruit beta testers",
+                "description": "Find 10-20 early users who match your target audience and are willing to give candid feedback.",
+                "sort_order": 0,
+            },
+            {
+                "title": "Gather and prioritize user feedback",
+                "description": "Collect feedback systematically. Use the Feature Requests tab to track and vote on ideas.",
+                "sort_order": 1,
+            },
+            {
+                "title": "Plan your go-to-market strategy",
+                "description": "Define channels, messaging, pricing, and launch timeline. Start building buzz before launch day.",
+                "sort_order": 2,
+            },
+        ],
+    },
+]
+
+
+async def seed_mock_milestones(db: AsyncSession, workspace_id: uuid.UUID) -> None:
+    """Populate a brand-new workspace with sample phases and milestones.
+
+    Called exactly once during signup. Never touches existing workspaces.
+    """
+    for phase_data in MOCK_PHASES:
+        phase = Phase(
+            workspace_id=workspace_id,
+            title=phase_data["title"],
+            description=phase_data.get("description"),
+            sort_order=phase_data["sort_order"],
+        )
+        db.add(phase)
+        await db.flush()
+
+        for ms_data in phase_data["milestones"]:
+            milestone = Milestone(
+                phase_id=phase.id,
+                title=ms_data["title"],
+                description=ms_data.get("description"),
+                status=ms_data.get("status", "not_started"),
+                sort_order=ms_data["sort_order"],
+            )
+            db.add(milestone)
+
+    await db.flush()
+    logger.info("Seeded mock milestones for workspace=%s", workspace_id)
+
+
 # ── Phase operations ─────────────────────────────────────────────
 
 

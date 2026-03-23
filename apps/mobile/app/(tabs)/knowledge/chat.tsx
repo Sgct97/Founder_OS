@@ -32,6 +32,7 @@ import {
   SHADOW,
   SPACING,
 } from "@/constants/theme";
+import { useTourRef } from "@/components/tour/TourProvider";
 import {
   useConversationMessages,
   useConversations,
@@ -335,6 +336,7 @@ function InputBar({ value, onChangeText, onSend, disabled }: InputBarProps) {
 
 export default function ChatScreen() {
   const router = useRouter();
+  const chatInterfaceRef = useTourRef("knowledge-chat-interface");
   const [activeConversationId, setActiveConversationId] = useState<
     string | undefined
   >(undefined);
@@ -461,7 +463,7 @@ export default function ChatScreen() {
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
       {/* Header Actions */}
-      <View style={styles.chatHeader}>
+      <View ref={chatInterfaceRef} collapsable={false} style={styles.chatHeader}>
         <View style={styles.headerLeftGroup}>
           <Pressable
             style={styles.headerButton}

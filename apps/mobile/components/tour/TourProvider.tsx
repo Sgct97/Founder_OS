@@ -116,9 +116,16 @@ export function TourProvider({
     }
   }, []);
 
-  // Auto-navigate to the correct tab when the step's page changes.
+  // Auto-navigate to the correct tab (or sub-page) when the step changes.
   useEffect(() => {
     if (!currentStep) return;
+
+    if (currentStep.navigateTo) {
+      if (!pathname.includes(currentStep.navigateTo.split("/").pop() ?? "")) {
+        router.navigate(currentStep.navigateTo as any);
+      }
+      return;
+    }
 
     const targetRoute = PAGE_ROUTES[currentStep.page];
     if (targetRoute && !pathname.includes(currentStep.page === "requests" ? "features" : currentStep.page)) {

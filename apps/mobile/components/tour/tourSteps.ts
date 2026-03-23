@@ -19,6 +19,8 @@ export interface TourStep {
   title: string;
   description: string;
   position: "top" | "bottom" | "left" | "right";
+  /** If set, navigate to this route when the step becomes active. */
+  navigateTo?: string;
 }
 
 export const PAGE_ROUTES: Record<TourPage, string> = {
@@ -126,12 +128,13 @@ export const TOUR_STEPS: TourStep[] = [
     position: "bottom",
   },
   {
-    targetKey: "knowledge-chat",
+    targetKey: "knowledge-chat-interface",
     page: "knowledge",
     title: "Chat with Your Knowledge Base",
     description:
       "This is your AI research assistant. It has read every document you've uploaded. Ask it questions like \"What did our user research say about onboarding?\" or \"Summarize the competitive analysis\" and it will answer using your actual documents as sources.",
-    position: "top",
+    position: "bottom",
+    navigateTo: "/(tabs)/knowledge/chat",
   },
 
   // ── Settings ──────────────────────────────────────────────
