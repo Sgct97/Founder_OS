@@ -46,24 +46,27 @@ export function TourOverlay(): React.JSX.Element | null {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const tooltipSlide = useRef(new Animated.Value(16)).current;
   const pulseAnim = useRef(new Animated.Value(0)).current;
+  const hasEnteredRef = useRef(false);
 
+  // Fade in once when tour starts; slide tooltip on each step change.
   useEffect(() => {
     if (isActive && currentStep) {
-      fadeAnim.setValue(0);
-      tooltipSlide.setValue(16);
-
-      Animated.parallel([
+      if (!hasEnteredRef.current) {
+        hasEnteredRef.current = true;
+        fadeAnim.setValue(0);
         Animated.timing(fadeAnim, {
           toValue: 1,
-          duration: 400,
+          duration: 350,
           useNativeDriver: true,
-        }),
-        Animated.timing(tooltipSlide, {
-          toValue: 0,
-          duration: 450,
-          useNativeDriver: true,
-        }),
-      ]).start();
+        }).start();
+      }
+
+      tooltipSlide.setValue(12);
+      Animated.timing(tooltipSlide, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
 
       const pulse = Animated.loop(
         Animated.sequence([
@@ -81,6 +84,8 @@ export function TourOverlay(): React.JSX.Element | null {
       );
       pulse.start();
       return () => pulse.stop();
+    } else {
+      hasEnteredRef.current = false;
     }
   }, [isActive, currentStep, currentStepIndex, fadeAnim, tooltipSlide, pulseAnim]);
 
