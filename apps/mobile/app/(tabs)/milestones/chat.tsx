@@ -32,6 +32,7 @@ import {
   SHADOW,
   SPACING,
 } from "@/constants/theme";
+import { useTourRef } from "@/components/tour/TourProvider";
 import {
   useConversationMessages,
   useConversations,
@@ -341,6 +342,7 @@ export default function MilestoneChatScreen() {
   const milestoneId = params.milestoneId;
   const milestoneTitle = params.milestoneTitle ?? "Milestone";
   const phaseName = params.phaseName ?? "";
+  const chatDemoRef = useTourRef("milestones-chat-demo");
 
   const [activeConversationId, setActiveConversationId] = useState<
     string | undefined
@@ -536,7 +538,7 @@ export default function MilestoneChatScreen() {
         )}
 
         {/* Chat Area */}
-        <View style={styles.chatArea}>
+        <View ref={chatDemoRef} collapsable={false} style={styles.chatArea}>
           {hasMessages ? (
             <FlatList
               ref={flatListRef}

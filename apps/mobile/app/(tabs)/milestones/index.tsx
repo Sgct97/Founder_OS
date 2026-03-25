@@ -579,7 +579,22 @@ export default function MilestonesScreen() {
     if (currentStep?.targetKey === "milestones-import") {
       setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 150);
     }
-  }, [currentStep]);
+    if (currentStep?.targetKey === "milestones-chat-demo" && phases?.length) {
+      const firstMilestone = phases[0]?.milestones[0];
+      if (firstMilestone) {
+        setTimeout(() => {
+          router.push({
+            pathname: "/(tabs)/milestones/chat",
+            params: {
+              milestoneId: firstMilestone.id,
+              milestoneTitle: firstMilestone.title,
+              phaseName: phases[0]!.title,
+            },
+          });
+        }, 200);
+      }
+    }
+  }, [currentStep, phases, router]);
 
   // Summary stats
   const totalMilestones = useMemo(

@@ -65,6 +65,14 @@ export const TOUR_STEPS: TourStep[] = [
       "Don't build your roadmap manually. Tap here to paste a project plan, pitch deck outline, or even a rough description. Our AI will automatically generate a complete milestone map with phases and tasks. You can edit everything after import.",
     position: "top",
   },
+  {
+    targetKey: "milestones-chat-demo",
+    page: "milestones",
+    title: "Milestone AI Chat",
+    description:
+      "Every milestone has its own AI advisor. It knows your full roadmap, project brief, and knowledge base. Ask it for implementation advice, help with blockers, or strategic guidance specific to this task. Think of it as a co-founder who never forgets your context.",
+    position: "bottom",
+  },
 
   // ── Requests ──────────────────────────────────────────────
   {
