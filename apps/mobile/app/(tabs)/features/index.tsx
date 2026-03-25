@@ -278,7 +278,6 @@ export default function FeaturesScreen() {
   const deleteMutation = useDeleteFeatureRequest();
   const voteMutation = useToggleVote();
 
-  const listRef = useTourRef("requests-list");
   const voteRef = useTourRef("requests-vote");
   const createRef = useTourRef("requests-create");
 
@@ -353,7 +352,7 @@ export default function FeaturesScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View ref={listRef} collapsable={false} style={styles.headerBar}>
+      <View style={styles.headerBar}>
         <View>
           <Text style={styles.headerTitle}>Feature Requests</Text>
           <Text style={styles.headerSubtitle}>

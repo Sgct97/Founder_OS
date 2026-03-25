@@ -68,20 +68,12 @@ export const TOUR_STEPS: TourStep[] = [
 
   // ── Requests ──────────────────────────────────────────────
   {
-    targetKey: "requests-list",
+    targetKey: "requests-vote",
     page: "requests",
     title: "Feature Request Board",
     description:
-      "This is your team's idea hub. Anyone in the workspace can submit feature requests and track their status. Use this to capture user feedback, prioritize your backlog, and keep your team aligned on what to build next.",
-    position: "bottom",
-  },
-  {
-    targetKey: "requests-vote",
-    page: "requests",
-    title: "Prioritize with Votes",
-    description:
-      "Tap the upvote arrow on any request to signal what matters most. Requests are ranked by vote count, so the most-wanted features rise to the top. This gives you data-driven prioritization without meetings.",
-    position: "bottom",
+      "This is your team's idea hub. Anyone in the workspace can submit and vote on feature requests. See the upvote arrow on the left of each card? Tap it to signal what matters most. Requests are ranked by vote count so the most-wanted features rise to the top automatically.",
+    position: "top",
   },
   {
     targetKey: "requests-create",
