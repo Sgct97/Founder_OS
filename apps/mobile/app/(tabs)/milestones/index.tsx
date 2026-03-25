@@ -29,7 +29,7 @@ import { GlowDivider } from "@/components/ui/GlowDivider";
 import ImportModal from "@/components/milestones/ImportModal";
 import MilestoneDetailSheet from "@/components/milestones/MilestoneDetailSheet";
 import { Skeleton, SkeletonPhaseCard } from "@/components/ui/Skeleton";
-import { useTourRef } from "@/components/tour/TourProvider";
+import { useTour, useTourRef } from "@/components/tour/TourProvider";
 import {
   useCreateMilestone,
   useCreatePhase,
@@ -568,10 +568,18 @@ export default function MilestonesScreen() {
   const [modalLoading, setModalLoading] = useState(false);
 
   // Tour refs
+  const { currentStep } = useTour();
   const journeyRef = useTourRef("milestones-journey");
   const phaseCardRef = useTourRef("milestones-phase-card");
   const statusToggleRef = useTourRef("milestones-status-toggle");
   const importRef = useTourRef("milestones-import");
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    if (currentStep?.targetKey === "milestones-import") {
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 150);
+    }
+  }, [currentStep]);
 
   // Summary stats
   const totalMilestones = useMemo(
@@ -815,6 +823,7 @@ export default function MilestonesScreen() {
 
           {/* Phase List */}
           <ScrollView
+            ref={scrollViewRef}
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
