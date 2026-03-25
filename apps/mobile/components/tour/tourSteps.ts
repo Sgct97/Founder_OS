@@ -32,11 +32,38 @@ export const PAGE_ROUTES: Record<TourPage, string> = {
 };
 
 export const TOUR_STEPS: TourStep[] = [
-  // ── Milestones ────────────────────────────────────────────
+  // ── Knowledge (Tab 1) ──────────────────────────────────────
+  {
+    targetKey: "knowledge-docs",
+    page: "knowledge",
+    title: "Your RAG-Powered Knowledge Base",
+    description:
+      "Welcome to FoundersForge! This is your private RAG (Retrieval-Augmented Generation) knowledge base. Upload your project documents and they're automatically split into chunks, embedded, and indexed. When you chat with the AI, it searches these embeddings to pull real answers from YOUR documents instead of guessing.",
+    position: "bottom",
+  },
+  {
+    targetKey: "knowledge-upload",
+    page: "knowledge",
+    title: "Upload Documents for RAG",
+    description:
+      "Tap here to upload PDFs, markdown files, text documents, and more. Each file is processed through the RAG pipeline: parsed, chunked into passages, and converted into vector embeddings. This is what makes the AI accurate. The more documents you upload, the smarter your AI assistant becomes.",
+    position: "bottom",
+  },
+  {
+    targetKey: "knowledge-chat-interface",
+    page: "knowledge",
+    title: "Chat with Your Knowledge Base",
+    description:
+      "This is your RAG-powered research assistant. When you ask a question, it performs a semantic search across all your document embeddings, retrieves the most relevant passages, and uses them to generate an accurate, cited answer. Try asking \"What did our user research say about onboarding?\" or \"Summarize the competitive analysis.\"",
+    position: "bottom",
+    navigateTo: "/(tabs)/knowledge/chat",
+  },
+
+  // ── Milestones (Tab 2) ─────────────────────────────────────
   {
     targetKey: "milestones-journey",
     page: "milestones",
-    title: "Welcome to Your Milestone Map",
+    title: "Your Milestone Map",
     description:
       "This is the heart of FoundersForge. Your milestone map breaks your entire project into Phases (big chapters) and Milestones (individual tasks). Think of it as your founder's roadmap. You'll always know exactly where you stand and what's next.",
     position: "bottom",
@@ -74,7 +101,7 @@ export const TOUR_STEPS: TourStep[] = [
     position: "bottom",
   },
 
-  // ── Requests ──────────────────────────────────────────────
+  // ── Requests (Tab 3) ──────────────────────────────────────
   {
     targetKey: "requests-vote",
     page: "requests",
@@ -92,7 +119,7 @@ export const TOUR_STEPS: TourStep[] = [
     position: "top",
   },
 
-  // ── Diary ─────────────────────────────────────────────────
+  // ── Diary (Tab 4) ─────────────────────────────────────────
   {
     targetKey: "diary-streak",
     page: "diary",
@@ -110,34 +137,7 @@ export const TOUR_STEPS: TourStep[] = [
     position: "top",
   },
 
-  // ── Knowledge ─────────────────────────────────────────────
-  {
-    targetKey: "knowledge-docs",
-    page: "knowledge",
-    title: "Your AI-Powered Knowledge Base",
-    description:
-      "This is where FoundersForge becomes truly powerful. Upload your project documents (specs, research, pitch decks, notes) and they're automatically processed, chunked, and embedded. This creates a private knowledge base that your AI assistant can search and reference in every conversation.",
-    position: "bottom",
-  },
-  {
-    targetKey: "knowledge-upload",
-    page: "knowledge",
-    title: "Upload Documents",
-    description:
-      "Tap here to upload PDFs, markdown files, text documents, and more. Each file is broken into searchable chunks using RAG (Retrieval-Augmented Generation). This means the AI doesn't just guess, it pulls real information from YOUR documents to give accurate answers.",
-    position: "bottom",
-  },
-  {
-    targetKey: "knowledge-chat-interface",
-    page: "knowledge",
-    title: "Chat with Your Knowledge Base",
-    description:
-      "This is your AI research assistant. It has read every document you've uploaded. Ask it questions like \"What did our user research say about onboarding?\" or \"Summarize the competitive analysis\" and it will answer using your actual documents as sources.",
-    position: "bottom",
-    navigateTo: "/(tabs)/knowledge/chat",
-  },
-
-  // ── Settings ──────────────────────────────────────────────
+  // ── Settings (Tab 5) ──────────────────────────────────────
   {
     targetKey: "settings-workspace",
     page: "settings",
