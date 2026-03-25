@@ -52,18 +52,10 @@ export const TOUR_STEPS: TourStep[] = [
   {
     targetKey: "milestones-status-toggle",
     page: "milestones",
-    title: "Update Milestone Status",
+    title: "Track Progress & Use AI",
     description:
-      "Tap any milestone to cycle its status: Not Started, In Progress, and Completed. This is how you track your build day-by-day. Each milestone also has its own AI-powered chat. Tap into a milestone to ask questions, brainstorm, or get help specific to that task.",
+      "Tap any milestone to cycle its status: Not Started, In Progress, and Completed. Each milestone also has its own AI-powered chat for brainstorming and problem-solving. You can also import an entire milestone map using AI. Scroll down and tap \"Import with AI\" to paste a project plan or description, and the AI generates your roadmap automatically.",
     position: "bottom",
-  },
-  {
-    targetKey: "milestones-import",
-    page: "milestones",
-    title: "Create Your Map with AI",
-    description:
-      "Don't build your roadmap manually. Tap here to paste a project plan, pitch deck outline, or even a rough description. Our AI will automatically generate a complete milestone map with phases and tasks. You can edit everything after import.",
-    position: "top",
   },
 
   // ── Requests ──────────────────────────────────────────────
