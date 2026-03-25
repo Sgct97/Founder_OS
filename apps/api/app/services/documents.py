@@ -36,6 +36,100 @@ CHUNK_OVERLAP_TOKENS = 50
 ALLOWED_EXTENSIONS = {"pdf", "md", "txt", "csv", "json", "yaml", "yml", "log", "rst", "xml"}
 MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB
 
+# ── Seed data for new workspaces ─────────────────────────────────
+
+MOCK_DOCUMENTS: list[dict] = [
+    {
+        "filename": "startup_pitch_deck_notes.txt",
+        "title": "startup_pitch_deck_notes",
+        "content": (
+            "Pitch Deck Structure\n\n"
+            "Slide 1 - Problem: Founders waste hours switching between project management, "
+            "note-taking, and AI tools. There is no single workspace built for early-stage "
+            "founders that combines roadmapping, knowledge management, and AI assistance.\n\n"
+            "Slide 2 - Solution: FoundersForge is an all-in-one workspace that gives "
+            "founders a milestone roadmap, AI-powered knowledge base, build diary, and "
+            "feature request board in one place.\n\n"
+            "Slide 3 - Market: 5 million new businesses are started in the US each year. "
+            "Our initial target is solo founders and small teams (2-5 people) in the "
+            "tech/SaaS space.\n\n"
+            "Slide 4 - Traction: Currently in private beta with 50 active workspaces. "
+            "Early feedback highlights the AI knowledge base as the standout feature."
+        ),
+    },
+    {
+        "filename": "user_research_summary.txt",
+        "title": "user_research_summary",
+        "content": (
+            "User Research Summary - January 2026\n\n"
+            "We interviewed 12 early-stage founders over two weeks. Key findings:\n\n"
+            "1. Tool Fatigue: 10 of 12 founders use 4+ tools daily (Notion, Linear, "
+            "ChatGPT, Google Docs). They want fewer tools, not more.\n\n"
+            "2. Context Switching: Founders lose an average of 45 minutes per day "
+            "switching between tools. The biggest pain point is re-explaining project "
+            "context to AI assistants every session.\n\n"
+            "3. Accountability: 8 of 12 founders said they struggle with consistency. "
+            "A daily build diary with streaks was rated as 'very useful' by 9 founders.\n\n"
+            "4. AI Trust: Founders want AI that knows their project. Generic AI answers "
+            "are seen as unhelpful. RAG-powered responses using their own documents "
+            "scored 4.2/5 vs 2.1/5 for generic AI.\n\n"
+            "5. Collaboration: Even solo founders want the option to invite a co-founder "
+            "or advisor to their workspace eventually."
+        ),
+    },
+]
+
+
+async def seed_mock_documents(
+    db: AsyncSession,
+    workspace_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> None:
+    """Populate a brand-new workspace with sample knowledge base documents.
+
+    Creates actual text files on disk and Document + DocumentChunk records
+    so the knowledge base list looks populated during onboarding. Chunks use
+    zero-vector embeddings (re-processed when the user adds an API key).
+
+    Called exactly once during signup/auto-provision.
+    """
+    for doc_data in MOCK_DOCUMENTS:
+        doc_id = uuid.uuid4()
+        upload_dir = Path(settings.upload_dir) / str(workspace_id) / str(doc_id)
+        upload_dir.mkdir(parents=True, exist_ok=True)
+
+        file_path = upload_dir / doc_data["filename"]
+        content = doc_data["content"]
+        file_path.write_text(content, encoding="utf-8")
+
+        document = Document(
+            id=doc_id,
+            workspace_id=workspace_id,
+            uploaded_by=user_id,
+            title=doc_data["title"],
+            file_path=str(file_path),
+            file_size_bytes=len(content.encode("utf-8")),
+            file_type="txt",
+            chunk_count=1,
+            status="ready",
+        )
+        db.add(document)
+        await db.flush()
+
+        chunk = DocumentChunk(
+            document_id=doc_id,
+            chunk_index=0,
+            content=content,
+            token_count=len(content.split()),
+            embedding=[0.0] * EMBEDDING_DIMENSION,
+            metadata_={"chunk_method": "seed"},
+        )
+        db.add(chunk)
+
+    await db.flush()
+    logger.info("Seeded mock documents for workspace=%s", workspace_id)
+
+
 # ── CRUD Operations ──────────────────────────────────────────────
 
 

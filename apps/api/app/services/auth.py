@@ -17,6 +17,7 @@ from app.schemas.auth import (
     SignupRequest,
 )
 from app.services.diary import seed_mock_diary_entries
+from app.services.documents import seed_mock_documents
 from app.services.feature_requests import seed_mock_feature_requests
 from app.services.milestones import seed_mock_milestones
 
@@ -93,6 +94,7 @@ async def signup(db: AsyncSession, payload: SignupRequest) -> tuple[User, Worksp
     await seed_mock_milestones(db, workspace.id)
     await seed_mock_feature_requests(db, workspace.id, user.id)
     await seed_mock_diary_entries(db, workspace.id, user.id)
+    await seed_mock_documents(db, workspace.id, user.id)
 
     logger.info("Signup: user=%s workspace=%s", user.id, workspace.id)
     return user, workspace
@@ -167,6 +169,7 @@ async def login(db: AsyncSession, payload: LoginRequest) -> tuple[User, Workspac
         await seed_mock_milestones(db, workspace.id)
         await seed_mock_feature_requests(db, workspace.id, user.id)
         await seed_mock_diary_entries(db, workspace.id, user.id)
+        await seed_mock_documents(db, workspace.id, user.id)
 
         return user, workspace
 
