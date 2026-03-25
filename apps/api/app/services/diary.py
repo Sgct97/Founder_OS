@@ -21,6 +21,63 @@ from app.schemas.diary import (
 
 logger = logging.getLogger(__name__)
 
+# ── Seed data for new workspaces ─────────────────────────────────
+MOCK_DIARY_ENTRIES: list[dict] = [
+    {
+        "days_ago": 2,
+        "hours_worked": 3.0,
+        "description": (
+            "Kicked off the project today. Spent time defining the core problem "
+            "we're solving and who our ideal customer is. Wrote a first draft of "
+            "our mission statement and started a competitor spreadsheet."
+        ),
+    },
+    {
+        "days_ago": 1,
+        "hours_worked": 4.5,
+        "description": (
+            "Deep dive into competitor research. Mapped out 5 direct competitors "
+            "and identified 3 key gaps none of them address. Also drafted our "
+            "initial user persona based on conversations with two potential users."
+        ),
+    },
+    {
+        "days_ago": 0,
+        "hours_worked": 2.0,
+        "description": (
+            "Set up the project workspace in FoundersForge and explored the "
+            "milestone map. Organized our roadmap into phases and started "
+            "uploading reference documents to the knowledge base."
+        ),
+    },
+]
+
+
+async def seed_mock_diary_entries(
+    db: AsyncSession,
+    workspace_id: uuid.UUID,
+    author_id: uuid.UUID,
+) -> None:
+    """Populate a brand-new workspace with sample diary entries.
+
+    Called exactly once during signup/auto-provision. Never touches
+    existing workspaces because it is only invoked in the new-workspace
+    code path.
+    """
+    today = date.today()
+    for entry_data in MOCK_DIARY_ENTRIES:
+        entry = DiaryEntry(
+            workspace_id=workspace_id,
+            author_id=author_id,
+            entry_date=today - timedelta(days=entry_data["days_ago"]),
+            hours_worked=entry_data.get("hours_worked"),
+            description=entry_data["description"],
+        )
+        db.add(entry)
+
+    await db.flush()
+    logger.info("Seeded mock diary entries for workspace=%s", workspace_id)
+
 
 async def list_entries(
     db: AsyncSession,

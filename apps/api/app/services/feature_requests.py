@@ -16,6 +16,58 @@ from app.schemas.feature_requests import (
 
 logger = logging.getLogger(__name__)
 
+# ── Seed data for new workspaces ─────────────────────────────────
+MOCK_FEATURE_REQUESTS: list[dict] = [
+    {
+        "title": "Dark mode / theme toggle",
+        "description": "Allow users to switch between light and dark themes. Many users prefer dark mode for late-night work sessions.",
+        "status": "open",
+        "vote_count": 5,
+    },
+    {
+        "title": "Calendar view for milestones",
+        "description": "Add an optional calendar visualization so founders can see milestone deadlines and diary entries mapped to dates.",
+        "status": "under_review",
+        "vote_count": 3,
+    },
+    {
+        "title": "Export milestone map as PDF",
+        "description": "Let users export their entire milestone roadmap as a shareable PDF for investor decks or team presentations.",
+        "status": "planned",
+        "vote_count": 2,
+    },
+]
+
+
+async def seed_mock_feature_requests(
+    db: AsyncSession,
+    workspace_id: uuid.UUID,
+    author_id: uuid.UUID,
+) -> None:
+    """Populate a brand-new workspace with sample feature requests.
+
+    Called exactly once during signup/auto-provision. Never touches
+    existing workspaces because it is only invoked in the new-workspace
+    code path.
+    """
+    for fr_data in MOCK_FEATURE_REQUESTS:
+        fr = FeatureRequest(
+            workspace_id=workspace_id,
+            author_id=author_id,
+            title=fr_data["title"],
+            description=fr_data.get("description"),
+            status=fr_data.get("status", "open"),
+            vote_count=fr_data.get("vote_count", 1),
+        )
+        db.add(fr)
+        await db.flush()
+
+        vote = FeatureVote(feature_request_id=fr.id, user_id=author_id)
+        db.add(vote)
+
+    await db.flush()
+    logger.info("Seeded mock feature requests for workspace=%s", workspace_id)
+
 
 async def list_feature_requests(
     db: AsyncSession, workspace_id: uuid.UUID, current_user_id: uuid.UUID
