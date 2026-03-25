@@ -2,7 +2,7 @@
  * Settings screen — profile, workspace, integrations, project brief, sign out.
  */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -20,7 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { useTourRef } from "@/components/tour/TourProvider";
+import { useTour, useTourRef } from "@/components/tour/TourProvider";
 import { useAuth } from "@/hooks/use-auth";
 import {
   useApiKeys,
@@ -53,9 +53,17 @@ const SUPPORTED_SERVICES = [
 
 export default function SettingsScreen() {
   const { user, workspace, isLoading, signOut, setWorkspace } = useAuth();
+  const { currentStep } = useTour();
   const workspaceRef = useTourRef("settings-workspace");
   const apiKeysRef = useTourRef("settings-api-keys");
   const briefRef = useTourRef("settings-brief");
+  const settingsScrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    if (currentStep?.targetKey === "settings-brief") {
+      setTimeout(() => settingsScrollRef.current?.scrollToEnd({ animated: true }), 150);
+    }
+  }, [currentStep]);
 
   const [signingOut, setSigningOut] = useState(false);
 
@@ -265,6 +273,7 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView
+      ref={settingsScrollRef}
       style={styles.screen}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
