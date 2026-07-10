@@ -15,7 +15,7 @@ MOBILE_DIR="apps/mobile"
 echo "==> Building FounderOS web frontend"
 cd "$MOBILE_DIR"
 
-EXPO_PUBLIC_API_URL="http://${DROPLET_IP}" \
+EXPO_PUBLIC_API_URL="${EXPO_PUBLIC_API_URL:-https://foundersforge.io}" \
 EXPO_PUBLIC_SUPABASE_URL="${EXPO_PUBLIC_SUPABASE_URL:-https://xwqcnmmdodiireigtjkb.supabase.co}" \
 EXPO_PUBLIC_SUPABASE_ANON_KEY="${EXPO_PUBLIC_SUPABASE_ANON_KEY:-sb_publishable_Op5QsFjEFZoEs2YghBdu5Q_77HMFKIa}" \
   npx expo export --platform web

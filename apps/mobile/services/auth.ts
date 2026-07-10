@@ -112,6 +112,29 @@ export async function joinWorkspace(
   return response;
 }
 
+/**
+ * Create a Supabase account and join an existing workspace via invite code.
+ * Mirrors signUp/logIn so AuthProvider can establish session state.
+ */
+export async function signUpAndJoin(
+  inviteCode: string,
+  email: string,
+  password: string,
+  displayName: string
+): Promise<AuthResponse> {
+  const { data, error } = await getSupabase().auth.signUp({ email, password });
+  if (error) throw new Error(error.message);
+  if (!data.session || !data.user) {
+    throw new Error(
+      "Signup succeeded but no session was returned. If email confirmation is enabled in Supabase, disable it for invite signup or confirm the email first."
+    );
+  }
+
+  await setAccessToken(data.session.access_token);
+
+  return joinWorkspace(inviteCode, email, displayName, data.user.id);
+}
+
 /** Get the current user's profile from the backend. */
 export async function getMe(): Promise<AuthResponse> {
   return apiGet<AuthResponse>("/api/v1/auth/me");

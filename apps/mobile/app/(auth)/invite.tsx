@@ -20,9 +20,6 @@ import { Link, router } from "expo-router";
 import { BrandHeader } from "@/components/ui/BrandHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { getSupabaseClient } from "@/services/auth";
-import * as authService from "@/services/auth";
-import { setAccessToken } from "@/services/api";
 import { useAuth } from "@/hooks/use-auth";
 import {
   BORDER_RADIUS,
@@ -35,6 +32,7 @@ import {
 } from "@/constants/theme";
 
 export default function InviteScreen() {
+  const { joinWithInvite } = useAuth();
   const [inviteCode, setInviteCode] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -58,27 +56,12 @@ export default function InviteScreen() {
 
     setLoading(true);
     try {
-      // 1. Create Supabase Auth account.
-      const { data, error: supaError } = await getSupabaseClient().auth.signUp({
-        email: email.trim().toLowerCase(),
-        password,
-      });
-      if (supaError) throw new Error(supaError.message);
-      if (!data.session || !data.user) {
-        throw new Error("Signup succeeded but no session returned");
-      }
-
-      // 2. Store token.
-      await setAccessToken(data.session.access_token);
-
-      // 3. Join workspace via invite code.
-      await authService.joinWorkspace(
+      await joinWithInvite(
         inviteCode.trim().toUpperCase(),
         email.trim().toLowerCase(),
-        displayName.trim(),
-        data.user.id
+        password,
+        displayName.trim()
       );
-
       router.replace("/(tabs)/milestones");
     } catch (err) {
       const message =
@@ -87,7 +70,7 @@ export default function InviteScreen() {
     } finally {
       setLoading(false);
     }
-  }, [inviteCode, displayName, email, password, isValid]);
+  }, [inviteCode, displayName, email, password, isValid, joinWithInvite]);
 
   return (
     <KeyboardAvoidingView

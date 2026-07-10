@@ -62,6 +62,12 @@ interface AuthContextValue extends AuthState {
     displayName: string,
     workspaceName: string
   ) => Promise<void>;
+  joinWithInvite: (
+    inviteCode: string,
+    email: string,
+    password: string,
+    displayName: string
+  ) => Promise<void>;
   logIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   setWorkspace: (workspace: WorkspaceInfo) => void;
@@ -120,6 +126,25 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
     [queryClient]
   );
 
+  const joinWithInvite = useCallback(
+    async (
+      inviteCode: string,
+      email: string,
+      password: string,
+      displayName: string
+    ) => {
+      queryClient.clear();
+      const { user, workspace } = await authService.signUpAndJoin(
+        inviteCode,
+        email,
+        password,
+        displayName
+      );
+      dispatch({ type: "SET_AUTH", user, workspace });
+    },
+    [queryClient]
+  );
+
   const logIn = useCallback(async (email: string, password: string) => {
     queryClient.clear();
     const { user, workspace } = await authService.logIn(email, password);
@@ -137,8 +162,8 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ ...state, signUp, logIn, signOut, setWorkspace }),
-    [state, signUp, logIn, signOut, setWorkspace]
+    () => ({ ...state, signUp, joinWithInvite, logIn, signOut, setWorkspace }),
+    [state, signUp, joinWithInvite, logIn, signOut, setWorkspace]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
