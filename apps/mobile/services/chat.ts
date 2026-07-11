@@ -2,14 +2,19 @@
  * Chat API service — wraps all RAG conversation endpoints + SSE streaming.
  */
 
+import { fetch as expoFetch } from "expo/fetch";
+
 import { API_BASE_URL } from "@/constants/api";
 import { apiDelete, apiGet, apiPost, getAccessToken } from "@/services/api";
+import { flushSSEBuffer, parseSSEChunk } from "@/services/sse";
 import type {
   ConversationCreatePayload,
   ConversationResponse,
   MessageResponse,
   SSEChatEvent,
 } from "@/types/chat";
+
+export { flushSSEBuffer, parseSSEChunk } from "@/services/sse";
 
 // ── Conversation CRUD ────────────────────────────────────────
 
@@ -49,6 +54,9 @@ export async function deleteConversation(
 /**
  * Send a message and process the streamed SSE response.
  *
+ * Uses `expo/fetch` so `response.body` is a ReadableStream on iOS/Android.
+ * React Native's default fetch often returns a null body for SSE.
+ *
  * @param conversationId  The conversation to send the message to.
  * @param content         The user's message text.
  * @param onEvent         Callback invoked for each SSE event.
@@ -62,7 +70,7 @@ export async function sendMessageStreaming(
 ): Promise<void> {
   const token = await getAccessToken();
 
-  const response = await fetch(
+  const response = (await expoFetch(
     `${API_BASE_URL}/api/v1/conversations/${conversationId}/messages`,
     {
       method: "POST",
@@ -72,8 +80,8 @@ export async function sendMessageStreaming(
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({ content }),
-    }
-  );
+    } as never
+  )) as unknown as Response;
 
   if (!response.ok) {
     let detail = `Chat request failed with status ${response.status}`;
@@ -91,52 +99,39 @@ export async function sendMessageStreaming(
     throw new Error(detail);
   }
 
-  if (!response.body) {
-    throw new Error("Response body is null — streaming not supported.");
+  // Preferred path: true streaming via ReadableStream.
+  if (response.body) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        buffer = parseSSEChunk(buffer, onEvent);
+      }
+
+      flushSSEBuffer(buffer, onEvent);
+    } finally {
+      reader.releaseLock();
+    }
+    return;
   }
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          const dataStr = line.slice(6).trim();
-          if (!dataStr || dataStr === "[DONE]") continue;
-
-          try {
-            const parsed = JSON.parse(dataStr) as SSEChatEvent;
-            onEvent(parsed);
-          } catch {
-            // Skip malformed JSON lines.
-          }
-        }
-      }
-    }
-
-    // Process any remaining data in the buffer.
-    if (buffer.startsWith("data: ")) {
-      const dataStr = buffer.slice(6).trim();
-      if (dataStr && dataStr !== "[DONE]") {
-        try {
-          const parsed = JSON.parse(dataStr) as SSEChatEvent;
-          onEvent(parsed);
-        } catch {
-          // ignore
-        }
-      }
-    }
-  } finally {
-    reader.releaseLock();
+  // Fallback: some runtimes buffer the full SSE payload with a null body.
+  // Still deliver events so chat works (without token-by-token streaming).
+  const text = await response.text();
+  if (!text) {
+    throw new Error(
+      "Chat response was empty. Streaming is unavailable on this device — try again or use the web app."
+    );
   }
+  const remainder = parseSSEChunk(
+    text.endsWith("\n") ? text : `${text}\n`,
+    onEvent
+  );
+  flushSSEBuffer(remainder, onEvent);
 }
-
