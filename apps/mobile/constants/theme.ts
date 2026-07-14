@@ -1,54 +1,81 @@
 /**
- * FoundersForge Design System — premium dark theme.
+ * FoundersForge Design System — light + dark palettes.
  *
- * Inspired by Linear, Stripe, and Vercel.
- * Forge-inspired palette: deep charcoal + molten orange accents.
- * Every value is intentional; do not add arbitrary one-offs.
+ * Dark is the default (forge charcoal + molten orange).
+ * Prefer `useTheme().colors` in components so the toggle works.
+ * `COLORS` remains the dark palette for gradual migration.
  */
 
-export const COLORS = {
-  // ── Brand (molten orange) ──────────────────────────
+export type ColorPalette = {
+  primary: string;
+  primaryLight: string;
+  primaryDark: string;
+  primaryMuted: string;
+  primaryGlow: string;
+  accent: string;
+  accentMuted: string;
+  highlight: string;
+  indigo: string;
+  navy: string;
+  navyLight: string;
+  navyMid: string;
+  navySoft: string;
+  white: string;
+  background: string;
+  backgroundSubtle: string;
+  surface: string;
+  surfaceElevated: string;
+  surfaceOverlay: string;
+  textPrimary: string;
+  textSecondary: string;
+  textTertiary: string;
+  textMuted: string;
+  textInverse: string;
+  textLink: string;
+  border: string;
+  borderLight: string;
+  borderFocus: string;
+  divider: string;
+  success: string;
+  successMuted: string;
+  error: string;
+  errorMuted: string;
+  warning: string;
+  warningMuted: string;
+  info: string;
+  infoMuted: string;
+};
+
+export const DARK_COLORS: ColorPalette = {
   primary: "#FF6A2A",
   primaryLight: "#FF8650",
   primaryDark: "#E55A1B",
   primaryMuted: "rgba(255, 106, 42, 0.12)",
   primaryGlow: "rgba(255, 106, 42, 0.25)",
-
-  // ── Secondary accents ─────────────────────────────
   accent: "#FFB36B",
   accentMuted: "rgba(255, 179, 107, 0.12)",
   highlight: "#FFD7A3",
   indigo: "#4F46E5",
-
-  // ── Dark surfaces ─────────────────────────────────
   navy: "#0B0B0C",
   navyLight: "#111114",
   navyMid: "#151518",
   navySoft: "#1E1E22",
-
-  // ── Neutrals ──────────────────────────────────────
   white: "#ffffff",
   background: "#0B0B0C",
   backgroundSubtle: "#151518",
   surface: "#151518",
   surfaceElevated: "#1E1E22",
   surfaceOverlay: "rgba(0, 0, 0, 0.65)",
-
-  // ── Text hierarchy ────────────────────────────────
   textPrimary: "#F5F5F5",
   textSecondary: "#9A9A9A",
   textTertiary: "#6B6B6B",
   textMuted: "#636363",
   textInverse: "#0B0B0C",
   textLink: "#FF6A2A",
-
-  // ── Borders ───────────────────────────────────────
   border: "rgba(255, 255, 255, 0.08)",
   borderLight: "rgba(255, 255, 255, 0.04)",
   borderFocus: "#FF6A2A",
   divider: "rgba(255, 255, 255, 0.06)",
-
-  // ── Semantic ──────────────────────────────────────
   success: "#22C55E",
   successMuted: "rgba(34, 197, 94, 0.12)",
   error: "#EF4444",
@@ -57,7 +84,56 @@ export const COLORS = {
   warningMuted: "rgba(245, 158, 11, 0.12)",
   info: "#3B82F6",
   infoMuted: "rgba(59, 130, 246, 0.12)",
-} as const;
+};
+
+export const LIGHT_COLORS: ColorPalette = {
+  primary: "#E55A1B",
+  primaryLight: "#FF6A2A",
+  primaryDark: "#C44A14",
+  primaryMuted: "rgba(229, 90, 27, 0.12)",
+  primaryGlow: "rgba(229, 90, 27, 0.2)",
+  accent: "#D97706",
+  accentMuted: "rgba(217, 119, 6, 0.12)",
+  highlight: "#F59E0B",
+  indigo: "#4F46E5",
+  navy: "#F4F2EF",
+  navyLight: "#FFFFFF",
+  navyMid: "#EDEAE6",
+  navySoft: "#E5E1DB",
+  white: "#ffffff",
+  background: "#F7F5F2",
+  backgroundSubtle: "#EDEAE6",
+  surface: "#FFFFFF",
+  surfaceElevated: "#FFFFFF",
+  surfaceOverlay: "rgba(15, 15, 15, 0.45)",
+  textPrimary: "#141414",
+  textSecondary: "#5C5C5C",
+  textTertiary: "#7A7A7A",
+  textMuted: "#8A8A8A",
+  textInverse: "#FFFFFF",
+  textLink: "#E55A1B",
+  border: "rgba(0, 0, 0, 0.1)",
+  borderLight: "rgba(0, 0, 0, 0.05)",
+  borderFocus: "#E55A1B",
+  divider: "rgba(0, 0, 0, 0.08)",
+  success: "#16A34A",
+  successMuted: "rgba(22, 163, 74, 0.12)",
+  error: "#DC2626",
+  errorMuted: "rgba(220, 38, 38, 0.12)",
+  warning: "#D97706",
+  warningMuted: "rgba(217, 119, 6, 0.12)",
+  info: "#2563EB",
+  infoMuted: "rgba(37, 99, 235, 0.12)",
+};
+
+/** @deprecated Prefer useTheme().colors — static dark palette for legacy screens. */
+export const COLORS = DARK_COLORS;
+
+export function colorsForScheme(scheme: "light" | "dark"): ColorPalette {
+  return scheme === "light" ? LIGHT_COLORS : DARK_COLORS;
+}
+
+export type ThemeMode = "light" | "dark" | "system";
 
 export const SPACING = {
   xxs: 2,

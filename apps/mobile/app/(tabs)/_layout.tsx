@@ -1,8 +1,5 @@
 /**
- * Tab navigator — the five main sections of FoundersForge.
- *
- * Premium tab bar with gradient background, orange active state,
- * subtle border. Feels like Linear meets Vercel.
+ * Tab navigator — main sections of FoundersForge.
  */
 
 import { Ionicons } from "@expo/vector-icons";
@@ -13,12 +10,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { HeaderTitle } from "@/components/ui/HeaderTitle";
 import { TourProvider } from "@/components/tour/TourProvider";
 import { TourOverlay } from "@/components/tour/TourOverlay";
-import { COLORS, FONT_SIZE, FONT_WEIGHT, LAYOUT } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
+import { FONT_SIZE, FONT_WEIGHT, LAYOUT } from "@/constants/theme";
 
 function TabBarBackground() {
+  const { colors } = useTheme();
   return (
     <LinearGradient
-      colors={[COLORS.navyMid, COLORS.navy]}
+      colors={[colors.navyMid, colors.navy]}
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
       style={{ flex: 1 }}
@@ -27,9 +26,11 @@ function TabBarBackground() {
 }
 
 function HeaderBackground() {
+  const { colors, resolved } = useTheme();
+  const top = resolved === "dark" ? "#1A1000" : colors.navyMid;
   return (
     <LinearGradient
-      colors={["#1A1000", COLORS.navy]}
+      colors={[top, colors.navy]}
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
       style={{ flex: 1 }}
@@ -38,16 +39,19 @@ function HeaderBackground() {
 }
 
 export default function TabLayout() {
+  const { colors, resolved } = useTheme();
+  const headerTint = resolved === "dark" ? colors.white : colors.textPrimary;
+
   return (
     <TourProvider>
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textMuted,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
-          backgroundColor: COLORS.navy,
-          borderTopColor: "rgba(255, 255, 255, 0.06)",
+          backgroundColor: colors.navy,
+          borderTopColor: colors.border,
           borderTopWidth: 0.5,
           height: LAYOUT.tabBarHeight,
           paddingBottom: 8,
@@ -60,12 +64,12 @@ export default function TabLayout() {
           letterSpacing: 0.1,
         },
         headerStyle: {
-          backgroundColor: COLORS.navy,
+          backgroundColor: colors.navy,
           shadowColor: "transparent",
           elevation: 0,
           height: 96,
         },
-        headerTintColor: COLORS.white,
+        headerTintColor: headerTint,
         headerTitleAlign: "center",
         headerTitleStyle: {
           fontWeight: FONT_WEIGHT.semibold,

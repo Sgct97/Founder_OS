@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useTour, useTourRef } from "@/components/tour/TourProvider";
 import { useAuth } from "@/hooks/use-auth";
+import { useTheme } from "@/hooks/use-theme";
 import {
   useApiKeys,
   useAddApiKey,
@@ -44,6 +45,7 @@ import {
   LAYOUT,
   SHADOW,
   SPACING,
+  type ThemeMode,
 } from "@/constants/theme";
 
 const SUPPORTED_SERVICES = [
@@ -53,6 +55,7 @@ const SUPPORTED_SERVICES = [
 
 export default function SettingsScreen() {
   const { user, workspace, isLoading, signOut, setWorkspace } = useAuth();
+  const { mode, setMode, colors } = useTheme();
   const { currentStep } = useTour();
   const workspaceRef = useTourRef("settings-workspace");
   const apiKeysRef = useTourRef("settings-api-keys");
@@ -288,6 +291,54 @@ export default function SettingsScreen() {
             <Text style={styles.profileName}>{user?.display_name}</Text>
             <Text style={styles.profileEmail}>{user?.email}</Text>
           </View>
+        </View>
+      </View>
+
+      {/* ── Appearance ─────────────────────────────────── */}
+      <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>
+          Appearance
+        </Text>
+        <View style={styles.themeRow}>
+          {(
+            [
+              { id: "light" as ThemeMode, label: "Light", icon: "sunny-outline" },
+              { id: "dark" as ThemeMode, label: "Dark", icon: "moon-outline" },
+              { id: "system" as ThemeMode, label: "System", icon: "phone-portrait-outline" },
+            ] as const
+          ).map((opt) => {
+            const active = mode === opt.id;
+            return (
+              <Pressable
+                key={opt.id}
+                onPress={() => setMode(opt.id)}
+                style={[
+                  styles.themeOption,
+                  {
+                    backgroundColor: active ? colors.primaryMuted : colors.backgroundSubtle,
+                    borderColor: active ? colors.primary : colors.border,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={`${opt.label} theme`}
+              >
+                <Ionicons
+                  name={opt.icon}
+                  size={18}
+                  color={active ? colors.primary : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.themeOptionLabel,
+                    { color: active ? colors.primary : colors.textSecondary },
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
       </View>
 
@@ -791,6 +842,24 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.8,
     marginBottom: 4,
+  },
+  themeRow: {
+    flexDirection: "row",
+    gap: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
+  themeOption: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1,
+  },
+  themeOptionLabel: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.semibold,
   },
   sectionSubtitle: {
     fontSize: FONT_SIZE.xs,

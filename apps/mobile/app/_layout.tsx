@@ -20,7 +20,8 @@ import { StatusBar } from "expo-status-bar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
-import { COLORS, FONT_WEIGHT, SPACING } from "@/constants/theme";
+import { ThemeProvider, useTheme } from "@/hooks/use-theme";
+import { FONT_WEIGHT, SPACING } from "@/constants/theme";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,13 +34,14 @@ const queryClient = new QueryClient({
 
 /** Loading screen shown while checking for an existing session. */
 function LoadingGate(): React.JSX.Element {
+  const { colors } = useTheme();
   return (
-    <View style={styles.loadingContainer}>
-      <View style={styles.loadingMark}>
-        <Text style={styles.loadingMarkText}>F</Text>
+    <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+      <View style={[styles.loadingMark, { backgroundColor: colors.primary, shadowColor: colors.primary }]}>
+        <Text style={[styles.loadingMarkText, { color: colors.white }]}>F</Text>
       </View>
       <ActivityIndicator
-        color={COLORS.primary}
+        color={colors.primary}
         size="small"
         style={styles.spinner}
       />
@@ -78,25 +80,36 @@ function AuthGate({ children }: { children: React.ReactNode }): React.JSX.Elemen
   return <>{children}</>;
 }
 
+function ThemedAppShell(): React.JSX.Element {
+  const { colors, resolved } = useTheme();
+  return (
+    <>
+      <StatusBar style={resolved === "dark" ? "light" : "dark"} />
+      <AuthGate>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.background },
+            animation: "fade",
+          }}
+        >
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+        </Stack>
+      </AuthGate>
+    </>
+  );
+}
+
 export default function RootLayout(): React.JSX.Element {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <StatusBar style="dark" />
-        <AuthGate>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: COLORS.background },
-              animation: "fade",
-            }}
-          >
-            <Stack.Screen name="index" />
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(tabs)" />
-          </Stack>
-        </AuthGate>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <ThemedAppShell />
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
@@ -106,17 +119,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: COLORS.background,
   },
   loadingMark: {
     width: 56,
     height: 56,
     borderRadius: 16,
-    backgroundColor: COLORS.primary,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: SPACING.lg,
-    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 16,
@@ -125,7 +135,6 @@ const styles = StyleSheet.create({
   loadingMarkText: {
     fontSize: 28,
     fontWeight: FONT_WEIGHT.heavy,
-    color: COLORS.white,
     marginTop: -1,
   },
   spinner: {
