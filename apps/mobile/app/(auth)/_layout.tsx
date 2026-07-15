@@ -5,17 +5,17 @@
 
 import { Stack } from "expo-router";
 
-import { COLORS } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 export default function AuthLayout() {
+  const { colors } = useTheme();
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: COLORS.background },
+        contentStyle: { backgroundColor: colors.background },
         animation: "fade",
       }}
     />
   );
 }
-

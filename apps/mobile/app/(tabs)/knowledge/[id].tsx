@@ -13,16 +13,17 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 
+import type { ColorPalette } from "@/constants/theme";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
+import { useTheme } from "@/hooks/use-theme";
 import {
   BORDER_RADIUS,
-  COLORS,
   FONT_SIZE,
   FONT_WEIGHT,
   LAYOUT,
@@ -56,7 +57,9 @@ function formatDateTime(dateStr: string): string {
   });
 }
 
-const STATUS_CONFIG: Record<
+function getStatusConfig(
+  colors: ColorPalette
+): Record<
   DocumentStatus,
   {
     label: string;
@@ -65,36 +68,38 @@ const STATUS_CONFIG: Record<
     bg: string;
     icon: keyof typeof Ionicons.glyphMap;
   }
-> = {
-  queued: {
-    label: "Queued",
-    description: "Waiting to be processed…",
-    color: COLORS.textTertiary,
-    bg: COLORS.backgroundSubtle,
-    icon: "time-outline",
-  },
-  processing: {
-    label: "Processing",
-    description: "Parsing, chunking, and generating embeddings…",
-    color: COLORS.info,
-    bg: COLORS.infoMuted,
-    icon: "sync-outline",
-  },
-  ready: {
-    label: "Ready",
-    description: "Document is indexed and available for AI search.",
-    color: COLORS.success,
-    bg: COLORS.successMuted,
-    icon: "checkmark-circle",
-  },
-  failed: {
-    label: "Failed",
-    description: "An error occurred during processing.",
-    color: COLORS.error,
-    bg: COLORS.errorMuted,
-    icon: "alert-circle",
-  },
-};
+> {
+  return {
+    queued: {
+      label: "Queued",
+      description: "Waiting to be processed…",
+      color: colors.textTertiary,
+      bg: colors.backgroundSubtle,
+      icon: "time-outline",
+    },
+    processing: {
+      label: "Processing",
+      description: "Parsing, chunking, and generating embeddings…",
+      color: colors.info,
+      bg: colors.infoMuted,
+      icon: "sync-outline",
+    },
+    ready: {
+      label: "Ready",
+      description: "Document is indexed and available for AI search.",
+      color: colors.success,
+      bg: colors.successMuted,
+      icon: "checkmark-circle",
+    },
+    failed: {
+      label: "Failed",
+      description: "An error occurred during processing.",
+      color: colors.error,
+      bg: colors.errorMuted,
+      icon: "alert-circle",
+    },
+  };
+}
 
 const FILE_TYPE_LABELS: Record<string, string> = {
   pdf: "PDF Document",
@@ -122,10 +127,12 @@ function MetadataRow({
   label: string;
   value: string;
 }) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.metaRow}>
       <View style={styles.metaIconContainer}>
-        <Ionicons name={icon} size={16} color={COLORS.textTertiary} />
+        <Ionicons name={icon} size={16} color={colors.textTertiary} />
       </View>
       <View style={styles.metaContent}>
         <Text style={styles.metaLabel}>{label}</Text>
@@ -138,6 +145,8 @@ function MetadataRow({
 // ── Main Screen ─────────────────────────────────────────────
 
 export default function DocumentDetailScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const navigation = useNavigation();
@@ -184,7 +193,7 @@ export default function DocumentDetailScreen() {
     (statusData?.status as DocumentStatus) ??
     (document?.status as DocumentStatus) ??
     "queued";
-  const statusConfig = STATUS_CONFIG[currentStatus];
+  const statusConfig = getStatusConfig(colors)[currentStatus];
   const effectiveChunkCount =
     statusData?.chunk_count ?? document?.chunk_count ?? null;
 
@@ -196,7 +205,7 @@ export default function DocumentDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Status hero card skeleton */}
-        <View style={[styles.statusCard, { borderLeftColor: COLORS.borderLight }]}>
+        <View style={[styles.statusCard, { borderLeftColor: colors.borderLight }]}>
           <View style={styles.statusCardTop}>
             <Skeleton width={48} height={48} borderRadius={BORDER_RADIUS.md} />
             <View style={{ flex: 1, marginLeft: SPACING.md }}>
@@ -216,7 +225,7 @@ export default function DocumentDetailScreen() {
   if (error) {
     return (
       <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle" size={32} color={COLORS.error} />
+        <Ionicons name="alert-circle" size={32} color={colors.error} />
         <Text style={styles.errorTitle}>Document Not Found</Text>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>Go Back</Text>
@@ -323,8 +332,8 @@ export default function DocumentDetailScreen() {
           ]}
           onPress={handleDelete}
         >
-          <Ionicons name="trash-outline" size={18} color={COLORS.error} />
-          <Text style={[styles.actionButtonText, { color: COLORS.error }]}>
+          <Ionicons name="trash-outline" size={18} color={colors.error} />
+          <Text style={[styles.actionButtonText, { color: colors.error }]}>
             Delete Document
           </Text>
         </Pressable>
@@ -335,169 +344,170 @@ export default function DocumentDetailScreen() {
 
 // ── Styles ──────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollContent: {
-    paddingHorizontal: LAYOUT.screenPaddingH,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.xxxl,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.background,
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.background,
-    paddingHorizontal: LAYOUT.screenPaddingH,
-  },
-  errorTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-    marginTop: SPACING.md,
-    marginBottom: SPACING.md,
-  },
-  backButton: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.primaryMuted,
-  },
-  backButtonText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
-  },
+function createStyles(colors: ColorPalette) {
+  return {
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollContent: {
+      paddingHorizontal: LAYOUT.screenPaddingH,
+      paddingTop: SPACING.lg,
+      paddingBottom: SPACING.xxxl,
+    },
+    loadingContainer: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: colors.background,
+    },
+    errorContainer: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: colors.background,
+      paddingHorizontal: LAYOUT.screenPaddingH,
+    },
+    errorTitle: {
+      fontSize: FONT_SIZE.lg,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+      marginTop: SPACING.md,
+      marginBottom: SPACING.md,
+    },
+    backButton: {
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.sm,
+      borderRadius: BORDER_RADIUS.sm,
+      backgroundColor: colors.primaryMuted,
+    },
+    backButtonText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.primary,
+    },
 
-  // ── Status Hero Card ───────────────────────────────────
-  statusCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    borderLeftWidth: 4,
-    marginBottom: SPACING.lg,
-    ...SHADOW.md,
-  },
-  statusCardTop: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-  },
-  statusIconBg: {
-    width: 48,
-    height: 48,
-    borderRadius: BORDER_RADIUS.md,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: SPACING.md,
-  },
-  statusCardContent: {
-    flex: 1,
-  },
-  statusLabel: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    letterSpacing: -0.2,
-    marginBottom: SPACING.xxs,
-  },
-  statusDescription: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.regular,
-    color: COLORS.textSecondary,
-    lineHeight: 20,
-  },
-  progressIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: SPACING.md,
-    paddingTop: SPACING.md,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-    gap: SPACING.sm,
-  },
-  progressText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-  },
+    // ── Status Hero Card ───────────────────────────────────
+    statusCard: {
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.lg,
+      padding: SPACING.lg,
+      borderLeftWidth: 4,
+      marginBottom: SPACING.lg,
+      ...SHADOW.md,
+    },
+    statusCardTop: {
+      flexDirection: "row" as const,
+      alignItems: "flex-start" as const,
+    },
+    statusIconBg: {
+      width: 48,
+      height: 48,
+      borderRadius: BORDER_RADIUS.md,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginRight: SPACING.md,
+    },
+    statusCardContent: {
+      flex: 1,
+    },
+    statusLabel: {
+      fontSize: FONT_SIZE.lg,
+      fontWeight: FONT_WEIGHT.bold,
+      letterSpacing: -0.2,
+      marginBottom: SPACING.xxs,
+    },
+    statusDescription: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.regular,
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
+    progressIndicator: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      marginTop: SPACING.md,
+      paddingTop: SPACING.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderLight,
+      gap: SPACING.sm,
+    },
+    progressText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.medium,
+    },
 
-  // ── Metadata ───────────────────────────────────────────
-  sectionTitle: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: SPACING.md,
-  },
-  metaCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md,
-    marginBottom: SPACING.lg,
-    ...SHADOW.sm,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: SPACING.sm,
-  },
-  metaIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.backgroundSubtle,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: SPACING.md,
-  },
-  metaContent: {
-    flex: 1,
-  },
-  metaLabel: {
-    fontSize: FONT_SIZE.caption,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textTertiary,
-    marginBottom: 1,
-  },
-  metaValue: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-  },
-  metaDivider: {
-    height: 1,
-    backgroundColor: COLORS.borderLight,
-  },
+    // ── Metadata ───────────────────────────────────────────
+    sectionTitle: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textTertiary,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.8,
+      marginBottom: SPACING.md,
+    },
+    metaCard: {
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.lg,
+      padding: SPACING.md,
+      marginBottom: SPACING.lg,
+      ...SHADOW.sm,
+    },
+    metaRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      paddingVertical: SPACING.sm,
+    },
+    metaIconContainer: {
+      width: 32,
+      height: 32,
+      borderRadius: BORDER_RADIUS.sm,
+      backgroundColor: colors.backgroundSubtle,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginRight: SPACING.md,
+    },
+    metaContent: {
+      flex: 1,
+    },
+    metaLabel: {
+      fontSize: FONT_SIZE.caption,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textTertiary,
+      marginBottom: 1,
+    },
+    metaValue: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+    },
+    metaDivider: {
+      height: 1,
+      backgroundColor: colors.borderLight,
+    },
 
-  // ── Actions ────────────────────────────────────────────
-  actionsCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.sm,
-    marginBottom: SPACING.lg,
-    ...SHADOW.sm,
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    gap: SPACING.sm,
-  },
-  actionButtonDanger: {
-    backgroundColor: COLORS.errorMuted,
-  },
-  actionButtonText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-});
-
+    // ── Actions ────────────────────────────────────────────
+    actionsCard: {
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.lg,
+      padding: SPACING.sm,
+      marginBottom: SPACING.lg,
+      ...SHADOW.sm,
+    },
+    actionButton: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      paddingVertical: SPACING.md,
+      paddingHorizontal: SPACING.md,
+      borderRadius: BORDER_RADIUS.md,
+      gap: SPACING.sm,
+    },
+    actionButtonDanger: {
+      backgroundColor: colors.errorMuted,
+    },
+    actionButtonText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+    },
+  };
+}

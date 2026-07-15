@@ -19,9 +19,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+import type { ColorPalette } from "@/constants/theme";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
+import { useTheme } from "@/hooks/use-theme";
 import {
   BORDER_RADIUS,
-  COLORS,
   FONT_SIZE,
   FONT_WEIGHT,
   SPACING,
@@ -32,6 +34,8 @@ const SPOTLIGHT_PADDING = 12;
 const TOOLTIP_WIDTH = 360;
 
 export function TourOverlay(): React.JSX.Element | null {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const {
     isActive,
     currentStep,
@@ -238,7 +242,8 @@ function computeTooltipPosition(
   return { left, top: Math.max(40, above - tooltipEstHeight) };
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ColorPalette) {
+  return {
   overlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 9999,
@@ -303,7 +308,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: "100%",
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 2,
   },
   progressLabel: {
@@ -330,7 +335,7 @@ const styles = StyleSheet.create({
   title: {
     color: "#fff",
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "700" as const,
     letterSpacing: -0.4,
     marginBottom: 10,
     lineHeight: 26,
@@ -369,7 +374,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 24,
     borderRadius: 12,
@@ -378,7 +383,7 @@ const styles = StyleSheet.create({
           boxShadow: `0 4px 16px rgba(255, 106, 42, 0.3), 0 1px 4px rgba(255, 106, 42, 0.2)`,
         }
       : {
-          shadowColor: COLORS.primary,
+          shadowColor: colors.primary,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.3,
           shadowRadius: 12,
@@ -387,7 +392,8 @@ const styles = StyleSheet.create({
   nextText: {
     color: "#fff",
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "600" as const,
     letterSpacing: 0.2,
   },
-});
+  };
+}

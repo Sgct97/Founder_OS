@@ -1,5 +1,8 @@
 /**
  * Theme context — light / dark / system with persisted preference.
+ *
+ * Mirrors market-opportunity-mapper: swap a full token palette app-wide.
+ * On web, also writes `data-theme` + CSS variables so the document chrome flips.
  */
 
 import React, {
@@ -57,6 +60,25 @@ async function writeStoredMode(mode: ThemeMode): Promise<void> {
   }
 }
 
+/** Apply mapper-style document tokens for Expo web. */
+function applyWebDocumentTheme(
+  resolved: "light" | "dark",
+  colors: ColorPalette
+): void {
+  if (Platform.OS !== "web" || typeof document === "undefined") return;
+  const root = document.documentElement;
+  root.setAttribute("data-theme", resolved);
+  root.style.colorScheme = resolved;
+  root.style.backgroundColor = colors.background;
+  if (document.body) {
+    document.body.style.backgroundColor = colors.background;
+    document.body.style.color = colors.textPrimary;
+  }
+  (Object.keys(colors) as (keyof ColorPalette)[]).forEach((key) => {
+    root.style.setProperty(`--ff-${key}`, colors[key]);
+  });
+}
+
 export function ThemeProvider({
   children,
 }: {
@@ -92,6 +114,10 @@ export function ThemeProvider({
 
   const colors = resolved === "light" ? LIGHT_COLORS : DARK_COLORS;
 
+  useEffect(() => {
+    applyWebDocumentTheme(resolved, colors);
+  }, [resolved, colors]);
+
   const toggleLightDark = useCallback(() => {
     setMode(resolved === "light" ? "dark" : "light");
   }, [resolved, setMode]);
@@ -101,7 +127,6 @@ export function ThemeProvider({
     [mode, resolved, colors, setMode, toggleLightDark]
   );
 
-  // Avoid flash of wrong theme on native after reading storage.
   if (!ready) {
     return (
       <ThemeContext.Provider

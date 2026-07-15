@@ -16,7 +16,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -34,9 +33,11 @@ import {
   useUploadAttachment,
 } from "@/hooks/use-milestones";
 import type { MilestoneAttachment, MilestoneResponse, MilestoneStatus } from "@/types/milestones";
+import type { ColorPalette } from "@/constants/theme";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
+import { useTheme } from "@/hooks/use-theme";
 import {
   BORDER_RADIUS,
-  COLORS,
   FONT_SIZE,
   FONT_WEIGHT,
   LAYOUT,
@@ -46,7 +47,9 @@ import {
 
 // ── Status Helpers ───────────────────────────────────────────
 
-const STATUS_META: Record<
+function getStatusMeta(
+  colors: ColorPalette
+): Record<
   MilestoneStatus,
   {
     label: string;
@@ -54,26 +57,28 @@ const STATUS_META: Record<
     color: string;
     bg: string;
   }
-> = {
-  not_started: {
-    label: "Not Started",
-    icon: "ellipse-outline",
-    color: COLORS.textMuted,
-    bg: COLORS.backgroundSubtle,
-  },
-  in_progress: {
-    label: "In Progress",
-    icon: "time-outline",
-    color: COLORS.warning,
-    bg: COLORS.warningMuted,
-  },
-  completed: {
-    label: "Completed",
-    icon: "checkmark-circle",
-    color: COLORS.success,
-    bg: COLORS.successMuted,
-  },
-};
+> {
+  return {
+    not_started: {
+      label: "Not Started",
+      icon: "ellipse-outline",
+      color: colors.textMuted,
+      bg: colors.backgroundSubtle,
+    },
+    in_progress: {
+      label: "In Progress",
+      icon: "time-outline",
+      color: colors.warning,
+      bg: colors.warningMuted,
+    },
+    completed: {
+      label: "Completed",
+      icon: "checkmark-circle",
+      color: colors.success,
+      bg: colors.successMuted,
+    },
+  };
+}
 
 const STATUS_ORDER: MilestoneStatus[] = [
   "not_started",
@@ -141,6 +146,9 @@ export default function MilestoneDetailSheet({
   onDelete,
   onChat,
 }: MilestoneDetailSheetProps): React.JSX.Element {
+  const s = useThemedStyles(createStyles);
+  const { colors } = useTheme();
+  const STATUS_META = getStatusMeta(colors);
   const updateMilestone = useUpdateMilestone();
   const uploadAttachment = useUploadAttachment();
   const deleteAttachment = useDeleteAttachment();
@@ -335,7 +343,7 @@ export default function MilestoneDetailSheet({
                   onPress={handleClose}
                   hitSlop={12}
                 >
-                  <Ionicons name="close" size={20} color={COLORS.textSecondary} />
+                  <Ionicons name="close" size={20} color={colors.textSecondary} />
                 </Pressable>
               </View>
 
@@ -349,7 +357,7 @@ export default function MilestoneDetailSheet({
                   <Ionicons
                     name="layers-outline"
                     size={12}
-                    color={COLORS.primary}
+                    color={colors.primary}
                   />
                   <Text style={s.phaseBadgeText}>{phaseName}</Text>
                 </View>
@@ -380,7 +388,7 @@ export default function MilestoneDetailSheet({
                         <Ionicons
                           name={m.icon}
                           size={14}
-                          color={isActive ? m.color : COLORS.textMuted}
+                          color={isActive ? m.color : colors.textMuted}
                         />
                         <Text
                           style={[
@@ -414,7 +422,7 @@ export default function MilestoneDetailSheet({
                     setNotesDirty(true);
                   }}
                   placeholder="Add notes, blockers, links, thoughts..."
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   multiline
                   textAlignVertical="top"
                 />
@@ -428,13 +436,13 @@ export default function MilestoneDetailSheet({
                     disabled={uploadAttachment.isPending}
                   >
                     {uploadAttachment.isPending ? (
-                      <ActivityIndicator size="small" color={COLORS.primary} />
+                      <ActivityIndicator size="small" color={colors.primary} />
                     ) : (
                       <>
                         <Ionicons
                           name="cloud-upload-outline"
                           size={14}
-                          color={COLORS.primary}
+                          color={colors.primary}
                         />
                         <Text style={s.uploadBtnText}>Upload</Text>
                       </>
@@ -444,7 +452,7 @@ export default function MilestoneDetailSheet({
 
                 {uploadAttachment.isError && (
                   <View style={s.errorBanner}>
-                    <Ionicons name="alert-circle" size={14} color={COLORS.error} />
+                    <Ionicons name="alert-circle" size={14} color={colors.error} />
                     <Text style={s.errorBannerText}>
                       Upload failed. Please try again.
                     </Text>
@@ -453,7 +461,7 @@ export default function MilestoneDetailSheet({
 
                 {loadingAttachments ? (
                   <View style={s.attachmentLoading}>
-                    <ActivityIndicator size="small" color={COLORS.textMuted} />
+                    <ActivityIndicator size="small" color={colors.textMuted} />
                     <Text style={s.attachmentLoadingText}>
                       Loading attachments...
                     </Text>
@@ -463,7 +471,7 @@ export default function MilestoneDetailSheet({
                     <Ionicons
                       name="folder-open-outline"
                       size={28}
-                      color={COLORS.borderLight}
+                      color={colors.borderLight}
                     />
                     <Text style={s.emptyAttachmentsText}>
                       No documents attached yet
@@ -484,7 +492,7 @@ export default function MilestoneDetailSheet({
                             <Ionicons
                               name={getFileIcon(att.file_type)}
                               size={18}
-                              color={COLORS.primary}
+                              color={colors.primary}
                             />
                           </View>
                           <View style={s.attachmentInfo}>
@@ -498,7 +506,7 @@ export default function MilestoneDetailSheet({
                           <Ionicons
                             name="download-outline"
                             size={16}
-                            color={COLORS.primary}
+                            color={colors.primary}
                           />
                         </Pressable>
                         <Pressable
@@ -509,7 +517,7 @@ export default function MilestoneDetailSheet({
                           <Ionicons
                             name="trash-outline"
                             size={16}
-                            color={COLORS.textMuted}
+                            color={colors.textMuted}
                           />
                         </Pressable>
                       </View>
@@ -523,7 +531,7 @@ export default function MilestoneDetailSheet({
                     <Ionicons
                       name="calendar-outline"
                       size={13}
-                      color={COLORS.textMuted}
+                      color={colors.textMuted}
                     />
                     <Text style={s.metaText}>
                       Created{" "}
@@ -538,7 +546,7 @@ export default function MilestoneDetailSheet({
                     <Ionicons
                       name="time-outline"
                       size={13}
-                      color={COLORS.textMuted}
+                      color={colors.textMuted}
                     />
                     <Text style={s.metaText}>
                       Updated{" "}
@@ -561,7 +569,7 @@ export default function MilestoneDetailSheet({
                     }}
                   >
                     <View style={s.chatBtnIconWrap}>
-                      <Ionicons name="sparkles" size={16} color={COLORS.white} />
+                      <Ionicons name="sparkles" size={16} color={colors.white} />
                     </View>
                     <View style={s.chatBtnTextWrap}>
                       <Text style={s.chatBtnTitle}>Chat about this milestone</Text>
@@ -569,7 +577,7 @@ export default function MilestoneDetailSheet({
                         Get AI help with implementation, blockers & strategy
                       </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+                    <Ionicons name="chevron-forward" size={16} color={colors.primary} />
                   </Pressable>
                 )}
 
@@ -585,7 +593,7 @@ export default function MilestoneDetailSheet({
                     <Ionicons
                       name="pencil-outline"
                       size={16}
-                      color={COLORS.textSecondary}
+                      color={colors.textSecondary}
                     />
                     <Text style={s.actionBtnText}>Edit</Text>
                   </Pressable>
@@ -599,7 +607,7 @@ export default function MilestoneDetailSheet({
                     <Ionicons
                       name="trash-outline"
                       size={16}
-                      color={COLORS.error}
+                      color={colors.error}
                     />
                     <Text style={[s.actionBtnText, s.actionBtnTextDanger]}>
                       Delete
@@ -617,356 +625,358 @@ export default function MilestoneDetailSheet({
 
 // ── Styles ───────────────────────────────────────────────────
 
-const s = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: COLORS.surfaceOverlay,
-    justifyContent: "flex-end",
-  },
-  keyboardAvoid: {
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    backgroundColor: COLORS.surface,
-    borderTopLeftRadius: BORDER_RADIUS.xxl,
-    borderTopRightRadius: BORDER_RADIUS.xxl,
-    maxHeight: "85%",
-    ...SHADOW.lg,
-  },
-  sheetInner: {
-    flex: 1,
-  },
-  sheetHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: SPACING.sm + 4,
-    paddingBottom: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    position: "relative",
-  },
-  handleBar: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: COLORS.borderLight,
-  },
-  closeButton: {
-    position: "absolute",
-    right: SPACING.md,
-    top: SPACING.sm,
-    width: 32,
-    height: 32,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.backgroundSubtle,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  scrollContent: {
-    paddingHorizontal: LAYOUT.screenPaddingH,
-    paddingBottom: SPACING.xxxl,
-  },
+function createStyles(colors: ColorPalette) {
+  return {
+    overlay: {
+      flex: 1,
+      backgroundColor: colors.surfaceOverlay,
+      justifyContent: "flex-end" as const,
+    },
+    keyboardAvoid: {
+      justifyContent: "flex-end" as const,
+    },
+    sheet: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: BORDER_RADIUS.xxl,
+      borderTopRightRadius: BORDER_RADIUS.xxl,
+      maxHeight: "85%" as const,
+      ...SHADOW.lg,
+    },
+    sheetInner: {
+      flex: 1,
+    },
+    sheetHeaderRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingTop: SPACING.sm + 4,
+      paddingBottom: SPACING.sm,
+      paddingHorizontal: SPACING.md,
+      position: "relative" as const,
+    },
+    handleBar: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.borderLight,
+    },
+    closeButton: {
+      position: "absolute" as const,
+      right: SPACING.md,
+      top: SPACING.sm,
+      width: 32,
+      height: 32,
+      borderRadius: BORDER_RADIUS.full,
+      backgroundColor: colors.backgroundSubtle,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    scrollContent: {
+      paddingHorizontal: LAYOUT.screenPaddingH,
+      paddingBottom: SPACING.xxxl,
+    },
 
-  // Phase badge
-  phaseBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    gap: SPACING.xs,
-    backgroundColor: COLORS.primaryMuted,
-    paddingHorizontal: SPACING.sm + 2,
-    paddingVertical: SPACING.xxs + 2,
-    borderRadius: BORDER_RADIUS.full,
-    marginBottom: SPACING.md,
-  },
-  phaseBadgeText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
-  },
+    // Phase badge
+    phaseBadge: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      alignSelf: "flex-start" as const,
+      gap: SPACING.xs,
+      backgroundColor: colors.primaryMuted,
+      paddingHorizontal: SPACING.sm + 2,
+      paddingVertical: SPACING.xxs + 2,
+      borderRadius: BORDER_RADIUS.full,
+      marginBottom: SPACING.md,
+    },
+    phaseBadgeText: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.primary,
+    },
 
-  // Title & desc
-  title: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    letterSpacing: -0.3,
-    marginBottom: SPACING.xs,
-    lineHeight: 28,
-  },
-  description: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-    lineHeight: 22,
-    marginBottom: SPACING.lg,
-  },
+    // Title & desc
+    title: {
+      fontSize: FONT_SIZE.xl,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+      letterSpacing: -0.3,
+      marginBottom: SPACING.xs,
+      lineHeight: 28,
+    },
+    description: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textSecondary,
+      lineHeight: 22,
+      marginBottom: SPACING.lg,
+    },
 
-  // Section label
-  sectionLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: SPACING.sm,
-    marginTop: SPACING.lg,
-  },
+    // Section label
+    sectionLabel: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textTertiary,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.8,
+      marginBottom: SPACING.sm,
+      marginTop: SPACING.lg,
+    },
 
-  // Status selector
-  statusRow: {
-    flexDirection: "row",
-    gap: SPACING.sm,
-  },
-  statusChip: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: SPACING.xs,
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.backgroundSubtle,
-    borderWidth: 1.5,
-    borderColor: "transparent",
-  },
-  statusChipText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textMuted,
-  },
+    // Status selector
+    statusRow: {
+      flexDirection: "row" as const,
+      gap: SPACING.sm,
+    },
+    statusChip: {
+      flex: 1,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      gap: SPACING.xs,
+      paddingVertical: SPACING.sm + 2,
+      borderRadius: BORDER_RADIUS.md,
+      backgroundColor: colors.backgroundSubtle,
+      borderWidth: 1.5,
+      borderColor: "transparent",
+    },
+    statusChipText: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textMuted,
+    },
 
-  // Notes
-  notesHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  notesInput: {
-    minHeight: 120,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.md,
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.background,
-    lineHeight: 22,
-  },
-  saveBtn: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs + 2,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.primary,
-    marginBottom: SPACING.sm,
-    marginTop: SPACING.lg,
-  },
-  saveBtnText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.white,
-  },
+    // Notes
+    notesHeader: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+    },
+    notesInput: {
+      minHeight: 120,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: BORDER_RADIUS.md,
+      padding: SPACING.md,
+      fontSize: FONT_SIZE.sm,
+      color: colors.textPrimary,
+      backgroundColor: colors.background,
+      lineHeight: 22,
+    },
+    saveBtn: {
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.xs + 2,
+      borderRadius: BORDER_RADIUS.sm,
+      backgroundColor: colors.primary,
+      marginBottom: SPACING.sm,
+      marginTop: SPACING.lg,
+    },
+    saveBtnText: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.white,
+    },
 
-  // ── Attachments ────────────────────────────────────────────
-  attachmentHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  uploadBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.xs,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs + 2,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.primaryMuted,
-    marginBottom: SPACING.sm,
-    marginTop: SPACING.lg,
-  },
-  uploadBtnText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
-  },
+    // ── Attachments ────────────────────────────────────────────
+    attachmentHeader: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+    },
+    uploadBtn: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: SPACING.xs,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.xs + 2,
+      borderRadius: BORDER_RADIUS.sm,
+      backgroundColor: colors.primaryMuted,
+      marginBottom: SPACING.sm,
+      marginTop: SPACING.lg,
+    },
+    uploadBtnText: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.primary,
+    },
 
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.xs,
-    backgroundColor: COLORS.errorMuted,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.sm,
-    marginBottom: SPACING.sm,
-  },
-  errorBannerText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.error,
-    fontWeight: FONT_WEIGHT.medium,
-  },
+    errorBanner: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: SPACING.xs,
+      backgroundColor: colors.errorMuted,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm,
+      borderRadius: BORDER_RADIUS.sm,
+      marginBottom: SPACING.sm,
+    },
+    errorBannerText: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.error,
+      fontWeight: FONT_WEIGHT.medium,
+    },
 
-  attachmentLoading: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: SPACING.sm,
-    paddingVertical: SPACING.lg,
-  },
-  attachmentLoadingText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-  },
+    attachmentLoading: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      gap: SPACING.sm,
+      paddingVertical: SPACING.lg,
+    },
+    attachmentLoadingText: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textMuted,
+    },
 
-  emptyAttachments: {
-    alignItems: "center",
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    borderRadius: BORDER_RADIUS.md,
-    borderStyle: "dashed",
-    backgroundColor: COLORS.background,
-  },
-  emptyAttachmentsText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textTertiary,
-    marginTop: SPACING.sm,
-  },
-  emptyAttachmentsSubtext: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-    marginTop: SPACING.xxs,
-    textAlign: "center",
-  },
+    emptyAttachments: {
+      alignItems: "center" as const,
+      paddingVertical: SPACING.lg,
+      paddingHorizontal: SPACING.md,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      borderRadius: BORDER_RADIUS.md,
+      borderStyle: "dashed" as const,
+      backgroundColor: colors.background,
+    },
+    emptyAttachmentsText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textTertiary,
+      marginTop: SPACING.sm,
+    },
+    emptyAttachmentsSubtext: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textMuted,
+      marginTop: SPACING.xxs,
+      textAlign: "center" as const,
+    },
 
-  attachmentList: {
-    gap: SPACING.sm,
-  },
-  attachmentCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingRight: SPACING.xs,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.surface,
-  },
-  attachmentTappable: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.md,
-    paddingVertical: SPACING.sm + 2,
-    paddingHorizontal: SPACING.md,
-  },
-  attachmentIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.primaryMuted,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  attachmentInfo: {
-    flex: 1,
-  },
-  attachmentName: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textPrimary,
-    lineHeight: 20,
-  },
-  attachmentMeta: {
-    fontSize: FONT_SIZE.caption,
-    color: COLORS.textMuted,
-    marginTop: 1,
-  },
-  attachmentDeleteBtn: {
-    padding: SPACING.xs,
-    borderRadius: BORDER_RADIUS.sm,
-  },
+    attachmentList: {
+      gap: SPACING.sm,
+    },
+    attachmentCard: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      paddingRight: SPACING.xs,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: BORDER_RADIUS.md,
+      backgroundColor: colors.surface,
+    },
+    attachmentTappable: {
+      flex: 1,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: SPACING.md,
+      paddingVertical: SPACING.sm + 2,
+      paddingHorizontal: SPACING.md,
+    },
+    attachmentIconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: BORDER_RADIUS.sm,
+      backgroundColor: colors.primaryMuted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    attachmentInfo: {
+      flex: 1,
+    },
+    attachmentName: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textPrimary,
+      lineHeight: 20,
+    },
+    attachmentMeta: {
+      fontSize: FONT_SIZE.caption,
+      color: colors.textMuted,
+      marginTop: 1,
+    },
+    attachmentDeleteBtn: {
+      padding: SPACING.xs,
+      borderRadius: BORDER_RADIUS.sm,
+    },
 
-  // Chat button
-  chatBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.md,
-    marginTop: SPACING.lg,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.primaryMuted,
-    borderWidth: 1,
-    borderColor: COLORS.primary + "30",
-  },
-  chatBtnIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  chatBtnTextWrap: {
-    flex: 1,
-  },
-  chatBtnTitle: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
-    marginBottom: 2,
-  },
-  chatBtnSubtitle: {
-    fontSize: FONT_SIZE.caption,
-    color: COLORS.textTertiary,
-    lineHeight: 16,
-  },
+    // Chat button
+    chatBtn: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: SPACING.md,
+      marginTop: SPACING.lg,
+      paddingVertical: SPACING.md,
+      paddingHorizontal: SPACING.md,
+      borderRadius: BORDER_RADIUS.md,
+      backgroundColor: colors.primaryMuted,
+      borderWidth: 1,
+      borderColor: colors.primary + "30",
+    },
+    chatBtnIconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: BORDER_RADIUS.full,
+      backgroundColor: colors.primary,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    chatBtnTextWrap: {
+      flex: 1,
+    },
+    chatBtnTitle: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.primary,
+      marginBottom: 2,
+    },
+    chatBtnSubtitle: {
+      fontSize: FONT_SIZE.caption,
+      color: colors.textTertiary,
+      lineHeight: 16,
+    },
 
-  // Metadata
-  metaRow: {
-    flexDirection: "row",
-    gap: SPACING.lg,
-    marginTop: SPACING.lg,
-    paddingTop: SPACING.md,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-  },
-  metaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.xs,
-  },
-  metaText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-  },
+    // Metadata
+    metaRow: {
+      flexDirection: "row" as const,
+      gap: SPACING.lg,
+      marginTop: SPACING.lg,
+      paddingTop: SPACING.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderLight,
+    },
+    metaItem: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: SPACING.xs,
+    },
+    metaText: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textMuted,
+    },
 
-  // Actions
-  actionRow: {
-    flexDirection: "row",
-    gap: SPACING.sm,
-    marginTop: SPACING.lg,
-  },
-  actionBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: SPACING.xs,
-    paddingVertical: SPACING.sm + 4,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.backgroundSubtle,
-  },
-  actionBtnDanger: {
-    backgroundColor: COLORS.errorMuted,
-  },
-  actionBtnText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
-  },
-  actionBtnTextDanger: {
-    color: COLORS.error,
-  },
-});
+    // Actions
+    actionRow: {
+      flexDirection: "row" as const,
+      gap: SPACING.sm,
+      marginTop: SPACING.lg,
+    },
+    actionBtn: {
+      flex: 1,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      gap: SPACING.xs,
+      paddingVertical: SPACING.sm + 4,
+      borderRadius: BORDER_RADIUS.md,
+      backgroundColor: colors.backgroundSubtle,
+    },
+    actionBtnDanger: {
+      backgroundColor: colors.errorMuted,
+    },
+    actionBtnText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textSecondary,
+    },
+    actionBtnTextDanger: {
+      color: colors.error,
+    },
+  };
+}

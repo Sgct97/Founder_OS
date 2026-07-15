@@ -8,7 +8,6 @@
 import React, { useCallback, useRef, useState } from "react";
 import {
   Animated,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -17,9 +16,11 @@ import {
   type ViewStyle,
 } from "react-native";
 
+import type { ColorPalette } from "@/constants/theme";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
+import { useTheme } from "@/hooks/use-theme";
 import {
   BORDER_RADIUS,
-  COLORS,
   FONT_SIZE,
   FONT_WEIGHT,
   LAYOUT,
@@ -54,6 +55,8 @@ export function Input({
   disabled = false,
   style,
 }: InputProps): React.JSX.Element {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
   const borderAnim = useRef(new Animated.Value(0)).current;
 
@@ -76,10 +79,10 @@ export function Input({
   }, [borderAnim]);
 
   const borderColor = error
-    ? COLORS.error
+    ? colors.error
     : borderAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [COLORS.border, COLORS.borderFocus],
+        outputRange: [colors.border, colors.borderFocus],
       });
 
   return (
@@ -97,7 +100,7 @@ export function Input({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={COLORS.textMuted}
+          placeholderTextColor={colors.textMuted}
           secureTextEntry={secureTextEntry}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
@@ -113,51 +116,52 @@ export function Input({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    marginBottom: SPACING.md,
-  },
-  label: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.xs + 2,
-    letterSpacing: 0.1,
-  },
-  labelError: {
-    color: COLORS.error,
-  },
-  inputWrapper: {
-    height: LAYOUT.inputHeight,
-    borderRadius: BORDER_RADIUS.md,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
-    ...SHADOW.sm,
-  },
-  inputFocused: {
-    ...SHADOW.md,
-  },
-  inputError: {
-    borderColor: COLORS.error,
-  },
-  input: {
-    flex: 1,
-    paddingHorizontal: SPACING.md,
-    fontSize: FONT_SIZE.md,
-    color: COLORS.textPrimary,
-    fontWeight: FONT_WEIGHT.regular,
-  },
-  inputDisabled: {
-    opacity: 0.5,
-    color: COLORS.textMuted,
-  },
-  errorText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.error,
-    marginTop: SPACING.xs,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-});
-
+function createStyles(colors: ColorPalette) {
+  return {
+    container: {
+      width: "100%" as const,
+      marginBottom: SPACING.md,
+    },
+    label: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textSecondary,
+      marginBottom: SPACING.xs + 2,
+      letterSpacing: 0.1,
+    },
+    labelError: {
+      color: colors.error,
+    },
+    inputWrapper: {
+      height: LAYOUT.inputHeight,
+      borderRadius: BORDER_RADIUS.md,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      ...SHADOW.sm,
+    },
+    inputFocused: {
+      ...SHADOW.md,
+    },
+    inputError: {
+      borderColor: colors.error,
+    },
+    input: {
+      flex: 1,
+      paddingHorizontal: SPACING.md,
+      fontSize: FONT_SIZE.md,
+      color: colors.textPrimary,
+      fontWeight: FONT_WEIGHT.regular,
+    },
+    inputDisabled: {
+      opacity: 0.5,
+      color: colors.textMuted,
+    },
+    errorText: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.error,
+      marginTop: SPACING.xs,
+      fontWeight: FONT_WEIGHT.medium,
+    },
+  };
+}

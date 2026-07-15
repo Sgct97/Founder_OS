@@ -11,7 +11,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -21,9 +20,10 @@ import { BrandHeader } from "@/components/ui/BrandHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/hooks/use-auth";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
+import type { ColorPalette } from "@/constants/theme";
 import {
   BORDER_RADIUS,
-  COLORS,
   FONT_SIZE,
   FONT_WEIGHT,
   LAYOUT,
@@ -32,6 +32,7 @@ import {
 } from "@/constants/theme";
 
 export default function InviteScreen() {
+  const styles = useThemedStyles(createStyles);
   const { joinWithInvite } = useAuth();
   const [inviteCode, setInviteCode] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -157,71 +158,72 @@ export default function InviteScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingHorizontal: LAYOUT.screenPaddingH,
-    paddingVertical: SPACING.xxl,
-  },
-  content: {
-    width: "100%",
-    maxWidth: LAYOUT.maxContentWidth,
-    alignSelf: "center",
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.lg,
-    paddingTop: SPACING.xl,
-    paddingBottom: SPACING.xl,
-    ...SHADOW.lg,
-  },
-  cardTitle: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.xs,
-    letterSpacing: -0.3,
-  },
-  cardSubtitle: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.regular,
-    color: COLORS.textTertiary,
-    marginBottom: SPACING.lg,
-  },
-  errorBanner: {
-    backgroundColor: COLORS.errorMuted,
-    borderRadius: BORDER_RADIUS.sm,
-    paddingVertical: SPACING.sm + 2,
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.md,
-  },
-  errorText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.error,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  buttonRow: {
-    marginTop: SPACING.sm,
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: SPACING.md,
-  },
-  footerText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textTertiary,
-  },
-  footerLink: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-});
-
+function createStyles(colors: ColorPalette) {
+  return {
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      justifyContent: "center" as const,
+      paddingHorizontal: LAYOUT.screenPaddingH,
+      paddingVertical: SPACING.xxl,
+    },
+    content: {
+      width: "100%" as const,
+      maxWidth: LAYOUT.maxContentWidth,
+      alignSelf: "center" as const,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.xl,
+      padding: SPACING.lg,
+      paddingTop: SPACING.xl,
+      paddingBottom: SPACING.xl,
+      ...SHADOW.lg,
+    },
+    cardTitle: {
+      fontSize: FONT_SIZE.xl,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+      marginBottom: SPACING.xs,
+      letterSpacing: -0.3,
+    },
+    cardSubtitle: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.regular,
+      color: colors.textTertiary,
+      marginBottom: SPACING.lg,
+    },
+    errorBanner: {
+      backgroundColor: colors.errorMuted,
+      borderRadius: BORDER_RADIUS.sm,
+      paddingVertical: SPACING.sm + 2,
+      paddingHorizontal: SPACING.md,
+      marginBottom: SPACING.md,
+    },
+    errorText: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.error,
+      fontWeight: FONT_WEIGHT.medium,
+    },
+    buttonRow: {
+      marginTop: SPACING.sm,
+    },
+    footer: {
+      flexDirection: "row" as const,
+      justifyContent: "center" as const,
+      marginTop: SPACING.md,
+    },
+    footerText: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textTertiary,
+    },
+    footerLink: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.primary,
+      fontWeight: FONT_WEIGHT.semibold,
+    },
+  };
+}

@@ -25,9 +25,11 @@ import { useRouter } from "expo-router";
 import { useCreateDiaryEntry } from "@/hooks/use-diary";
 import { usePhases } from "@/hooks/use-milestones";
 import type { DiaryEntryCreatePayload } from "@/types/diary";
+import type { ColorPalette } from "@/constants/theme";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
+import { useTheme } from "@/hooks/use-theme";
 import {
   BORDER_RADIUS,
-  COLORS,
   FONT_SIZE,
   FONT_WEIGHT,
   LAYOUT,
@@ -60,6 +62,8 @@ function MilestonePicker({
   selectedId,
   onSelect,
 }: MilestonePickerProps): React.JSX.Element {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const { data: phases } = usePhases();
   const [expanded, setExpanded] = useState(false);
 
@@ -86,7 +90,7 @@ function MilestonePicker({
         <Ionicons
           name="flag"
           size={16}
-          color={selectedId ? COLORS.primary : COLORS.textTertiary}
+          color={selectedId ? colors.primary : colors.textTertiary}
         />
         <Text
           style={[
@@ -102,7 +106,7 @@ function MilestonePicker({
         <Ionicons
           name="chevron-down"
           size={16}
-          color={COLORS.textTertiary}
+          color={colors.textTertiary}
         />
       </Pressable>
     );
@@ -113,7 +117,7 @@ function MilestonePicker({
       <View style={styles.pickerDropdownHeader}>
         <Text style={styles.pickerDropdownTitle}>Link Milestone</Text>
         <Pressable onPress={() => setExpanded(false)}>
-          <Ionicons name="close" size={20} color={COLORS.textTertiary} />
+          <Ionicons name="close" size={20} color={colors.textTertiary} />
         </Pressable>
       </View>
 
@@ -133,7 +137,7 @@ function MilestonePicker({
           <Ionicons
             name="checkmark"
             size={16}
-            color={COLORS.primary}
+            color={colors.primary}
           />
         )}
       </Pressable>
@@ -160,7 +164,7 @@ function MilestonePicker({
             <Ionicons
               name="checkmark"
               size={16}
-              color={COLORS.primary}
+              color={colors.primary}
             />
           )}
         </Pressable>
@@ -191,6 +195,8 @@ const DATE_OPTIONS = (() => {
 // ── Main Form ───────────────────────────────────────────────
 
 export default function NewDiaryEntryScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const router = useRouter();
   const createEntry = useCreateDiaryEntry();
 
@@ -277,14 +283,14 @@ export default function NewDiaryEntryScreen() {
             <Ionicons
               name="time-outline"
               size={18}
-              color={COLORS.textTertiary}
+              color={colors.textTertiary}
             />
             <TextInput
               style={styles.hoursInput}
               value={hoursWorked}
               onChangeText={setHoursWorked}
               placeholder="e.g. 4.5"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               keyboardType="decimal-pad"
               returnKeyType="next"
               maxLength={5}
@@ -301,7 +307,7 @@ export default function NewDiaryEntryScreen() {
             value={description}
             onChangeText={setDescription}
             placeholder="Describe what you worked on today…"
-            placeholderTextColor={COLORS.textMuted}
+            placeholderTextColor={colors.textMuted}
             multiline
             textAlignVertical="top"
             returnKeyType="default"
@@ -330,10 +336,10 @@ export default function NewDiaryEntryScreen() {
           disabled={!canSubmit}
         >
           {createEntry.isPending ? (
-            <ActivityIndicator color={COLORS.white} size="small" />
+            <ActivityIndicator color={colors.white} size="small" />
           ) : (
             <>
-              <Ionicons name="checkmark" size={20} color={COLORS.white} />
+              <Ionicons name="checkmark" size={20} color={colors.white} />
               <Text style={styles.submitButtonText}>Log Entry</Text>
             </>
           )}
@@ -345,228 +351,229 @@ export default function NewDiaryEntryScreen() {
 
 // ── Styles ──────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: LAYOUT.screenPaddingH,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.xxl,
-  },
+function createStyles(colors: ColorPalette) {
+  return {
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: LAYOUT.screenPaddingH,
+      paddingTop: SPACING.lg,
+      paddingBottom: SPACING.xxl,
+    },
 
-  // ── Field groups ──────────────────────────────────────
-  fieldGroup: {
-    marginBottom: SPACING.lg,
-  },
-  fieldLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: SPACING.sm,
-  },
+    // ── Field groups ──────────────────────────────────────
+    fieldGroup: {
+      marginBottom: SPACING.lg,
+    },
+    fieldLabel: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textTertiary,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.8,
+      marginBottom: SPACING.sm,
+    },
 
-  // ── Date picker ───────────────────────────────────────
-  dateRow: {
-    flexDirection: "row",
-    gap: SPACING.sm,
-    marginBottom: SPACING.sm,
-  },
-  dateChip: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-  },
-  dateChipActive: {
-    backgroundColor: COLORS.primaryMuted,
-    borderColor: COLORS.primary,
-  },
-  dateChipText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
-  },
-  dateChipTextActive: {
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  dateDisplay: {
-    fontSize: FONT_SIZE.caption,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textMuted,
-  },
+    // ── Date picker ───────────────────────────────────────
+    dateRow: {
+      flexDirection: "row" as const,
+      gap: SPACING.sm,
+      marginBottom: SPACING.sm,
+    },
+    dateChip: {
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm,
+      borderRadius: BORDER_RADIUS.sm,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+    },
+    dateChipActive: {
+      backgroundColor: colors.primaryMuted,
+      borderColor: colors.primary,
+    },
+    dateChipText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textSecondary,
+    },
+    dateChipTextActive: {
+      color: colors.primary,
+      fontWeight: FONT_WEIGHT.semibold,
+    },
+    dateDisplay: {
+      fontSize: FONT_SIZE.caption,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textMuted,
+    },
 
-  // ── Milestone picker ──────────────────────────────────
-  pickerButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    gap: SPACING.sm,
-  },
-  pickerButtonText: {
-    flex: 1,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.regular,
-    color: COLORS.textMuted,
-  },
-  pickerButtonTextActive: {
-    color: COLORS.textPrimary,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  pickerDropdown: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    overflow: "hidden",
-    ...SHADOW.md,
-  },
-  pickerDropdownHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
-  },
-  pickerDropdownTitle: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-  },
-  pickerOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm + 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.borderLight,
-  },
-  pickerOptionActive: {
-    backgroundColor: COLORS.primaryMuted,
-  },
-  pickerOptionContent: {
-    flex: 1,
-  },
-  pickerOptionText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textPrimary,
-  },
-  pickerOptionSub: {
-    fontSize: FONT_SIZE.caption,
-    fontWeight: FONT_WEIGHT.regular,
-    color: COLORS.textTertiary,
-    marginTop: 1,
-  },
+    // ── Milestone picker ──────────────────────────────────
+    pickerButton: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.md,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.md,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      gap: SPACING.sm,
+    },
+    pickerButtonText: {
+      flex: 1,
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.regular,
+      color: colors.textMuted,
+    },
+    pickerButtonTextActive: {
+      color: colors.textPrimary,
+      fontWeight: FONT_WEIGHT.medium,
+    },
+    pickerDropdown: {
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.md,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      overflow: "hidden" as const,
+      ...SHADOW.md,
+    },
+    pickerDropdownHeader: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderLight,
+    },
+    pickerDropdownTitle: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+    },
+    pickerOption: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm + 2,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.borderLight,
+    },
+    pickerOptionActive: {
+      backgroundColor: colors.primaryMuted,
+    },
+    pickerOptionContent: {
+      flex: 1,
+    },
+    pickerOptionText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textPrimary,
+    },
+    pickerOptionSub: {
+      fontSize: FONT_SIZE.caption,
+      fontWeight: FONT_WEIGHT.regular,
+      color: colors.textTertiary,
+      marginTop: 1,
+    },
 
-  // ── Hours input ───────────────────────────────────────
-  hoursInputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    gap: SPACING.sm,
-  },
-  hoursInput: {
-    flex: 1,
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textPrimary,
-    paddingVertical: SPACING.md,
-  },
-  hoursUnit: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textTertiary,
-  },
+    // ── Hours input ───────────────────────────────────────
+    hoursInputWrapper: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.md,
+      paddingHorizontal: SPACING.md,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      gap: SPACING.sm,
+    },
+    hoursInput: {
+      flex: 1,
+      fontSize: FONT_SIZE.md,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textPrimary,
+      paddingVertical: SPACING.md,
+    },
+    hoursUnit: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textTertiary,
+    },
 
-  // ── Description ───────────────────────────────────────
-  descriptionInput: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    paddingTop: SPACING.md,
-    paddingBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.regular,
-    color: COLORS.textPrimary,
-    lineHeight: 22,
-    minHeight: 160,
-  },
-  charCount: {
-    fontSize: FONT_SIZE.caption,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textMuted,
-    textAlign: "right",
-    marginTop: SPACING.xs,
-  },
+    // ── Description ───────────────────────────────────────
+    descriptionInput: {
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.md,
+      paddingHorizontal: SPACING.md,
+      paddingTop: SPACING.md,
+      paddingBottom: SPACING.md,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.regular,
+      color: colors.textPrimary,
+      lineHeight: 22,
+      minHeight: 160,
+    },
+    charCount: {
+      fontSize: FONT_SIZE.caption,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textMuted,
+      textAlign: "right" as const,
+      marginTop: SPACING.xs,
+    },
 
-  // ── Footer ────────────────────────────────────────────
-  footer: {
-    flexDirection: "row",
-    paddingHorizontal: LAYOUT.screenPaddingH,
-    paddingVertical: SPACING.md,
-    backgroundColor: COLORS.surface,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-    gap: SPACING.sm,
-    ...SHADOW.sm,
-  },
-  cancelButton: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    height: LAYOUT.buttonHeight,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.backgroundSubtle,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-  },
-  cancelButtonText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
-  },
-  submitButton: {
-    flex: 2,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    height: LAYOUT.buttonHeight,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.primary,
-    gap: SPACING.xs,
-    ...SHADOW.glow,
-  },
-  submitButtonDisabled: {
-    opacity: 0.5,
-  },
-  submitButtonText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.white,
-    letterSpacing: 0.2,
-  },
-});
-
+    // ── Footer ────────────────────────────────────────────
+    footer: {
+      flexDirection: "row" as const,
+      paddingHorizontal: LAYOUT.screenPaddingH,
+      paddingVertical: SPACING.md,
+      backgroundColor: colors.surface,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderLight,
+      gap: SPACING.sm,
+      ...SHADOW.sm,
+    },
+    cancelButton: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      height: LAYOUT.buttonHeight,
+      borderRadius: BORDER_RADIUS.md,
+      backgroundColor: colors.backgroundSubtle,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+    },
+    cancelButtonText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textSecondary,
+    },
+    submitButton: {
+      flex: 2,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      height: LAYOUT.buttonHeight,
+      borderRadius: BORDER_RADIUS.md,
+      backgroundColor: colors.primary,
+      gap: SPACING.xs,
+      ...SHADOW.glow,
+    },
+    submitButtonDisabled: {
+      opacity: 0.5,
+    },
+    submitButtonText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.white,
+      letterSpacing: 0.2,
+    },
+  };
+}

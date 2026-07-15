@@ -7,9 +7,11 @@
  */
 
 import React, { useEffect, useRef } from "react";
-import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
+import { Animated, View, type ViewStyle } from "react-native";
 
-import { BORDER_RADIUS, COLORS } from "@/constants/theme";
+import type { ColorPalette } from "@/constants/theme";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
+import { BORDER_RADIUS } from "@/constants/theme";
 
 interface SkeletonProps {
   /** Width of the skeleton element. */
@@ -28,6 +30,7 @@ export function Skeleton({
   borderRadius = BORDER_RADIUS.sm,
   style,
 }: SkeletonProps): React.JSX.Element {
+  const styles = useThemedStyles(createStyles);
   const opacity = useRef(new Animated.Value(0.35)).current;
 
   useEffect(() => {
@@ -75,6 +78,7 @@ export function SkeletonCard({
 }: {
   style?: ViewStyle;
 }): React.JSX.Element {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.card, style]}>
       <Skeleton width={44} height={44} borderRadius={BORDER_RADIUS.md} />
@@ -92,6 +96,7 @@ export function SkeletonCard({
 
 /** A row of two side-by-side skeleton cards (streak-style). */
 export function SkeletonStreakRow(): React.JSX.Element {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.streakRow}>
       <View style={styles.streakCard}>
@@ -120,6 +125,7 @@ export function SkeletonStreakRow(): React.JSX.Element {
 
 /** Timeline entry skeleton for the diary screen. */
 export function SkeletonTimelineEntry(): React.JSX.Element {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.timelineEntry}>
       <View style={styles.timelineDotCol}>
@@ -147,6 +153,7 @@ export function SkeletonTimelineEntry(): React.JSX.Element {
 
 /** Phase card skeleton for the milestones screen. */
 export function SkeletonPhaseCard(): React.JSX.Element {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.phaseCard}>
       <View style={styles.phaseHeader}>
@@ -183,6 +190,7 @@ export function SkeletonPhaseCard(): React.JSX.Element {
 
 /** Document card skeleton for the knowledge base screen. */
 export function SkeletonDocumentCard(): React.JSX.Element {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.docCard}>
       <Skeleton width={44} height={44} borderRadius={BORDER_RADIUS.md} />
@@ -207,6 +215,7 @@ export function SkeletonDocumentCard(): React.JSX.Element {
 
 /** Stats row skeleton for knowledge base. */
 export function SkeletonStatsRow(): React.JSX.Element {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.statsRow}>
       {[0, 1, 2].map((i) => (
@@ -221,6 +230,7 @@ export function SkeletonStatsRow(): React.JSX.Element {
 
 /** Metadata row skeleton for document detail. */
 export function SkeletonMetadataCard(): React.JSX.Element {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.metaCard}>
       {[0, 1, 2, 3, 4].map((i) => (
@@ -238,164 +248,165 @@ export function SkeletonMetadataCard(): React.JSX.Element {
 
 // ── Styles ──────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  skeleton: {
-    backgroundColor: COLORS.borderLight,
-  },
+function createStyles(colors: ColorPalette) {
+  return {
+    skeleton: {
+      backgroundColor: colors.borderLight,
+    },
 
-  // Card skeleton
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
-    padding: 16,
-    marginBottom: 8,
-  },
-  cardContent: {
-    flex: 1,
-    marginLeft: 16,
-    gap: 0,
-  },
-  cardSubtitle: {
-    marginTop: 8,
-  },
+    // Card skeleton
+    card: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.md,
+      padding: 16,
+      marginBottom: 8,
+    },
+    cardContent: {
+      flex: 1,
+      marginLeft: 16,
+      gap: 0,
+    },
+    cardSubtitle: {
+      marginTop: 8,
+    },
 
-  // Streak row
-  streakRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 24,
-  },
-  streakCard: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: 16,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.borderLight,
-  },
-  streakCardTop: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  streakCardInfo: {
-    flex: 1,
-    marginLeft: 8,
-  },
+    // Streak row
+    streakRow: {
+      flexDirection: "row" as const,
+      gap: 8,
+      marginBottom: 24,
+    },
+    streakCard: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.lg,
+      padding: 16,
+      borderLeftWidth: 3,
+      borderLeftColor: colors.borderLight,
+    },
+    streakCardTop: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+    },
+    streakCardInfo: {
+      flex: 1,
+      marginLeft: 8,
+    },
 
-  // Timeline entry
-  timelineEntry: {
-    flexDirection: "row",
-    marginBottom: 4,
-  },
-  timelineDotCol: {
-    alignItems: "center",
-    width: 20,
-    marginRight: 8,
-  },
-  timelineLine: {
-    flex: 1,
-    width: 2,
-    backgroundColor: COLORS.borderLight,
-    marginTop: 2,
-  },
-  timelineContent: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
-    padding: 16,
-    marginBottom: 8,
-  },
-  timelineHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  timelineHeaderText: {
-    flex: 1,
-    marginLeft: 8,
-  },
+    // Timeline entry
+    timelineEntry: {
+      flexDirection: "row" as const,
+      marginBottom: 4,
+    },
+    timelineDotCol: {
+      alignItems: "center" as const,
+      width: 20,
+      marginRight: 8,
+    },
+    timelineLine: {
+      flex: 1,
+      width: 2,
+      backgroundColor: colors.borderLight,
+      marginTop: 2,
+    },
+    timelineContent: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.md,
+      padding: 16,
+      marginBottom: 8,
+    },
+    timelineHeader: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+    },
+    timelineHeaderText: {
+      flex: 1,
+      marginLeft: 8,
+    },
 
-  // Phase card
-  phaseCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: 16,
-    marginBottom: 16,
-  },
-  phaseHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  phaseHeaderLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    flex: 1,
-  },
-  milestoneRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-    gap: 8,
-  },
+    // Phase card
+    phaseCard: {
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.lg,
+      padding: 16,
+      marginBottom: 16,
+    },
+    phaseHeader: {
+      flexDirection: "row" as const,
+      justifyContent: "space-between" as const,
+      alignItems: "center" as const,
+    },
+    phaseHeaderLeft: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 8,
+      flex: 1,
+    },
+    milestoneRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      paddingVertical: 10,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderLight,
+      gap: 8,
+    },
 
-  // Document card
-  docCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
-    padding: 16,
-    marginBottom: 8,
-  },
-  docCardContent: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  docCardTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  docCardMeta: {
-    flexDirection: "row",
-    gap: 8,
-  },
+    // Document card
+    docCard: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.md,
+      padding: 16,
+      marginBottom: 8,
+    },
+    docCardContent: {
+      flex: 1,
+      marginLeft: 16,
+    },
+    docCardTitleRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      marginBottom: 6,
+    },
+    docCardMeta: {
+      flexDirection: "row" as const,
+      gap: 8,
+    },
 
-  // Stats row
-  statsRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 24,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
-    padding: 16,
-    alignItems: "center",
-  },
+    // Stats row
+    statsRow: {
+      flexDirection: "row" as const,
+      gap: 8,
+      marginBottom: 24,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.md,
+      padding: 16,
+      alignItems: "center" as const,
+    },
 
-  // Metadata card
-  metaCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: 16,
-    marginBottom: 24,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    gap: 16,
-  },
-  metaRowContent: {
-    flex: 1,
-  },
-});
-
+    // Metadata card
+    metaCard: {
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.lg,
+      padding: 16,
+      marginBottom: 24,
+    },
+    metaRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      paddingVertical: 10,
+      gap: 16,
+    },
+    metaRowContent: {
+      flex: 1,
+    },
+  };
+}

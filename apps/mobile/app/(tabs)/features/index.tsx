@@ -13,17 +13,17 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+import type { ColorPalette } from "@/constants/theme";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
+import { useTheme } from "@/hooks/use-theme";
 import {
   BORDER_RADIUS,
-  COLORS,
   FONT_SIZE,
   FONT_WEIGHT,
   LAYOUT,
@@ -42,47 +42,48 @@ import type { FeatureRequest, FeatureRequestStatus } from "@/types/feature-reque
 
 // ── Status config ────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<
-  FeatureRequestStatus,
-  { label: string; color: string; bg: string; icon: string }
-> = {
-  open: {
-    label: "Open",
-    color: COLORS.info,
-    bg: COLORS.infoMuted,
-    icon: "chatbubble-ellipses-outline",
-  },
-  under_review: {
-    label: "Under Review",
-    color: COLORS.warning,
-    bg: COLORS.warningMuted,
-    icon: "eye-outline",
-  },
-  planned: {
-    label: "Planned",
-    color: COLORS.primary,
-    bg: COLORS.primaryMuted,
-    icon: "calendar-outline",
-  },
-  in_progress: {
-    label: "In Progress",
-    color: "#a855f7",
-    bg: "rgba(168, 85, 247, 0.10)",
-    icon: "hammer-outline",
-  },
-  completed: {
-    label: "Completed",
-    color: COLORS.success,
-    bg: COLORS.successMuted,
-    icon: "checkmark-circle-outline",
-  },
-  declined: {
-    label: "Declined",
-    color: COLORS.textTertiary,
-    bg: "rgba(142, 153, 164, 0.10)",
-    icon: "close-circle-outline",
-  },
-};
+function getStatusConfig(
+  colors: ColorPalette
+): Record<FeatureRequestStatus, { label: string; color: string; bg: string; icon: string }> {
+  return {
+    open: {
+      label: "Open",
+      color: colors.info,
+      bg: colors.infoMuted,
+      icon: "chatbubble-ellipses-outline",
+    },
+    under_review: {
+      label: "Under Review",
+      color: colors.warning,
+      bg: colors.warningMuted,
+      icon: "eye-outline",
+    },
+    planned: {
+      label: "Planned",
+      color: colors.primary,
+      bg: colors.primaryMuted,
+      icon: "calendar-outline",
+    },
+    in_progress: {
+      label: "In Progress",
+      color: "#a855f7",
+      bg: "rgba(168, 85, 247, 0.10)",
+      icon: "hammer-outline",
+    },
+    completed: {
+      label: "Completed",
+      color: colors.success,
+      bg: colors.successMuted,
+      icon: "checkmark-circle-outline",
+    },
+    declined: {
+      label: "Declined",
+      color: colors.textTertiary,
+      bg: "rgba(142, 153, 164, 0.10)",
+      icon: "close-circle-outline",
+    },
+  };
+}
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -111,7 +112,10 @@ function FeatureCard({
   onDelete: (id: string) => void;
   isVoting: boolean;
 }) {
-  const cfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.open;
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
+  const statusConfig = getStatusConfig(colors);
+  const cfg = statusConfig[item.status] || statusConfig.open;
 
   return (
     <View style={[styles.card, SHADOW.md]}>
@@ -128,7 +132,7 @@ function FeatureCard({
           <Ionicons
             name={item.has_voted ? "chevron-up" : "chevron-up-outline"}
             size={20}
-            color={item.has_voted ? COLORS.primary : COLORS.textTertiary}
+            color={item.has_voted ? colors.primary : colors.textTertiary}
           />
           <Text
             style={[
@@ -179,7 +183,7 @@ function FeatureCard({
               <Ionicons
                 name="trash-outline"
                 size={16}
-                color={COLORS.textMuted}
+                color={colors.textMuted}
               />
             </Pressable>
           </View>
@@ -196,7 +200,7 @@ function FeatureCard({
             <Ionicons
               name="person-outline"
               size={12}
-              color={COLORS.textTertiary}
+              color={colors.textTertiary}
             />
             <Text style={styles.metaText}>
               {item.author_name || item.author_email || "Unknown"}
@@ -213,6 +217,7 @@ function FeatureCard({
 // ── Skeleton loader ──────────────────────────────────────────
 
 function SkeletonCard() {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.card, SHADOW.sm, { opacity: 0.6 }]}>
       <View style={styles.cardRow}>
@@ -249,13 +254,15 @@ function SkeletonCard() {
 // ── Empty state ──────────────────────────────────────────────
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.empty}>
       <View style={styles.emptyIconWrap}>
         <Ionicons
           name="bulb-outline"
           size={48}
-          color={COLORS.primary}
+          color={colors.primary}
         />
       </View>
       <Text style={styles.emptyTitle}>No feature requests yet</Text>
@@ -263,7 +270,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
         Be the first to suggest an idea for the team
       </Text>
       <Pressable style={[styles.emptyBtn, SHADOW.glow]} onPress={onAdd}>
-        <Ionicons name="add" size={18} color={COLORS.white} />
+        <Ionicons name="add" size={18} color={colors.white} />
         <Text style={styles.emptyBtnText}>Submit Request</Text>
       </Pressable>
     </View>
@@ -273,6 +280,8 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
 // ── Main screen ──────────────────────────────────────────────
 
 export default function FeaturesScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const { data: requests, isLoading, isError, refetch } = useFeatureRequests();
   const createMutation = useCreateFeatureRequest();
   const deleteMutation = useDeleteFeatureRequest();
@@ -336,7 +345,7 @@ export default function FeaturesScreen() {
           <Ionicons
             name="warning-outline"
             size={40}
-            color={COLORS.error}
+            color={colors.error}
           />
           <Text style={styles.errorText}>Failed to load feature requests</Text>
           <Pressable style={styles.retryBtn} onPress={() => refetch()}>
@@ -365,7 +374,7 @@ export default function FeaturesScreen() {
           style={[styles.addBtn, SHADOW.glow]}
           onPress={() => setModalVisible(true)}
         >
-          <Ionicons name="add" size={20} color={COLORS.white} />
+          <Ionicons name="add" size={20} color={colors.white} />
           <Text style={styles.addBtnText}>New</Text>
         </Pressable>
       </View>
@@ -415,7 +424,7 @@ export default function FeaturesScreen() {
             <TextInput
               style={styles.input}
               placeholder="e.g., Dark mode, Notifications, Export..."
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={title}
               onChangeText={setTitle}
               maxLength={255}
@@ -425,7 +434,7 @@ export default function FeaturesScreen() {
             <TextInput
               style={[styles.input, styles.inputMultiline]}
               placeholder="Add more detail about what you'd like and why..."
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={description}
               onChangeText={setDescription}
               multiline
@@ -458,7 +467,7 @@ export default function FeaturesScreen() {
                   <Text style={styles.submitText}>Submitting...</Text>
                 ) : (
                   <>
-                    <Ionicons name="rocket-outline" size={16} color={COLORS.white} />
+                    <Ionicons name="rocket-outline" size={16} color={colors.white} />
                     <Text style={styles.submitText}>Submit</Text>
                   </>
                 )}
@@ -473,282 +482,284 @@ export default function FeaturesScreen() {
 
 // ── Styles ───────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  headerBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: LAYOUT.screenPaddingH,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.md,
-    backgroundColor: COLORS.background,
-  },
-  headerTitle: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textTertiary,
-    marginTop: 2,
-  },
-  addBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.full,
-    gap: 4,
-  },
-  addBtnText: {
-    color: COLORS.white,
-    fontWeight: FONT_WEIGHT.semibold,
-    fontSize: FONT_SIZE.sm,
-  },
-  list: {
-    paddingHorizontal: LAYOUT.screenPaddingH,
-    paddingBottom: SPACING.xxxl,
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    overflow: "hidden",
-  },
-  cardRow: {
-    flexDirection: "row",
-  },
-  voteCol: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    borderRightWidth: 1,
-    borderRightColor: COLORS.borderLight,
-    minWidth: 56,
-    gap: 2,
-  },
-  voteColActive: {
-    backgroundColor: COLORS.primaryMuted,
-  },
-  voteCount: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textTertiary,
-  },
-  voteCountActive: {
-    color: COLORS.primary,
-  },
-  cardContent: {
-    flex: 1,
-    padding: SPACING.md,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: SPACING.sm,
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 3,
-    borderRadius: BORDER_RADIUS.full,
-    gap: 4,
-  },
-  statusText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  cardTitle: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-    lineHeight: FONT_SIZE.md * 1.4,
-  },
-  cardDesc: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
-    lineHeight: FONT_SIZE.sm * 1.5,
-  },
-  cardMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: SPACING.sm,
-    gap: 4,
-  },
-  metaText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textTertiary,
-  },
-  metaDot: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-  },
+function createStyles(colors: ColorPalette) {
+  return {
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    headerBar: {
+      flexDirection: "row" as const,
+      justifyContent: "space-between" as const,
+      alignItems: "center" as const,
+      paddingHorizontal: LAYOUT.screenPaddingH,
+      paddingTop: SPACING.lg,
+      paddingBottom: SPACING.md,
+      backgroundColor: colors.background,
+    },
+    headerTitle: {
+      fontSize: FONT_SIZE.xxl,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+      letterSpacing: -0.5,
+    },
+    headerSubtitle: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textTertiary,
+      marginTop: 2,
+    },
+    addBtn: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: colors.primary,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm,
+      borderRadius: BORDER_RADIUS.full,
+      gap: 4,
+    },
+    addBtnText: {
+      color: colors.white,
+      fontWeight: FONT_WEIGHT.semibold,
+      fontSize: FONT_SIZE.sm,
+    },
+    list: {
+      paddingHorizontal: LAYOUT.screenPaddingH,
+      paddingBottom: SPACING.xxxl,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.lg,
+      marginBottom: SPACING.md,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      overflow: "hidden" as const,
+    },
+    cardRow: {
+      flexDirection: "row" as const,
+    },
+    voteCol: {
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingVertical: SPACING.md,
+      paddingHorizontal: SPACING.md,
+      borderRightWidth: 1,
+      borderRightColor: colors.borderLight,
+      minWidth: 56,
+      gap: 2,
+    },
+    voteColActive: {
+      backgroundColor: colors.primaryMuted,
+    },
+    voteCount: {
+      fontSize: FONT_SIZE.md,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textTertiary,
+    },
+    voteCountActive: {
+      color: colors.primary,
+    },
+    cardContent: {
+      flex: 1,
+      padding: SPACING.md,
+    },
+    cardHeader: {
+      flexDirection: "row" as const,
+      justifyContent: "space-between" as const,
+      alignItems: "center" as const,
+      marginBottom: SPACING.sm,
+    },
+    statusBadge: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      paddingHorizontal: SPACING.sm,
+      paddingVertical: 3,
+      borderRadius: BORDER_RADIUS.full,
+      gap: 4,
+    },
+    statusText: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+    },
+    cardTitle: {
+      fontSize: FONT_SIZE.md,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+      lineHeight: FONT_SIZE.md * 1.4,
+    },
+    cardDesc: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textSecondary,
+      marginTop: SPACING.xs,
+      lineHeight: FONT_SIZE.sm * 1.5,
+    },
+    cardMeta: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      marginTop: SPACING.sm,
+      gap: 4,
+    },
+    metaText: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textTertiary,
+    },
+    metaDot: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textMuted,
+    },
 
-  // Empty state
-  empty: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: SPACING.xl,
-  },
-  emptyIconWrap: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: COLORS.primaryMuted,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: SPACING.lg,
-  },
-  emptyTitle: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.xs,
-  },
-  emptySubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textTertiary,
-    textAlign: "center",
-    marginBottom: SPACING.lg,
-  },
-  emptyBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: BORDER_RADIUS.full,
-    gap: 6,
-  },
-  emptyBtnText: {
-    color: COLORS.white,
-    fontWeight: FONT_WEIGHT.semibold,
-    fontSize: FONT_SIZE.md,
-  },
+    // Empty state
+    empty: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingHorizontal: SPACING.xl,
+    },
+    emptyIconWrap: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      backgroundColor: colors.primaryMuted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginBottom: SPACING.lg,
+    },
+    emptyTitle: {
+      fontSize: FONT_SIZE.xl,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+      marginBottom: SPACING.xs,
+    },
+    emptySubtitle: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textTertiary,
+      textAlign: "center" as const,
+      marginBottom: SPACING.lg,
+    },
+    emptyBtn: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: colors.primary,
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.sm + 2,
+      borderRadius: BORDER_RADIUS.full,
+      gap: 6,
+    },
+    emptyBtnText: {
+      color: colors.white,
+      fontWeight: FONT_WEIGHT.semibold,
+      fontSize: FONT_SIZE.md,
+    },
 
-  // Error / Center
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: SPACING.md,
-  },
-  errorText: {
-    fontSize: FONT_SIZE.md,
-    color: COLORS.textSecondary,
-  },
-  retryBtn: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primaryMuted,
-  },
-  retryText: {
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
+    // Error / Center
+    center: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      gap: SPACING.md,
+    },
+    errorText: {
+      fontSize: FONT_SIZE.md,
+      color: colors.textSecondary,
+    },
+    retryBtn: {
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.sm,
+      borderRadius: BORDER_RADIUS.full,
+      backgroundColor: colors.primaryMuted,
+    },
+    retryText: {
+      color: colors.primary,
+      fontWeight: FONT_WEIGHT.semibold,
+    },
 
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: COLORS.surfaceOverlay,
-  },
-  modalContent: {
-    backgroundColor: COLORS.surface,
-    borderTopLeftRadius: BORDER_RADIUS.xxl,
-    borderTopRightRadius: BORDER_RADIUS.xxl,
-    paddingHorizontal: LAYOUT.screenPaddingH,
-    paddingBottom: SPACING.xxxl,
-    paddingTop: SPACING.md,
-  },
-  modalHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: COLORS.borderLight,
-    alignSelf: "center",
-    marginBottom: SPACING.lg,
-  },
-  modalTitle: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  modalSubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textTertiary,
-    marginBottom: SPACING.lg,
-  },
-  inputLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: SPACING.xs,
-    marginTop: SPACING.sm,
-  },
-  input: {
-    backgroundColor: COLORS.backgroundSubtle,
-    borderRadius: BORDER_RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm + 2,
-    fontSize: FONT_SIZE.md,
-    color: COLORS.textPrimary,
-  },
-  inputMultiline: {
-    minHeight: 100,
-    paddingTop: SPACING.sm + 2,
-  },
-  modalActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: SPACING.sm,
-    marginTop: SPACING.lg,
-  },
-  cancelBtn: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: BORDER_RADIUS.full,
-  },
-  cancelText: {
-    color: COLORS.textSecondary,
-    fontWeight: FONT_WEIGHT.medium,
-    fontSize: FONT_SIZE.md,
-  },
-  submitBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: BORDER_RADIUS.full,
-    gap: 6,
-  },
-  submitBtnDisabled: {
-    opacity: 0.5,
-  },
-  submitText: {
-    color: COLORS.white,
-    fontWeight: FONT_WEIGHT.semibold,
-    fontSize: FONT_SIZE.md,
-  },
-});
+    // Modal
+    modalOverlay: {
+      flex: 1,
+      justifyContent: "flex-end" as const,
+      backgroundColor: colors.surfaceOverlay,
+    },
+    modalContent: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: BORDER_RADIUS.xxl,
+      borderTopRightRadius: BORDER_RADIUS.xxl,
+      paddingHorizontal: LAYOUT.screenPaddingH,
+      paddingBottom: SPACING.xxxl,
+      paddingTop: SPACING.md,
+    },
+    modalHandle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.borderLight,
+      alignSelf: "center" as const,
+      marginBottom: SPACING.lg,
+    },
+    modalTitle: {
+      fontSize: FONT_SIZE.xl,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+      marginBottom: 4,
+    },
+    modalSubtitle: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textTertiary,
+      marginBottom: SPACING.lg,
+    },
+    inputLabel: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textSecondary,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.5,
+      marginBottom: SPACING.xs,
+      marginTop: SPACING.sm,
+    },
+    input: {
+      backgroundColor: colors.backgroundSubtle,
+      borderRadius: BORDER_RADIUS.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm + 2,
+      fontSize: FONT_SIZE.md,
+      color: colors.textPrimary,
+    },
+    inputMultiline: {
+      minHeight: 100,
+      paddingTop: SPACING.sm + 2,
+    },
+    modalActions: {
+      flexDirection: "row" as const,
+      justifyContent: "flex-end" as const,
+      gap: SPACING.sm,
+      marginTop: SPACING.lg,
+    },
+    cancelBtn: {
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.sm + 2,
+      borderRadius: BORDER_RADIUS.full,
+    },
+    cancelText: {
+      color: colors.textSecondary,
+      fontWeight: FONT_WEIGHT.medium,
+      fontSize: FONT_SIZE.md,
+    },
+    submitBtn: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: colors.primary,
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.sm + 2,
+      borderRadius: BORDER_RADIUS.full,
+      gap: 6,
+    },
+    submitBtnDisabled: {
+      opacity: 0.5,
+    },
+    submitText: {
+      color: colors.white,
+      fontWeight: FONT_WEIGHT.semibold,
+      fontSize: FONT_SIZE.md,
+    },
+  };
+}

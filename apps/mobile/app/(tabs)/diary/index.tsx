@@ -8,12 +8,10 @@
 
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -32,9 +30,11 @@ import {
 } from "@/components/ui/Skeleton";
 import { useTourRef } from "@/components/tour/TourProvider";
 import type { DiaryEntryResponse, StreakInfo } from "@/types/diary";
+import type { ColorPalette } from "@/constants/theme";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
+import { useTheme } from "@/hooks/use-theme";
 import {
   BORDER_RADIUS,
-  COLORS,
   FONT_SIZE,
   FONT_WEIGHT,
   LAYOUT,
@@ -44,14 +44,11 @@ import {
 
 // ── Author color assignment ─────────────────────────────────
 
-const AUTHOR_COLORS = [
-  { bg: COLORS.primaryMuted, text: COLORS.primary, dot: COLORS.primary },
-  { bg: COLORS.infoMuted, text: COLORS.info, dot: COLORS.info },
-] as const;
-
-function getAuthorColor(authorId: string, currentUserId: string | undefined) {
-  if (authorId === currentUserId) return AUTHOR_COLORS[0];
-  return AUTHOR_COLORS[1];
+function getAuthorColors(colors: ColorPalette) {
+  return [
+    { bg: colors.primaryMuted, text: colors.primary, dot: colors.primary },
+    { bg: colors.infoMuted, text: colors.info, dot: colors.info },
+  ] as const;
 }
 
 function getInitials(name: string): string {
@@ -90,13 +87,16 @@ function StreakCard({
   streak,
   isCurrentUser,
 }: StreakCardProps): React.JSX.Element {
-  const colors = isCurrentUser ? AUTHOR_COLORS[0] : AUTHOR_COLORS[1];
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
+  const authorColors = getAuthorColors(colors);
+  const author = isCurrentUser ? authorColors[0] : authorColors[1];
 
   return (
-    <View style={[styles.streakCard, { borderLeftColor: colors.dot }]}>
+    <View style={[styles.streakCard, { borderLeftColor: author.dot }]}>
       <View style={styles.streakCardTop}>
-        <View style={[styles.streakAvatar, { backgroundColor: colors.bg }]}>
-          <Text style={[styles.streakAvatarText, { color: colors.text }]}>
+        <View style={[styles.streakAvatar, { backgroundColor: author.bg }]}>
+          <Text style={[styles.streakAvatarText, { color: author.text }]}>
             {getInitials(streak.display_name)}
           </Text>
         </View>
@@ -110,15 +110,15 @@ function StreakCard({
               <Ionicons
                 name="checkmark-circle"
                 size={14}
-                color={COLORS.success}
+                color={colors.success}
               />
             ) : (
-              <Ionicons name="close-circle" size={14} color={COLORS.error} />
+              <Ionicons name="close-circle" size={14} color={colors.error} />
             )}
             <Text
               style={[
                 styles.streakStatusText,
-                { color: streak.logged_today ? COLORS.success : COLORS.error },
+                { color: streak.logged_today ? colors.success : colors.error },
               ]}
             >
               {streak.logged_today ? "Logged today" : "Not logged today"}
@@ -127,7 +127,7 @@ function StreakCard({
         </View>
       </View>
       <View style={styles.streakBadge}>
-        <Ionicons name="flame" size={16} color={COLORS.warning} />
+        <Ionicons name="flame" size={16} color={colors.warning} />
         <Text style={styles.streakCount}>{streak.current_streak}</Text>
         <Text style={styles.streakDaysLabel}>day streak</Text>
       </View>
@@ -148,7 +148,10 @@ function EntryCard({
   isCurrentUser,
   onDelete,
 }: EntryCardProps): React.JSX.Element {
-  const colors = isCurrentUser ? AUTHOR_COLORS[0] : AUTHOR_COLORS[1];
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
+  const authorColors = getAuthorColors(colors);
+  const author = isCurrentUser ? authorColors[0] : authorColors[1];
 
   const handleLongPress = useCallback(() => {
     if (!isCurrentUser) return;
@@ -170,7 +173,7 @@ function EntryCard({
     >
       {/* Timeline dot + line */}
       <View style={styles.timelineDotCol}>
-        <View style={[styles.timelineDot, { backgroundColor: colors.dot }]} />
+        <View style={[styles.timelineDot, { backgroundColor: author.dot }]} />
         <View style={styles.timelineLine} />
       </View>
 
@@ -178,8 +181,8 @@ function EntryCard({
       <View style={styles.entryContent}>
         {/* Header */}
         <View style={styles.entryHeader}>
-          <View style={[styles.entryAvatar, { backgroundColor: colors.bg }]}>
-            <Text style={[styles.entryAvatarText, { color: colors.text }]}>
+          <View style={[styles.entryAvatar, { backgroundColor: author.bg }]}>
+            <Text style={[styles.entryAvatarText, { color: author.text }]}>
               {getInitials(entry.author.display_name)}
             </Text>
           </View>
@@ -196,7 +199,7 @@ function EntryCard({
               <Ionicons
                 name="time-outline"
                 size={12}
-                color={COLORS.textTertiary}
+                color={colors.textTertiary}
               />
               <Text style={styles.hoursText}>{entry.hours_worked}h</Text>
             </View>
@@ -209,7 +212,7 @@ function EntryCard({
         {/* Linked Milestone */}
         {entry.milestone ? (
           <View style={styles.linkedMilestone}>
-            <Ionicons name="flag" size={12} color={COLORS.primary} />
+            <Ionicons name="flag" size={12} color={colors.primary} />
             <Text style={styles.linkedMilestoneText} numberOfLines={1}>
               {entry.milestone.title}
             </Text>
@@ -223,12 +226,13 @@ function EntryCard({
 // ── Empty State ─────────────────────────────────────────────
 
 function EmptyState(): React.JSX.Element {
-  const router = useRouter();
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
 
   return (
     <View style={styles.emptyState}>
       <View style={styles.emptyIconContainer}>
-        <Ionicons name="journal" size={32} color={COLORS.primary} />
+        <Ionicons name="journal" size={32} color={colors.primary} />
       </View>
       <Text style={styles.emptyTitle}>Accountability Diary</Text>
       <Text style={styles.emptyBody}>
@@ -251,6 +255,8 @@ function EmptyState(): React.JSX.Element {
 // ── Main Screen ─────────────────────────────────────────────
 
 export default function DiaryScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const router = useRouter();
   const { user } = useAuth();
   const {
@@ -337,7 +343,7 @@ export default function DiaryScreen() {
   if (entriesError) {
     return (
       <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle" size={32} color={COLORS.error} />
+        <Ionicons name="alert-circle" size={32} color={colors.error} />
         <Text style={styles.errorText}>Failed to load diary entries</Text>
         <Text style={styles.errorDetail}>
           {entriesError instanceof Error
@@ -345,7 +351,7 @@ export default function DiaryScreen() {
             : "An unexpected error occurred"}
         </Text>
         <Pressable style={styles.retryButton} onPress={() => refetchEntries()}>
-          <Ionicons name="refresh" size={16} color={COLORS.primary} />
+          <Ionicons name="refresh" size={16} color={colors.primary} />
           <Text style={styles.retryText}>Try Again</Text>
         </Pressable>
       </View>
@@ -365,7 +371,7 @@ export default function DiaryScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={COLORS.primary}
+              tintColor={colors.primary}
             />
           }
         >
@@ -409,7 +415,7 @@ export default function DiaryScreen() {
 
       {/* FAB — New Entry */}
       <Pressable ref={addRef} collapsable={false} style={styles.fab} onPress={handleNewEntry}>
-        <Ionicons name="add" size={28} color={COLORS.white} />
+        <Ionicons name="add" size={28} color={colors.white} />
       </Pressable>
     </View>
   );
@@ -417,308 +423,310 @@ export default function DiaryScreen() {
 
 // ── Styles ──────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.background,
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.background,
-    paddingHorizontal: LAYOUT.screenPaddingH,
-  },
-  errorText: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-    marginTop: SPACING.md,
-  },
-  errorDetail: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textTertiary,
-    marginTop: SPACING.xs,
-    textAlign: "center",
-    maxWidth: 300,
-  },
-  retryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: SPACING.lg,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.primaryMuted,
-    gap: SPACING.xs,
-  },
-  retryText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: LAYOUT.screenPaddingH,
-    paddingTop: SPACING.lg,
-    paddingBottom: 100,
-  },
+function createStyles(colors: ColorPalette) {
+  return {
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    loadingContainer: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: colors.background,
+    },
+    errorContainer: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: colors.background,
+      paddingHorizontal: LAYOUT.screenPaddingH,
+    },
+    errorText: {
+      fontSize: FONT_SIZE.lg,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+      marginTop: SPACING.md,
+    },
+    errorDetail: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textTertiary,
+      marginTop: SPACING.xs,
+      textAlign: "center" as const,
+      maxWidth: 300,
+    },
+    retryButton: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      marginTop: SPACING.lg,
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.sm + 2,
+      borderRadius: BORDER_RADIUS.sm,
+      backgroundColor: colors.primaryMuted,
+      gap: SPACING.xs,
+    },
+    retryText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.primary,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: LAYOUT.screenPaddingH,
+      paddingTop: SPACING.lg,
+      paddingBottom: 100,
+    },
 
-  // ── Section headers ───────────────────────────────────
-  sectionTitle: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: SPACING.md,
-  },
-  dateSectionHeader: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.sm,
-    marginTop: SPACING.sm,
-  },
+    // ── Section headers ───────────────────────────────────
+    sectionTitle: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textTertiary,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.8,
+      marginBottom: SPACING.md,
+    },
+    dateSectionHeader: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textSecondary,
+      marginBottom: SPACING.sm,
+      marginTop: SPACING.sm,
+    },
 
-  // ── Streaks ───────────────────────────────────────────
-  streaksSection: {
-    marginBottom: SPACING.lg,
-  },
-  streaksRow: {
-    flexDirection: "row",
-    gap: SPACING.sm,
-  },
-  streakCard: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md,
-    borderLeftWidth: 3,
-    ...SHADOW.sm,
-  },
-  streakCardTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: SPACING.sm,
-  },
-  streakAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: BORDER_RADIUS.full,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: SPACING.sm,
-  },
-  streakAvatarText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-  },
-  streakInfo: {
-    flex: 1,
-  },
-  streakName: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-    marginBottom: 1,
-  },
-  streakStatusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.xxs,
-  },
-  streakStatusText: {
-    fontSize: FONT_SIZE.caption,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  streakBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.xxs,
-  },
-  streakCount: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-  },
-  streakDaysLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textTertiary,
-    fontWeight: FONT_WEIGHT.medium,
-  },
+    // ── Streaks ───────────────────────────────────────────
+    streaksSection: {
+      marginBottom: SPACING.lg,
+    },
+    streaksRow: {
+      flexDirection: "row" as const,
+      gap: SPACING.sm,
+    },
+    streakCard: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.lg,
+      padding: SPACING.md,
+      borderLeftWidth: 3,
+      ...SHADOW.sm,
+    },
+    streakCardTop: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      marginBottom: SPACING.sm,
+    },
+    streakAvatar: {
+      width: 32,
+      height: 32,
+      borderRadius: BORDER_RADIUS.full,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginRight: SPACING.sm,
+    },
+    streakAvatarText: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.bold,
+    },
+    streakInfo: {
+      flex: 1,
+    },
+    streakName: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+      marginBottom: 1,
+    },
+    streakStatusRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: SPACING.xxs,
+    },
+    streakStatusText: {
+      fontSize: FONT_SIZE.caption,
+      fontWeight: FONT_WEIGHT.medium,
+    },
+    streakBadge: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: SPACING.xxs,
+    },
+    streakCount: {
+      fontSize: FONT_SIZE.lg,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+    },
+    streakDaysLabel: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textTertiary,
+      fontWeight: FONT_WEIGHT.medium,
+    },
 
-  // ── Timeline Entry ────────────────────────────────────
-  entryCard: {
-    flexDirection: "row",
-    marginBottom: SPACING.xs,
-  },
-  timelineDotCol: {
-    alignItems: "center",
-    width: 20,
-    marginRight: SPACING.sm,
-  },
-  timelineDot: {
-    width: 10,
-    height: 10,
-    borderRadius: BORDER_RADIUS.full,
-    marginTop: 6,
-  },
-  timelineLine: {
-    flex: 1,
-    width: 2,
-    backgroundColor: COLORS.borderLight,
-    marginTop: SPACING.xxs,
-  },
-  entryContent: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    ...SHADOW.sm,
-  },
-  entryHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: SPACING.sm,
-  },
-  entryAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: BORDER_RADIUS.full,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: SPACING.sm,
-  },
-  entryAvatarText: {
-    fontSize: FONT_SIZE.caption,
-    fontWeight: FONT_WEIGHT.bold,
-  },
-  entryMeta: {
-    flex: 1,
-  },
-  entryAuthor: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-  },
-  entryDate: {
-    fontSize: FONT_SIZE.caption,
-    color: COLORS.textTertiary,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  hoursBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.backgroundSubtle,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xxs,
-    borderRadius: BORDER_RADIUS.xs,
-    gap: SPACING.xxs,
-  },
-  hoursText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textTertiary,
-  },
-  entryDescription: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.regular,
-    color: COLORS.textPrimary,
-    lineHeight: 21,
-  },
-  linkedMilestone: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: SPACING.sm,
-    paddingTop: SPACING.sm,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-    gap: SPACING.xs,
-  },
-  linkedMilestoneText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.primary,
-    flex: 1,
-  },
+    // ── Timeline Entry ────────────────────────────────────
+    entryCard: {
+      flexDirection: "row" as const,
+      marginBottom: SPACING.xs,
+    },
+    timelineDotCol: {
+      alignItems: "center" as const,
+      width: 20,
+      marginRight: SPACING.sm,
+    },
+    timelineDot: {
+      width: 10,
+      height: 10,
+      borderRadius: BORDER_RADIUS.full,
+      marginTop: 6,
+    },
+    timelineLine: {
+      flex: 1,
+      width: 2,
+      backgroundColor: colors.borderLight,
+      marginTop: SPACING.xxs,
+    },
+    entryContent: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.md,
+      padding: SPACING.md,
+      marginBottom: SPACING.sm,
+      ...SHADOW.sm,
+    },
+    entryHeader: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      marginBottom: SPACING.sm,
+    },
+    entryAvatar: {
+      width: 28,
+      height: 28,
+      borderRadius: BORDER_RADIUS.full,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginRight: SPACING.sm,
+    },
+    entryAvatarText: {
+      fontSize: FONT_SIZE.caption,
+      fontWeight: FONT_WEIGHT.bold,
+    },
+    entryMeta: {
+      flex: 1,
+    },
+    entryAuthor: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+    },
+    entryDate: {
+      fontSize: FONT_SIZE.caption,
+      color: colors.textTertiary,
+      fontWeight: FONT_WEIGHT.medium,
+    },
+    hoursBadge: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: colors.backgroundSubtle,
+      paddingHorizontal: SPACING.sm,
+      paddingVertical: SPACING.xxs,
+      borderRadius: BORDER_RADIUS.xs,
+      gap: SPACING.xxs,
+    },
+    hoursText: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textTertiary,
+    },
+    entryDescription: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.regular,
+      color: colors.textPrimary,
+      lineHeight: 21,
+    },
+    linkedMilestone: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      marginTop: SPACING.sm,
+      paddingTop: SPACING.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderLight,
+      gap: SPACING.xs,
+    },
+    linkedMilestoneText: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.primary,
+      flex: 1,
+    },
 
-  // ── Empty State ───────────────────────────────────────
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: LAYOUT.screenPaddingH,
-  },
-  emptyIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: COLORS.primaryMuted,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: SPACING.lg,
-  },
-  emptyTitle: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.sm,
-    letterSpacing: -0.3,
-  },
-  emptyBody: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.regular,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    lineHeight: 22,
-    maxWidth: 320,
-    marginBottom: SPACING.lg,
-  },
-  emptyStreakRow: {
-    flexDirection: "row",
-    gap: SPACING.sm,
-    marginBottom: SPACING.sm,
-  },
-  emptyStreakDot: {
-    width: 28,
-    height: 28,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.primary,
-    opacity: 0.25,
-  },
-  emptyStreakDotEmpty: {
-    width: 28,
-    height: 28,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.borderLight,
-  },
-  emptyStreakLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textMuted,
-  },
+    // ── Empty State ───────────────────────────────────────
+    emptyState: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingHorizontal: LAYOUT.screenPaddingH,
+    },
+    emptyIconContainer: {
+      width: 64,
+      height: 64,
+      borderRadius: BORDER_RADIUS.lg,
+      backgroundColor: colors.primaryMuted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginBottom: SPACING.lg,
+    },
+    emptyTitle: {
+      fontSize: FONT_SIZE.xl,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+      marginBottom: SPACING.sm,
+      letterSpacing: -0.3,
+    },
+    emptyBody: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.regular,
+      color: colors.textSecondary,
+      textAlign: "center" as const,
+      lineHeight: 22,
+      maxWidth: 320,
+      marginBottom: SPACING.lg,
+    },
+    emptyStreakRow: {
+      flexDirection: "row" as const,
+      gap: SPACING.sm,
+      marginBottom: SPACING.sm,
+    },
+    emptyStreakDot: {
+      width: 28,
+      height: 28,
+      borderRadius: BORDER_RADIUS.sm,
+      backgroundColor: colors.primary,
+      opacity: 0.25,
+    },
+    emptyStreakDotEmpty: {
+      width: 28,
+      height: 28,
+      borderRadius: BORDER_RADIUS.sm,
+      backgroundColor: colors.borderLight,
+    },
+    emptyStreakLabel: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textMuted,
+    },
 
-  // ── FAB ───────────────────────────────────────────────
-  fab: {
-    position: "absolute",
-    bottom: 24,
-    right: LAYOUT.screenPaddingH,
-    width: 56,
-    height: 56,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    ...SHADOW.glow,
-  },
-});
+    // ── FAB ───────────────────────────────────────────────
+    fab: {
+      position: "absolute" as const,
+      bottom: 24,
+      right: LAYOUT.screenPaddingH,
+      width: 56,
+      height: 56,
+      borderRadius: BORDER_RADIUS.full,
+      backgroundColor: colors.primary,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      ...SHADOW.glow,
+    },
+  };
+}

@@ -14,7 +14,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -44,10 +43,11 @@ import type {
   MilestoneStatus,
   PhaseWithMilestones,
 } from "@/types/milestones";
+import type { ColorPalette } from "@/constants/theme";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
+import { useTheme } from "@/hooks/use-theme";
 import {
-  ANIMATION,
   BORDER_RADIUS,
-  COLORS,
   FONT_SIZE,
   FONT_WEIGHT,
   LAYOUT,
@@ -69,15 +69,16 @@ function nextStatus(current: MilestoneStatus): MilestoneStatus {
 }
 
 function statusIcon(
-  status: MilestoneStatus
+  status: MilestoneStatus,
+  colors: ColorPalette
 ): { name: keyof typeof Ionicons.glyphMap; color: string } {
   switch (status) {
     case "completed":
-      return { name: "checkmark-circle", color: COLORS.success };
+      return { name: "checkmark-circle", color: colors.success };
     case "in_progress":
-      return { name: "ellipse-outline", color: COLORS.warning };
+      return { name: "ellipse-outline", color: colors.warning };
     default:
-      return { name: "ellipse-outline", color: COLORS.textMuted };
+      return { name: "ellipse-outline", color: colors.textMuted };
   }
 }
 
@@ -109,6 +110,8 @@ function JourneyNode({
   onPress,
   onToggleStatus,
 }: JourneyNodeProps): React.JSX.Element {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const isCompleted = milestone.status === "completed";
   const isInProgress = milestone.status === "in_progress";
 
@@ -165,7 +168,7 @@ function JourneyNode({
       {/* Vertical connector line */}
       <View style={styles.journeyLineColumn}>
         {/* Top line (hidden for first) */}
-        <View style={[styles.journeyLineSeg, index === 0 && { backgroundColor: "transparent" }, isCompleted && { backgroundColor: COLORS.primary }]} />
+        <View style={[styles.journeyLineSeg, index === 0 && { backgroundColor: "transparent" }, isCompleted && { backgroundColor: colors.primary }]} />
         {/* Node circle */}
         <Pressable onPress={handleToggle} hitSlop={8} style={styles.journeyNodeCircleWrap}>
           {isInProgress && (
@@ -184,7 +187,7 @@ function JourneyNode({
             ]}
           >
             {isCompleted && (
-              <Ionicons name="checkmark" size={12} color={COLORS.white} />
+              <Ionicons name="checkmark" size={12} color={colors.white} />
             )}
             {isInProgress && (
               <View style={styles.journeyNodeInnerDot} />
@@ -192,7 +195,7 @@ function JourneyNode({
           </View>
         </Pressable>
         {/* Bottom line (hidden for last) */}
-        <View style={[styles.journeyLineSeg, isLast && { backgroundColor: "transparent" }, isCompleted && { backgroundColor: COLORS.primary }]} />
+        <View style={[styles.journeyLineSeg, isLast && { backgroundColor: "transparent" }, isCompleted && { backgroundColor: colors.primary }]} />
       </View>
 
       {/* Card */}
@@ -242,7 +245,7 @@ function JourneyNode({
         ) : null}
         {milestone.notes ? (
           <View style={styles.journeyNotesIndicator}>
-            <Ionicons name="document-text-outline" size={11} color={COLORS.textMuted} />
+            <Ionicons name="document-text-outline" size={11} color={colors.textMuted} />
             <Text style={styles.journeyNotesText}>Has notes</Text>
           </View>
         ) : null}
@@ -275,6 +278,8 @@ function PhaseCard({
   onEditPhase,
   onDeletePhase,
 }: PhaseCardProps): React.JSX.Element {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const [expanded, setExpanded] = useState(true);
 
   const total = phase.milestones.length;
@@ -307,7 +312,7 @@ function PhaseCard({
         <View style={styles.phaseHeaderLeft}>
           <View style={[styles.phaseNumber, allDone && styles.phaseNumberDone]}>
             {allDone ? (
-              <Ionicons name="checkmark" size={13} color={COLORS.white} />
+              <Ionicons name="checkmark" size={13} color={colors.white} />
             ) : (
               <Text style={styles.phaseNumberText}>{phaseIndex + 1}</Text>
             )}
@@ -331,13 +336,13 @@ function PhaseCard({
             <Ionicons
               name="ellipsis-horizontal"
               size={18}
-              color={COLORS.textTertiary}
+              color={colors.textTertiary}
             />
           </Pressable>
           <Ionicons
             name={expanded ? "chevron-down" : "chevron-forward"}
             size={16}
-            color={COLORS.textTertiary}
+            color={colors.textTertiary}
           />
         </View>
       </Pressable>
@@ -373,7 +378,7 @@ function PhaseCard({
             style={styles.addMilestoneBtn}
             onPress={() => onAddMilestone(phase.id)}
           >
-            <Ionicons name="add-circle-outline" size={16} color={COLORS.primary} />
+            <Ionicons name="add-circle-outline" size={16} color={colors.primary} />
             <Text style={styles.addMilestoneBtnText}>Add milestone</Text>
           </Pressable>
         </View>
@@ -403,6 +408,8 @@ function FormModal({
   onSubmit,
   loading,
 }: FormModalProps): React.JSX.Element {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const [formTitle, setFormTitle] = useState(initialTitle);
   const [formDesc, setFormDesc] = useState(initialDescription);
 
@@ -434,7 +441,7 @@ function FormModal({
             value={formTitle}
             onChangeText={setFormTitle}
             placeholder="Enter title..."
-            placeholderTextColor={COLORS.textMuted}
+            placeholderTextColor={colors.textMuted}
             autoFocus
           />
 
@@ -444,7 +451,7 @@ function FormModal({
             value={formDesc}
             onChangeText={setFormDesc}
             placeholder="Add a description..."
-            placeholderTextColor={COLORS.textMuted}
+            placeholderTextColor={colors.textMuted}
             multiline
             numberOfLines={3}
           />
@@ -480,10 +487,12 @@ function EmptyState({
   onAddPhase: () => void;
   onImportPress: () => void;
 }): React.JSX.Element {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.emptyState}>
       <View style={styles.emptyIconContainer}>
-        <Ionicons name="flag" size={32} color={COLORS.primary} />
+        <Ionicons name="flag" size={32} color={colors.primary} />
       </View>
       <Text style={styles.emptyTitle}>Milestone Board</Text>
       <Text style={styles.emptyBody}>
@@ -516,6 +525,8 @@ function EmptyState({
 // ── Main Screen ─────────────────────────────────────────────
 
 export default function MilestonesScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{
     reopenMilestoneId?: string;
@@ -785,13 +796,13 @@ export default function MilestonesScreen() {
   if (error) {
     return (
       <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle" size={32} color={COLORS.error} />
+        <Ionicons name="alert-circle" size={32} color={colors.error} />
         <Text style={styles.errorText}>Failed to load milestones</Text>
         <Text style={styles.errorDetail}>
           {error instanceof Error ? error.message : "An unexpected error occurred"}
         </Text>
         <Pressable style={styles.retryButton} onPress={() => refetch()}>
-          <Ionicons name="refresh" size={16} color={COLORS.primary} />
+          <Ionicons name="refresh" size={16} color={colors.primary} />
           <Text style={styles.retryText}>Try Again</Text>
         </Pressable>
       </View>
@@ -863,7 +874,7 @@ export default function MilestonesScreen() {
             {/* Action Buttons */}
             <View style={styles.actionRow}>
               <Pressable style={styles.addPhaseBtn} onPress={handleAddPhase}>
-                <Ionicons name="add-circle-outline" size={20} color={COLORS.primary} />
+                <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
                 <Text style={styles.addPhaseBtnText}>Add Phase</Text>
               </Pressable>
               <Pressable
@@ -872,7 +883,7 @@ export default function MilestonesScreen() {
                 style={styles.importBtn}
                 onPress={() => setImportModalVisible(true)}
               >
-                <Ionicons name="sparkles" size={18} color={COLORS.primary} />
+                <Ionicons name="sparkles" size={18} color={colors.primary} />
                 <Text style={styles.importBtnText}>Import with AI</Text>
               </Pressable>
             </View>
@@ -918,469 +929,471 @@ export default function MilestonesScreen() {
 
 // ── Styles ──────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.background,
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.background,
-    paddingHorizontal: LAYOUT.screenPaddingH,
-  },
-  errorText: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-    marginTop: SPACING.md,
-  },
-  errorDetail: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textTertiary,
-    marginTop: SPACING.xs,
-    textAlign: "center",
-    maxWidth: 300,
-  },
-  retryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: SPACING.lg,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.primaryMuted,
-    gap: SPACING.xs,
-  },
-  retryText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
-  },
+function createStyles(colors: ColorPalette) {
+  return {
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    loadingContainer: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: colors.background,
+    },
+    errorContainer: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: colors.background,
+      paddingHorizontal: LAYOUT.screenPaddingH,
+    },
+    errorText: {
+      fontSize: FONT_SIZE.lg,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+      marginTop: SPACING.md,
+    },
+    errorDetail: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textTertiary,
+      marginTop: SPACING.xs,
+      textAlign: "center" as const,
+      maxWidth: 300,
+    },
+    retryButton: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      marginTop: SPACING.lg,
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.sm + 2,
+      borderRadius: BORDER_RADIUS.sm,
+      backgroundColor: colors.primaryMuted,
+      gap: SPACING.xs,
+    },
+    retryText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.primary,
+    },
 
-  // ── Overall Progress ──────────────────────────────────
-  overallHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    paddingHorizontal: LAYOUT.screenPaddingH,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.sm,
-  },
-  overallHeaderLeft: {},
-  overallLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: 2,
-  },
-  overallCount: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
-  },
-  overallPct: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
-    letterSpacing: -0.5,
-  },
-  overallProgressBar: {
-    paddingHorizontal: LAYOUT.screenPaddingH,
-    paddingBottom: SPACING.md,
-  },
+    // ── Overall Progress ──────────────────────────────────
+    overallHeader: {
+      flexDirection: "row" as const,
+      justifyContent: "space-between" as const,
+      alignItems: "flex-end" as const,
+      paddingHorizontal: LAYOUT.screenPaddingH,
+      paddingTop: SPACING.lg,
+      paddingBottom: SPACING.sm,
+    },
+    overallHeaderLeft: {},
+    overallLabel: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textTertiary,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.8,
+      marginBottom: 2,
+    },
+    overallCount: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textSecondary,
+    },
+    overallPct: {
+      fontSize: FONT_SIZE.xxl,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.primary,
+      letterSpacing: -0.5,
+    },
+    overallProgressBar: {
+      paddingHorizontal: LAYOUT.screenPaddingH,
+      paddingBottom: SPACING.md,
+    },
 
-  // ── Scroll ────────────────────────────────────────────
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: LAYOUT.screenPaddingH,
-    paddingBottom: SPACING.xxxl,
-  },
+    // ── Scroll ────────────────────────────────────────────
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: LAYOUT.screenPaddingH,
+      paddingBottom: SPACING.xxxl,
+    },
 
-  // ── Phase Card ────────────────────────────────────────
-  phaseCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    marginBottom: SPACING.lg,
-    ...SHADOW.sm,
-    overflow: "hidden",
-  },
-  phaseHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
-  },
-  phaseHeaderLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    gap: SPACING.sm,
-  },
-  phaseNumber: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: COLORS.navyMid,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  phaseNumberDone: {
-    backgroundColor: COLORS.primary,
-  },
-  phaseNumberText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.white,
-  },
-  phaseTitleWrap: {
-    flex: 1,
-  },
-  phaseTitle: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-    letterSpacing: -0.2,
-  },
-  phaseSubtitle: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textTertiary,
-    marginTop: 1,
-  },
-  phaseHeaderRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.sm,
-  },
-  phaseCount: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textTertiary,
-    backgroundColor: COLORS.backgroundSubtle,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xxs,
-    borderRadius: BORDER_RADIUS.xs,
-  },
-  phaseMenuBtn: {
-    padding: SPACING.xs,
-  },
+    // ── Phase Card ────────────────────────────────────────
+    phaseCard: {
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.lg,
+      marginBottom: SPACING.lg,
+      ...SHADOW.sm,
+      overflow: "hidden" as const,
+    },
+    phaseHeader: {
+      flexDirection: "row" as const,
+      justifyContent: "space-between" as const,
+      alignItems: "center" as const,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.md,
+    },
+    phaseHeaderLeft: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      flex: 1,
+      gap: SPACING.sm,
+    },
+    phaseNumber: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      backgroundColor: colors.navyMid,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    phaseNumberDone: {
+      backgroundColor: colors.primary,
+    },
+    phaseNumberText: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.white,
+    },
+    phaseTitleWrap: {
+      flex: 1,
+    },
+    phaseTitle: {
+      fontSize: FONT_SIZE.md,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+      letterSpacing: -0.2,
+    },
+    phaseSubtitle: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textTertiary,
+      marginTop: 1,
+    },
+    phaseHeaderRight: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: SPACING.sm,
+    },
+    phaseCount: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textTertiary,
+      backgroundColor: colors.backgroundSubtle,
+      paddingHorizontal: SPACING.sm,
+      paddingVertical: SPACING.xxs,
+      borderRadius: BORDER_RADIUS.xs,
+    },
+    phaseMenuBtn: {
+      padding: SPACING.xs,
+    },
 
-  // ── Progress Bar ──────────────────────────────────────
-  progressBarContainer: {
-    paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.sm,
-  },
-  progressBarTrack: {
-    width: "100%",
-    height: 4,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.borderLight,
-    overflow: "hidden",
-  },
-  progressBarFill: {
-    height: "100%",
-    borderRadius: BORDER_RADIUS.full,
-  },
+    // ── Progress Bar ──────────────────────────────────────
+    progressBarContainer: {
+      paddingHorizontal: SPACING.md,
+      paddingBottom: SPACING.sm,
+    },
+    progressBarTrack: {
+      width: "100%" as const,
+      height: 4,
+      borderRadius: BORDER_RADIUS.full,
+      backgroundColor: colors.borderLight,
+      overflow: "hidden" as const,
+    },
+    progressBarFill: {
+      height: "100%" as const,
+      borderRadius: BORDER_RADIUS.full,
+    },
 
-  // ── Journey Path ──────────────────────────────────────
-  journeyContainer: {
-    paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.md,
-    paddingTop: SPACING.xs,
-  },
-  journeyNodeOuter: {
-    flexDirection: "row",
-    minHeight: 72,
-  },
-  journeyLineColumn: {
-    width: 28,
-    alignItems: "center",
-  },
-  journeyLineSeg: {
-    flex: 1,
-    width: 2,
-    backgroundColor: COLORS.borderLight,
-  },
-  journeyNodeCircleWrap: {
-    width: 28,
-    height: 28,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  journeyPulseRing: {
-    position: "absolute",
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-    opacity: 0.4,
-  },
-  journeyNodeCircle: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    borderColor: COLORS.borderLight,
-    backgroundColor: COLORS.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  journeyNodeCircleCompleted: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  journeyNodeCircleInProgress: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.surface,
-  },
-  journeyNodeInnerDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.primary,
-  },
+    // ── Journey Path ──────────────────────────────────────
+    journeyContainer: {
+      paddingHorizontal: SPACING.md,
+      paddingBottom: SPACING.md,
+      paddingTop: SPACING.xs,
+    },
+    journeyNodeOuter: {
+      flexDirection: "row" as const,
+      minHeight: 72,
+    },
+    journeyLineColumn: {
+      width: 28,
+      alignItems: "center" as const,
+    },
+    journeyLineSeg: {
+      flex: 1,
+      width: 2,
+      backgroundColor: colors.borderLight,
+    },
+    journeyNodeCircleWrap: {
+      width: 28,
+      height: 28,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    journeyPulseRing: {
+      position: "absolute" as const,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: colors.primary,
+      opacity: 0.4,
+    },
+    journeyNodeCircle: {
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      borderWidth: 2,
+      borderColor: colors.borderLight,
+      backgroundColor: colors.surface,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    journeyNodeCircleCompleted: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    journeyNodeCircleInProgress: {
+      borderColor: colors.primary,
+      backgroundColor: colors.surface,
+    },
+    journeyNodeInnerDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.primary,
+    },
 
-  // Journey cards
-  journeyCard: {
-    flex: 1,
-    marginLeft: SPACING.sm,
-    marginBottom: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-  },
-  journeyCardCompleted: {
-    borderColor: COLORS.successMuted,
-    backgroundColor: "rgba(34, 197, 94, 0.06)",
-  },
-  journeyCardInProgress: {
-    borderColor: "rgba(255, 106, 42, 0.5)",
-    backgroundColor: "rgba(255, 106, 42, 0.06)",
-    ...SHADOW.glow,
-  },
-  journeyCardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: SPACING.sm,
-  },
-  journeyCardTitle: {
-    flex: 1,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-    lineHeight: 20,
-  },
-  journeyCardTitleDone: {
-    color: COLORS.textTertiary,
-  },
-  journeyCardDesc: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textTertiary,
-    marginTop: SPACING.xxs + 1,
-    lineHeight: 18,
-  },
-  journeyNotesIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: SPACING.xs,
-  },
-  journeyNotesText: {
-    fontSize: FONT_SIZE.caption,
-    color: COLORS.textMuted,
-  },
-  journeyStatusBadge: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xxs + 1,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.backgroundSubtle,
-  },
-  journeyStatusBadgeCompleted: {
-    backgroundColor: COLORS.successMuted,
-  },
-  journeyStatusBadgeInProgress: {
-    backgroundColor: COLORS.warningMuted,
-  },
-  journeyStatusText: {
-    fontSize: FONT_SIZE.caption,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textTertiary,
-  },
-  journeyStatusTextCompleted: {
-    color: COLORS.success,
-  },
-  journeyStatusTextInProgress: {
-    color: COLORS.warning,
-  },
+    // Journey cards
+    journeyCard: {
+      flex: 1,
+      marginLeft: SPACING.sm,
+      marginBottom: SPACING.sm,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm + 2,
+      borderRadius: BORDER_RADIUS.md,
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+    },
+    journeyCardCompleted: {
+      borderColor: colors.successMuted,
+      backgroundColor: "rgba(34, 197, 94, 0.06)",
+    },
+    journeyCardInProgress: {
+      borderColor: "rgba(255, 106, 42, 0.5)",
+      backgroundColor: "rgba(255, 106, 42, 0.06)",
+      ...SHADOW.glow,
+    },
+    journeyCardHeader: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      gap: SPACING.sm,
+    },
+    journeyCardTitle: {
+      flex: 1,
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+      lineHeight: 20,
+    },
+    journeyCardTitleDone: {
+      color: colors.textTertiary,
+    },
+    journeyCardDesc: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textTertiary,
+      marginTop: SPACING.xxs + 1,
+      lineHeight: 18,
+    },
+    journeyNotesIndicator: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 4,
+      marginTop: SPACING.xs,
+    },
+    journeyNotesText: {
+      fontSize: FONT_SIZE.caption,
+      color: colors.textMuted,
+    },
+    journeyStatusBadge: {
+      paddingHorizontal: SPACING.sm,
+      paddingVertical: SPACING.xxs + 1,
+      borderRadius: BORDER_RADIUS.full,
+      backgroundColor: colors.backgroundSubtle,
+    },
+    journeyStatusBadgeCompleted: {
+      backgroundColor: colors.successMuted,
+    },
+    journeyStatusBadgeInProgress: {
+      backgroundColor: colors.warningMuted,
+    },
+    journeyStatusText: {
+      fontSize: FONT_SIZE.caption,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textTertiary,
+    },
+    journeyStatusTextCompleted: {
+      color: colors.success,
+    },
+    journeyStatusTextInProgress: {
+      color: colors.warning,
+    },
 
-  // ── Add buttons ───────────────────────────────────────
-  addMilestoneBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: SPACING.sm + 2,
-    marginTop: SPACING.xs,
-    borderRadius: BORDER_RADIUS.sm,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: COLORS.border,
-    gap: SPACING.xs,
-  },
-  addMilestoneBtnText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
-  },
-  actionRow: {
-    flexDirection: "row",
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  addPhaseBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    borderStyle: "dashed",
-    gap: SPACING.xs,
-  },
-  addPhaseBtnText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
-  },
-  importBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: COLORS.primaryMuted,
-    gap: SPACING.xs,
-  },
-  importBtnText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
-  },
+    // ── Add buttons ───────────────────────────────────────
+    addMilestoneBtn: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingVertical: SPACING.sm + 2,
+      marginTop: SPACING.xs,
+      borderRadius: BORDER_RADIUS.sm,
+      borderWidth: 1,
+      borderStyle: "dashed" as const,
+      borderColor: colors.border,
+      gap: SPACING.xs,
+    },
+    addMilestoneBtnText: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.primary,
+    },
+    actionRow: {
+      flexDirection: "row" as const,
+      gap: SPACING.sm,
+      marginBottom: SPACING.md,
+    },
+    addPhaseBtn: {
+      flex: 1,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingVertical: SPACING.md,
+      borderRadius: BORDER_RADIUS.lg,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      borderStyle: "dashed" as const,
+      gap: SPACING.xs,
+    },
+    addPhaseBtnText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.primary,
+    },
+    importBtn: {
+      flex: 1,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingVertical: SPACING.md,
+      borderRadius: BORDER_RADIUS.lg,
+      backgroundColor: colors.primaryMuted,
+      gap: SPACING.xs,
+    },
+    importBtnText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.primary,
+    },
 
-  // ── Empty State ───────────────────────────────────────
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: LAYOUT.screenPaddingH,
-  },
-  emptyIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: COLORS.primaryMuted,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: SPACING.lg,
-  },
-  emptyTitle: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.sm,
-    letterSpacing: -0.3,
-  },
-  emptyBody: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.regular,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    lineHeight: 22,
-    maxWidth: 320,
-    marginBottom: SPACING.lg,
-  },
-  emptyProgressPreview: {
-    width: "100%",
-    maxWidth: 260,
-    alignItems: "center",
-  },
-  emptyProgressLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textMuted,
-    marginTop: SPACING.xs,
-  },
+    // ── Empty State ───────────────────────────────────────
+    emptyState: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingHorizontal: LAYOUT.screenPaddingH,
+    },
+    emptyIconContainer: {
+      width: 64,
+      height: 64,
+      borderRadius: BORDER_RADIUS.lg,
+      backgroundColor: colors.primaryMuted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginBottom: SPACING.lg,
+    },
+    emptyTitle: {
+      fontSize: FONT_SIZE.xl,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+      marginBottom: SPACING.sm,
+      letterSpacing: -0.3,
+    },
+    emptyBody: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.regular,
+      color: colors.textSecondary,
+      textAlign: "center" as const,
+      lineHeight: 22,
+      maxWidth: 320,
+      marginBottom: SPACING.lg,
+    },
+    emptyProgressPreview: {
+      width: "100%" as const,
+      maxWidth: 260,
+      alignItems: "center" as const,
+    },
+    emptyProgressLabel: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textMuted,
+      marginTop: SPACING.xs,
+    },
 
-  // ── Modal ─────────────────────────────────────────────
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: COLORS.surfaceOverlay,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: LAYOUT.screenPaddingH,
-  },
-  modalContent: {
-    width: "100%",
-    maxWidth: LAYOUT.maxContentWidth,
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.lg,
-    ...SHADOW.lg,
-  },
-  modalTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.lg,
-    letterSpacing: -0.3,
-  },
-  modalLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: SPACING.xs,
-  },
-  modalInput: {
-    height: LAYOUT.inputHeight,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    fontSize: FONT_SIZE.md,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.background,
-    marginBottom: SPACING.md,
-  },
-  modalInputMultiline: {
-    height: 88,
-    paddingTop: SPACING.sm,
-    textAlignVertical: "top",
-  },
-  modalActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: SPACING.sm,
-    marginTop: SPACING.sm,
-  },
-});
+    // ── Modal ─────────────────────────────────────────────
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: colors.surfaceOverlay,
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
+      padding: LAYOUT.screenPaddingH,
+    },
+    modalContent: {
+      width: "100%" as const,
+      maxWidth: LAYOUT.maxContentWidth,
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.xl,
+      padding: SPACING.lg,
+      ...SHADOW.lg,
+    },
+    modalTitle: {
+      fontSize: FONT_SIZE.lg,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+      marginBottom: SPACING.lg,
+      letterSpacing: -0.3,
+    },
+    modalLabel: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textTertiary,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.8,
+      marginBottom: SPACING.xs,
+    },
+    modalInput: {
+      height: LAYOUT.inputHeight,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: BORDER_RADIUS.md,
+      paddingHorizontal: SPACING.md,
+      fontSize: FONT_SIZE.md,
+      color: colors.textPrimary,
+      backgroundColor: colors.background,
+      marginBottom: SPACING.md,
+    },
+    modalInputMultiline: {
+      height: 88,
+      paddingTop: SPACING.sm,
+      textAlignVertical: "top" as const,
+    },
+    modalActions: {
+      flexDirection: "row" as const,
+      justifyContent: "flex-end" as const,
+      gap: SPACING.sm,
+      marginTop: SPACING.sm,
+    },
+  };
+}

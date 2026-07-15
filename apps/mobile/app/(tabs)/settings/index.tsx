@@ -10,7 +10,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -23,6 +22,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useTour, useTourRef } from "@/components/tour/TourProvider";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/hooks/use-theme";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
 import {
   useApiKeys,
   useAddApiKey,
@@ -37,9 +37,9 @@ import {
   useJoinWorkspace,
   useRenameWorkspace,
 } from "@/hooks/use-workspaces";
+import type { ColorPalette } from "@/constants/theme";
 import {
   BORDER_RADIUS,
-  COLORS,
   FONT_SIZE,
   FONT_WEIGHT,
   LAYOUT,
@@ -54,6 +54,7 @@ const SUPPORTED_SERVICES = [
 ] as const;
 
 export default function SettingsScreen() {
+  const styles = useThemedStyles(createStyles);
   const { user, workspace, isLoading, signOut, setWorkspace } = useAuth();
   const { mode, setMode, colors } = useTheme();
   const { currentStep } = useTour();
@@ -295,8 +296,8 @@ export default function SettingsScreen() {
       </View>
 
       {/* ── Appearance ─────────────────────────────────── */}
-      <View style={[styles.card, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>
           Appearance
         </Text>
         <View style={styles.themeRow}>
@@ -355,19 +356,19 @@ export default function SettingsScreen() {
                 onChangeText={setNameDraft}
                 autoFocus
                 maxLength={100}
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={colors.textMuted}
                 onSubmitEditing={handleSaveName}
                 returnKeyType="done"
               />
               <Pressable onPress={handleSaveName} style={styles.editNameSaveBtn}>
                 {renameWorkspaceMutation.isPending ? (
-                  <ActivityIndicator size="small" color={COLORS.primary} />
+                  <ActivityIndicator size="small" color={colors.primary} />
                 ) : (
-                  <Ionicons name="checkmark" size={18} color={COLORS.primary} />
+                  <Ionicons name="checkmark" size={18} color={colors.primary} />
                 )}
               </Pressable>
               <Pressable onPress={() => setEditingName(false)} style={styles.editNameCancelBtn}>
-                <Ionicons name="close" size={18} color={COLORS.textMuted} />
+                <Ionicons name="close" size={18} color={colors.textMuted} />
               </Pressable>
             </View>
           </View>
@@ -381,7 +382,7 @@ export default function SettingsScreen() {
             <Text style={styles.rowLabel}>Name</Text>
             <View style={styles.editableValue}>
               <Text style={styles.rowValue}>{workspace?.name ?? "—"}</Text>
-              <Ionicons name="pencil-outline" size={14} color={COLORS.textMuted} style={{ marginLeft: 6 }} />
+              <Ionicons name="pencil-outline" size={14} color={colors.textMuted} style={{ marginLeft: 6 }} />
             </View>
           </Pressable>
         )}
@@ -401,7 +402,7 @@ export default function SettingsScreen() {
             <Ionicons
               name={copiedInvite ? "checkmark" : "copy-outline"}
               size={14}
-              color={copiedInvite ? COLORS.success : COLORS.primary}
+              color={copiedInvite ? colors.success : colors.primary}
               style={styles.copyIcon}
             />
           </View>
@@ -434,7 +435,7 @@ export default function SettingsScreen() {
               title="Join a workspace using an invite code"
               accessibilityLabel="Join workspace"
             >
-              <Ionicons name="enter-outline" size={14} color={COLORS.primary} />
+              <Ionicons name="enter-outline" size={14} color={colors.primary} />
               <Text style={styles.wsActionLabel}>Join</Text>
             </Pressable>
             <Pressable
@@ -444,7 +445,7 @@ export default function SettingsScreen() {
               title="Create a brand new workspace"
               accessibilityLabel="Create workspace"
             >
-              <Ionicons name="add" size={15} color={COLORS.primary} />
+              <Ionicons name="add" size={15} color={colors.primary} />
               <Text style={styles.wsActionLabel}>Create</Text>
             </Pressable>
           </View>
@@ -483,12 +484,12 @@ export default function SettingsScreen() {
               </View>
               {ws.is_active && (
                 <View style={styles.wsActiveBadge}>
-                  <Ionicons name="checkmark-circle" size={16} color={COLORS.success} />
+                  <Ionicons name="checkmark-circle" size={16} color={colors.success} />
                   <Text style={styles.wsActiveText}>Active</Text>
                 </View>
               )}
               {!ws.is_active && (
-                <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
+                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
               )}
             </Pressable>
           ))
@@ -517,7 +518,7 @@ export default function SettingsScreen() {
                 value={newWorkspaceName}
                 onChangeText={setNewWorkspaceName}
                 placeholder="Workspace name"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={colors.textMuted}
                 autoFocus
                 maxLength={100}
               />
@@ -540,7 +541,7 @@ export default function SettingsScreen() {
                   disabled={!newWorkspaceName.trim() || createWorkspaceMutation.isPending}
                 >
                   {createWorkspaceMutation.isPending ? (
-                    <ActivityIndicator size="small" color={COLORS.white} />
+                    <ActivityIndicator size="small" color={colors.white} />
                   ) : (
                     <Text style={styles.modalCreateText}>Create</Text>
                   )}
@@ -573,7 +574,7 @@ export default function SettingsScreen() {
                 value={joinInviteCode}
                 onChangeText={setJoinInviteCode}
                 placeholder="e.g. A7KX3BN2"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={colors.textMuted}
                 autoFocus
                 maxLength={20}
                 autoCapitalize="characters"
@@ -597,7 +598,7 @@ export default function SettingsScreen() {
                   disabled={!joinInviteCode.trim() || joinWorkspaceMutation.isPending}
                 >
                   {joinWorkspaceMutation.isPending ? (
-                    <ActivityIndicator size="small" color={COLORS.white} />
+                    <ActivityIndicator size="small" color={colors.white} />
                   ) : (
                     <Text style={styles.modalCreateText}>Join</Text>
                   )}
@@ -617,7 +618,7 @@ export default function SettingsScreen() {
               API keys are encrypted with AES-256-GCM and never leave the server.
             </Text>
           </View>
-          <Ionicons name="shield-checkmark" size={18} color={COLORS.success} />
+          <Ionicons name="shield-checkmark" size={18} color={colors.success} />
         </View>
 
         {keysLoading ? (
@@ -643,7 +644,7 @@ export default function SettingsScreen() {
                   // @ts-ignore
                   title="Remove this API key"
                 >
-                  <Ionicons name="trash-outline" size={18} color={COLORS.error} />
+                  <Ionicons name="trash-outline" size={18} color={colors.error} />
                 </Pressable>
               </View>
             ))}
@@ -660,7 +661,7 @@ export default function SettingsScreen() {
                     SUPPORTED_SERVICES.find((s) => s.id === addingService)
                       ?.placeholder || "Enter API key"
                   }
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={newKeyValue}
                   onChangeText={setNewKeyValue}
                   secureTextEntry
@@ -670,7 +671,7 @@ export default function SettingsScreen() {
                 <TextInput
                   style={styles.textInput}
                   placeholder="Label (optional, e.g. 'Production')"
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={newKeyLabel}
                   onChangeText={setNewKeyLabel}
                   autoCapitalize="none"
@@ -708,7 +709,7 @@ export default function SettingsScreen() {
                     <Ionicons
                       name="add-circle-outline"
                       size={18}
-                      color={COLORS.primary}
+                      color={colors.primary}
                     />
                     <Text style={styles.addKeyButtonText}>
                       Add {service.label} Key
@@ -737,7 +738,7 @@ export default function SettingsScreen() {
               Describe your project so the AI assistant understands your context.
             </Text>
           </View>
-          <Ionicons name="document-text-outline" size={18} color={COLORS.primary} />
+          <Ionicons name="document-text-outline" size={18} color={colors.primary} />
         </View>
 
         {briefLoading ? (
@@ -747,7 +748,7 @@ export default function SettingsScreen() {
             <TextInput
               style={[styles.textInput, styles.briefInput]}
               placeholder="Describe your project, its goals, tech stack, business model, target audience..."
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={briefDraft}
               onChangeText={setBriefDraft}
               multiline
@@ -778,7 +779,7 @@ export default function SettingsScreen() {
               {briefData.project_brief}
             </Text>
             <Pressable style={styles.editBriefButton} onPress={handleStartEditBrief}>
-              <Ionicons name="create-outline" size={16} color={COLORS.primary} />
+              <Ionicons name="create-outline" size={16} color={colors.primary} />
               <Text style={styles.editBriefText}>Edit Brief</Text>
             </Pressable>
           </View>
@@ -787,7 +788,7 @@ export default function SettingsScreen() {
             <Ionicons
               name="add-circle-outline"
               size={24}
-              color={COLORS.textTertiary}
+              color={colors.textTertiary}
             />
             <Text style={styles.emptyBriefText}>
               Add a project brief to give the AI assistant context about what you're building.
@@ -812,435 +813,437 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollContent: {
-    paddingHorizontal: LAYOUT.screenPaddingH,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.xxxl,
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
-    ...SHADOW.sm,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: SPACING.md,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: 4,
-  },
-  themeRow: {
-    flexDirection: "row",
-    gap: SPACING.sm,
-    marginTop: SPACING.sm,
-  },
-  themeOption: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    borderWidth: 1,
-  },
-  themeOptionLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  sectionSubtitle: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-    maxWidth: "90%",
-  },
-  profileRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primaryMuted,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: SPACING.md,
-  },
-  avatarText: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  profileName: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-    marginBottom: 2,
-  },
-  profileEmail: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textTertiary,
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: SPACING.sm,
-  },
-  rowLabel: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  rowValue: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textPrimary,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  editableValue: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-  },
-  editNameRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 6,
-    flex: 1,
-    maxWidth: 220,
-  },
-  editNameInput: {
-    flex: 1,
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textPrimary,
-    fontWeight: FONT_WEIGHT.semibold,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.primary,
-    paddingVertical: 2,
-    paddingHorizontal: 4,
-  },
-  editNameSaveBtn: {
-    padding: 4,
-  },
-  editNameCancelBtn: {
-    padding: 4,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.divider,
-  },
-  codeBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.primaryMuted,
-    borderRadius: BORDER_RADIUS.sm,
-    paddingHorizontal: SPACING.sm + 2,
-    paddingVertical: SPACING.xs,
-  },
-  codeText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
-    letterSpacing: 1.2,
-  },
-  copyIcon: {
-    marginLeft: SPACING.xs,
-  },
+function createStyles(colors: ColorPalette) {
+  return {
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollContent: {
+      paddingHorizontal: LAYOUT.screenPaddingH,
+      paddingTop: SPACING.lg,
+      paddingBottom: SPACING.xxxl,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.lg,
+      padding: SPACING.lg,
+      marginBottom: SPACING.md,
+      ...SHADOW.sm,
+    },
+    sectionHeader: {
+      flexDirection: "row" as const,
+      justifyContent: "space-between" as const,
+      alignItems: "flex-start" as const,
+      marginBottom: SPACING.md,
+    },
+    sectionTitle: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textTertiary,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.8,
+      marginBottom: 4,
+    },
+    themeRow: {
+      flexDirection: "row" as const,
+      gap: SPACING.sm,
+      marginTop: SPACING.sm,
+    },
+    themeOption: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      gap: 6,
+      paddingVertical: SPACING.md,
+      borderRadius: BORDER_RADIUS.md,
+      borderWidth: 1,
+    },
+    themeOptionLabel: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+    },
+    sectionSubtitle: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textMuted,
+      maxWidth: "90%" as const,
+    },
+    profileRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+    },
+    avatar: {
+      width: 48,
+      height: 48,
+      borderRadius: BORDER_RADIUS.full,
+      backgroundColor: colors.primaryMuted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginRight: SPACING.md,
+    },
+    avatarText: {
+      fontSize: FONT_SIZE.lg,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.primary,
+    },
+    profileInfo: {
+      flex: 1,
+    },
+    profileName: {
+      fontSize: FONT_SIZE.lg,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+      marginBottom: 2,
+    },
+    profileEmail: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textTertiary,
+    },
+    row: {
+      flexDirection: "row" as const,
+      justifyContent: "space-between" as const,
+      alignItems: "center" as const,
+      paddingVertical: SPACING.sm,
+    },
+    rowLabel: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textSecondary,
+      fontWeight: FONT_WEIGHT.medium,
+    },
+    rowValue: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textPrimary,
+      fontWeight: FONT_WEIGHT.semibold,
+    },
+    editableValue: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+    },
+    editNameRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 6,
+      flex: 1,
+      maxWidth: 220,
+    },
+    editNameInput: {
+      flex: 1,
+      fontSize: FONT_SIZE.sm,
+      color: colors.textPrimary,
+      fontWeight: FONT_WEIGHT.semibold,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.primary,
+      paddingVertical: 2,
+      paddingHorizontal: 4,
+    },
+    editNameSaveBtn: {
+      padding: 4,
+    },
+    editNameCancelBtn: {
+      padding: 4,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.divider,
+    },
+    codeBadge: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: colors.primaryMuted,
+      borderRadius: BORDER_RADIUS.sm,
+      paddingHorizontal: SPACING.sm + 2,
+      paddingVertical: SPACING.xs,
+    },
+    codeText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.primary,
+      letterSpacing: 1.2,
+    },
+    copyIcon: {
+      marginLeft: SPACING.xs,
+    },
 
-  // ── Integrations ────────────────────────────────
-  keyRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: COLORS.surfaceElevated,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  keyInfo: {
-    flex: 1,
-  },
-  keyService: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
-    letterSpacing: 1,
-    marginBottom: 2,
-  },
-  keyHint: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-  },
-  keyLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-    marginTop: 2,
-  },
-  addKeyButtons: {
-    gap: SPACING.sm,
-  },
-  addKeyButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.sm,
-    paddingVertical: SPACING.sm,
-  },
-  addKeyButtonText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  allConfigured: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.success,
-    fontWeight: FONT_WEIGHT.medium,
-    textAlign: "center",
-    paddingVertical: SPACING.sm,
-  },
-  addKeyForm: {
-    backgroundColor: COLORS.surfaceElevated,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  addKeyFormTitle: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.md,
-  },
-  addKeyActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: SPACING.sm,
-    marginTop: SPACING.md,
-  },
-  textInput: {
-    backgroundColor: COLORS.background,
-    borderRadius: BORDER_RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm + 2,
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.sm,
-  },
+    // ── Integrations ────────────────────────────────
+    keyRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: BORDER_RADIUS.md,
+      padding: SPACING.md,
+      marginBottom: SPACING.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    keyInfo: {
+      flex: 1,
+    },
+    keyService: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.primary,
+      letterSpacing: 1,
+      marginBottom: 2,
+    },
+    keyHint: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textSecondary,
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+    },
+    keyLabel: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    addKeyButtons: {
+      gap: SPACING.sm,
+    },
+    addKeyButton: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: SPACING.sm,
+      paddingVertical: SPACING.sm,
+    },
+    addKeyButtonText: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.primary,
+      fontWeight: FONT_WEIGHT.medium,
+    },
+    allConfigured: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.success,
+      fontWeight: FONT_WEIGHT.medium,
+      textAlign: "center" as const,
+      paddingVertical: SPACING.sm,
+    },
+    addKeyForm: {
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: BORDER_RADIUS.md,
+      padding: SPACING.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    addKeyFormTitle: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+      marginBottom: SPACING.md,
+    },
+    addKeyActions: {
+      flexDirection: "row" as const,
+      justifyContent: "flex-end" as const,
+      gap: SPACING.sm,
+      marginTop: SPACING.md,
+    },
+    textInput: {
+      backgroundColor: colors.background,
+      borderRadius: BORDER_RADIUS.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm + 2,
+      fontSize: FONT_SIZE.sm,
+      color: colors.textPrimary,
+      marginBottom: SPACING.sm,
+    },
 
-  // ── Project Brief ──────────────────────────────
-  briefInput: {
-    minHeight: 160,
-    textAlignVertical: "top",
-    paddingTop: SPACING.sm + 2,
-  },
-  charCount: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-    textAlign: "right",
-  },
-  briefPreview: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-    lineHeight: 20,
-    marginBottom: SPACING.sm,
-  },
-  editBriefButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.xs,
-    paddingVertical: SPACING.xs,
-  },
-  editBriefText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  emptyBrief: {
-    alignItems: "center",
-    paddingVertical: SPACING.lg,
-    gap: SPACING.sm,
-  },
-  emptyBriefText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textTertiary,
-    textAlign: "center",
-    maxWidth: "80%",
-    lineHeight: 20,
-  },
+    // ── Project Brief ──────────────────────────────
+    briefInput: {
+      minHeight: 160,
+      textAlignVertical: "top" as const,
+      paddingTop: SPACING.sm + 2,
+    },
+    charCount: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textMuted,
+      textAlign: "right" as const,
+    },
+    briefPreview: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textSecondary,
+      lineHeight: 20,
+      marginBottom: SPACING.sm,
+    },
+    editBriefButton: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: SPACING.xs,
+      paddingVertical: SPACING.xs,
+    },
+    editBriefText: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.primary,
+      fontWeight: FONT_WEIGHT.medium,
+    },
+    emptyBrief: {
+      alignItems: "center" as const,
+      paddingVertical: SPACING.lg,
+      gap: SPACING.sm,
+    },
+    emptyBriefText: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textTertiary,
+      textAlign: "center" as const,
+      maxWidth: "80%" as const,
+      lineHeight: 20,
+    },
 
-  // ── Workspace Switcher ──────────────────────────
-  wsActionBtns: {
-    flexDirection: "row",
-    gap: SPACING.xs,
-  },
-  addWorkspaceBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    height: 30,
-    paddingHorizontal: SPACING.sm,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primaryMuted,
-    justifyContent: "center",
-  },
-  wsActionLabel: {
-    fontSize: 12,
-    fontWeight: "600" as const,
-    color: COLORS.primary,
-    letterSpacing: 0.3,
-  },
-  workspaceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: SPACING.sm + 2,
-    paddingHorizontal: SPACING.sm,
-    borderRadius: BORDER_RADIUS.md,
-    marginBottom: SPACING.xs,
-  },
-  workspaceRowActive: {
-    backgroundColor: COLORS.primaryMuted,
-  },
-  wsIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.backgroundSubtle,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: SPACING.md,
-  },
-  wsIconWrapActive: {
-    backgroundColor: COLORS.primary,
-  },
-  wsIconText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textSecondary,
-  },
-  wsIconTextActive: {
-    color: COLORS.white,
-  },
-  wsInfo: {
-    flex: 1,
-  },
-  wsName: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textPrimary,
-  },
-  wsNameActive: {
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
-  },
-  wsRole: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-    marginTop: 1,
-  },
-  wsActiveBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.xxs,
-  },
-  wsActiveText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.success,
-    fontWeight: FONT_WEIGHT.medium,
-  },
+    // ── Workspace Switcher ──────────────────────────
+    wsActionBtns: {
+      flexDirection: "row" as const,
+      gap: SPACING.xs,
+    },
+    addWorkspaceBtn: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 4,
+      height: 30,
+      paddingHorizontal: SPACING.sm,
+      borderRadius: BORDER_RADIUS.full,
+      backgroundColor: colors.primaryMuted,
+      justifyContent: "center" as const,
+    },
+    wsActionLabel: {
+      fontSize: 12,
+      fontWeight: "600" as const,
+      color: colors.primary,
+      letterSpacing: 0.3,
+    },
+    workspaceRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      paddingVertical: SPACING.sm + 2,
+      paddingHorizontal: SPACING.sm,
+      borderRadius: BORDER_RADIUS.md,
+      marginBottom: SPACING.xs,
+    },
+    workspaceRowActive: {
+      backgroundColor: colors.primaryMuted,
+    },
+    wsIconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: BORDER_RADIUS.sm,
+      backgroundColor: colors.backgroundSubtle,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginRight: SPACING.md,
+    },
+    wsIconWrapActive: {
+      backgroundColor: colors.primary,
+    },
+    wsIconText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textSecondary,
+    },
+    wsIconTextActive: {
+      color: colors.white,
+    },
+    wsInfo: {
+      flex: 1,
+    },
+    wsName: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textPrimary,
+    },
+    wsNameActive: {
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.primary,
+    },
+    wsRole: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textMuted,
+      marginTop: 1,
+    },
+    wsActiveBadge: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: SPACING.xxs,
+    },
+    wsActiveText: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.success,
+      fontWeight: FONT_WEIGHT.medium,
+    },
 
-  // ── Create Workspace Modal ────────────────────
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: SPACING.xl,
-  },
-  modalSheet: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.xl,
-    width: "100%",
-    maxWidth: 400,
-    ...SHADOW.lg,
-  },
-  modalTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.xs,
-  },
-  modalSubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.lg,
-    lineHeight: 20,
-  },
-  modalInput: {
-    backgroundColor: COLORS.background,
-    borderRadius: BORDER_RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm + 2,
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textPrimary,
-  },
-  modalActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: SPACING.sm,
-    marginTop: SPACING.lg,
-  },
-  modalCancelBtn: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.backgroundSubtle,
-  },
-  modalCancelText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
-  },
-  modalCreateBtn: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.primary,
-  },
-  modalCreateBtnDisabled: {
-    opacity: 0.5,
-  },
-  modalCreateText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.white,
-  },
+    // ── Create Workspace Modal ────────────────────
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
+      padding: SPACING.xl,
+    },
+    modalSheet: {
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.xl,
+      padding: SPACING.xl,
+      width: "100%" as const,
+      maxWidth: 400,
+      ...SHADOW.lg,
+    },
+    modalTitle: {
+      fontSize: FONT_SIZE.lg,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+      marginBottom: SPACING.xs,
+    },
+    modalSubtitle: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textSecondary,
+      marginBottom: SPACING.lg,
+      lineHeight: 20,
+    },
+    modalInput: {
+      backgroundColor: colors.background,
+      borderRadius: BORDER_RADIUS.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm + 2,
+      fontSize: FONT_SIZE.sm,
+      color: colors.textPrimary,
+    },
+    modalActions: {
+      flexDirection: "row" as const,
+      justifyContent: "flex-end" as const,
+      gap: SPACING.sm,
+      marginTop: SPACING.lg,
+    },
+    modalCancelBtn: {
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.sm + 2,
+      borderRadius: BORDER_RADIUS.md,
+      backgroundColor: colors.backgroundSubtle,
+    },
+    modalCancelText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textSecondary,
+    },
+    modalCreateBtn: {
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.sm + 2,
+      borderRadius: BORDER_RADIUS.md,
+      backgroundColor: colors.primary,
+    },
+    modalCreateBtnDisabled: {
+      opacity: 0.5,
+    },
+    modalCreateText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.white,
+    },
 
-  versionText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-    textAlign: "center",
-    marginTop: SPACING.lg,
-  },
-});
+    versionText: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textMuted,
+      textAlign: "center" as const,
+      marginTop: SPACING.lg,
+    },
+  };
+}

@@ -15,7 +15,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -23,9 +22,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
+import type { ColorPalette } from "@/constants/theme";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
+import { useTheme } from "@/hooks/use-theme";
 import {
   BORDER_RADIUS,
-  COLORS,
   FONT_SIZE,
   FONT_WEIGHT,
   LAYOUT,
@@ -66,10 +67,12 @@ function formatRelativeTime(dateStr: string): string {
 // ── Source Citation Card ────────────────────────────────────
 
 function SourceCard({ source }: { source: SourceCitation }) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.sourceCard}>
       <View style={styles.sourceHeader}>
-        <Ionicons name="document-text" size={12} color={COLORS.primary} />
+        <Ionicons name="document-text" size={12} color={colors.primary} />
         <Text style={styles.sourceTitle} numberOfLines={1}>
           {source.document_title}
         </Text>
@@ -89,6 +92,8 @@ interface MessageBubbleProps {
 }
 
 function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const isUser = message.role === "user";
 
   return (
@@ -101,7 +106,7 @@ function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
       {/* Avatar for assistant */}
       {!isUser && (
         <View style={styles.assistantAvatar}>
-          <Ionicons name="sparkles" size={14} color={COLORS.primary} />
+          <Ionicons name="sparkles" size={14} color={colors.primary} />
         </View>
       )}
 
@@ -151,10 +156,12 @@ function StreamingBubble({
   content: string;
   sources: SourceCitation[];
 }) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={[styles.messageBubbleRow, styles.assistantBubbleRow]}>
       <View style={styles.assistantAvatar}>
-        <Ionicons name="sparkles" size={14} color={COLORS.primary} />
+        <Ionicons name="sparkles" size={14} color={colors.primary} />
       </View>
       <View style={[styles.messageBubble, styles.assistantBubble]}>
         <Text style={[styles.messageText, styles.assistantMessageText]}>
@@ -185,13 +192,15 @@ function StreamingBubble({
 // ── Thinking Indicator ──────────────────────────────────────
 
 function ThinkingIndicator() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={[styles.messageBubbleRow, styles.assistantBubbleRow]}>
       <View style={styles.assistantAvatar}>
-        <Ionicons name="sparkles" size={14} color={COLORS.primary} />
+        <Ionicons name="sparkles" size={14} color={colors.primary} />
       </View>
       <View style={[styles.messageBubble, styles.assistantBubble, styles.thinkingBubble]}>
-        <ActivityIndicator color={COLORS.primary} size="small" />
+        <ActivityIndicator color={colors.primary} size="small" />
         <Text style={styles.thinkingText}>Searching your documents…</Text>
       </View>
     </View>
@@ -211,6 +220,7 @@ function ConversationItem({
   onPress: () => void;
   onDelete: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const handleLongPress = useCallback(() => {
     Alert.alert("Conversation", undefined, [
       { text: "Delete", style: "destructive", onPress: onDelete },
@@ -250,10 +260,12 @@ function ConversationItem({
 // ── Chat Empty State ────────────────────────────────────────
 
 function ChatEmptyState() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.chatEmptyState}>
       <View style={styles.chatEmptyIconBg}>
-        <Ionicons name="chatbubble-ellipses" size={36} color={COLORS.primary} />
+        <Ionicons name="chatbubble-ellipses" size={36} color={colors.primary} />
       </View>
       <Text style={styles.chatEmptyTitle}>AI Knowledge Assistant</Text>
       <Text style={styles.chatEmptyBody}>
@@ -270,7 +282,7 @@ function ChatEmptyState() {
             <Ionicons
               name="sparkles-outline"
               size={12}
-              color={COLORS.textTertiary}
+              color={colors.textTertiary}
             />
             <Text style={styles.suggestionText}>{suggestion}</Text>
           </View>
@@ -290,6 +302,8 @@ interface InputBarProps {
 }
 
 function InputBar({ value, onChangeText, onSend, disabled }: InputBarProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const canSend = value.trim().length > 0 && !disabled;
 
   return (
@@ -300,7 +314,7 @@ function InputBar({ value, onChangeText, onSend, disabled }: InputBarProps) {
           value={value}
           onChangeText={onChangeText}
           placeholder="Ask about your documents…"
-          placeholderTextColor={COLORS.textMuted}
+          placeholderTextColor={colors.textMuted}
           multiline
           maxLength={10000}
           editable={!disabled}
@@ -318,12 +332,12 @@ function InputBar({ value, onChangeText, onSend, disabled }: InputBarProps) {
           disabled={!canSend}
         >
           {disabled ? (
-            <ActivityIndicator color={COLORS.white} size={16} />
+            <ActivityIndicator color={colors.white} size={16} />
           ) : (
             <Ionicons
               name="arrow-up"
               size={20}
-              color={canSend ? COLORS.white : COLORS.textMuted}
+              color={canSend ? colors.white : colors.textMuted}
             />
           )}
         </Pressable>
@@ -335,6 +349,8 @@ function InputBar({ value, onChangeText, onSend, disabled }: InputBarProps) {
 // ── Main Screen ─────────────────────────────────────────────
 
 export default function ChatScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const router = useRouter();
   const chatInterfaceRef = useTourRef("knowledge-chat-interface");
   const [activeConversationId, setActiveConversationId] = useState<
@@ -475,7 +491,7 @@ export default function ChatScreen() {
               }
             }}
           >
-            <Ionicons name="chevron-back" size={22} color={COLORS.primary} />
+            <Ionicons name="chevron-back" size={22} color={colors.primary} />
           </Pressable>
           <Pressable
             style={styles.headerButton}
@@ -484,7 +500,7 @@ export default function ChatScreen() {
             <Ionicons
               name={showSidebar ? "close" : "menu"}
               size={22}
-              color={COLORS.textSecondary}
+              color={colors.textSecondary}
             />
           </Pressable>
         </View>
@@ -498,7 +514,7 @@ export default function ChatScreen() {
           <Ionicons
             name="create-outline"
             size={22}
-            color={COLORS.primary}
+            color={colors.primary}
           />
         </Pressable>
       </View>
@@ -553,7 +569,7 @@ export default function ChatScreen() {
                       <Ionicons
                         name="alert-circle"
                         size={16}
-                        color={COLORS.error}
+                        color={colors.error}
                       />
                       <Text style={styles.streamErrorText}>{streamError}</Text>
                     </View>
@@ -563,7 +579,7 @@ export default function ChatScreen() {
             />
           ) : messagesLoading && activeConversationId ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator color={COLORS.primary} size="large" />
+              <ActivityIndicator color={colors.primary} size="large" />
             </View>
           ) : (
             <ChatEmptyState />
@@ -584,345 +600,346 @@ export default function ChatScreen() {
 
 // ── Styles ──────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
+function createStyles(colors: ColorPalette) {
+  return {
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
 
-  // ── Chat Header ────────────────────────────────────────
-  chatHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
-    backgroundColor: COLORS.surface,
-  },
-  headerLeftGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerButton: {
-    width: 36,
-    height: 36,
-    borderRadius: BORDER_RADIUS.sm,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  chatHeaderTitle: {
-    flex: 1,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-    textAlign: "center",
-    marginHorizontal: SPACING.sm,
-  },
+    // ── Chat Header ────────────────────────────────────────
+    chatHeader: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderLight,
+      backgroundColor: colors.surface,
+    },
+    headerLeftGroup: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+    },
+    headerButton: {
+      width: 36,
+      height: 36,
+      borderRadius: BORDER_RADIUS.sm,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    chatHeaderTitle: {
+      flex: 1,
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+      textAlign: "center" as const,
+      marginHorizontal: SPACING.sm,
+    },
 
-  // ── Main Content ───────────────────────────────────────
-  mainContent: {
-    flex: 1,
-    flexDirection: "row",
-  },
+    // ── Main Content ───────────────────────────────────────
+    mainContent: {
+      flex: 1,
+      flexDirection: "row" as const,
+    },
 
-  // ── Sidebar ────────────────────────────────────────────
-  sidebar: {
-    width: 260,
-    backgroundColor: COLORS.surface,
-    borderRightWidth: 1,
-    borderRightColor: COLORS.borderLight,
-    paddingTop: SPACING.md,
-  },
-  sidebarTitle: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.sm,
-  },
-  sidebarScroll: {
-    flex: 1,
-  },
-  sidebarEmpty: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textMuted,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.lg,
-    textAlign: "center",
-  },
-  conversationItem: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm + 2,
-    borderLeftWidth: 3,
-    borderLeftColor: "transparent",
-  },
-  conversationItemActive: {
-    backgroundColor: COLORS.primaryMuted,
-    borderLeftColor: COLORS.primary,
-  },
-  conversationItemContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  conversationTitle: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textPrimary,
-    flex: 1,
-    marginRight: SPACING.sm,
-  },
-  conversationTitleActive: {
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  conversationTime: {
-    fontSize: FONT_SIZE.caption,
-    color: COLORS.textMuted,
-    fontWeight: FONT_WEIGHT.regular,
-  },
+    // ── Sidebar ────────────────────────────────────────────
+    sidebar: {
+      width: 260,
+      backgroundColor: colors.surface,
+      borderRightWidth: 1,
+      borderRightColor: colors.borderLight,
+      paddingTop: SPACING.md,
+    },
+    sidebarTitle: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textTertiary,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.8,
+      paddingHorizontal: SPACING.md,
+      marginBottom: SPACING.sm,
+    },
+    sidebarScroll: {
+      flex: 1,
+    },
+    sidebarEmpty: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textMuted,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.lg,
+      textAlign: "center" as const,
+    },
+    conversationItem: {
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm + 2,
+      borderLeftWidth: 3,
+      borderLeftColor: "transparent",
+    },
+    conversationItemActive: {
+      backgroundColor: colors.primaryMuted,
+      borderLeftColor: colors.primary,
+    },
+    conversationItemContent: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+    },
+    conversationTitle: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textPrimary,
+      flex: 1,
+      marginRight: SPACING.sm,
+    },
+    conversationTitleActive: {
+      color: colors.primary,
+      fontWeight: FONT_WEIGHT.semibold,
+    },
+    conversationTime: {
+      fontSize: FONT_SIZE.caption,
+      color: colors.textMuted,
+      fontWeight: FONT_WEIGHT.regular,
+    },
 
-  // ── Chat Area ──────────────────────────────────────────
-  chatArea: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  messagesList: {
-    paddingHorizontal: SPACING.md,
-    paddingTop: SPACING.md,
-    paddingBottom: SPACING.sm,
-  },
+    // ── Chat Area ──────────────────────────────────────────
+    chatArea: {
+      flex: 1,
+      justifyContent: "flex-end" as const,
+    },
+    loadingContainer: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    messagesList: {
+      paddingHorizontal: SPACING.md,
+      paddingTop: SPACING.md,
+      paddingBottom: SPACING.sm,
+    },
 
-  // ── Message Bubbles ────────────────────────────────────
-  messageBubbleRow: {
-    flexDirection: "row",
-    marginBottom: SPACING.md,
-    maxWidth: "88%",
-  },
-  userBubbleRow: {
-    alignSelf: "flex-end",
-  },
-  assistantBubbleRow: {
-    alignSelf: "flex-start",
-  },
-  assistantAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primaryMuted,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: SPACING.sm,
-    marginTop: SPACING.xxs,
-  },
-  messageBubble: {
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md,
-    maxWidth: "100%",
-    flexShrink: 1,
-  },
-  userBubble: {
-    backgroundColor: COLORS.primary,
-    borderBottomRightRadius: BORDER_RADIUS.xs,
-  },
-  assistantBubble: {
-    backgroundColor: COLORS.surface,
-    borderBottomLeftRadius: BORDER_RADIUS.xs,
-    ...SHADOW.sm,
-  },
-  messageText: {
-    fontSize: FONT_SIZE.sm,
-    lineHeight: 22,
-  },
-  userMessageText: {
-    color: COLORS.white,
-    fontWeight: FONT_WEIGHT.regular,
-  },
-  assistantMessageText: {
-    color: COLORS.textPrimary,
-    fontWeight: FONT_WEIGHT.regular,
-  },
-  cursor: {
-    color: COLORS.primary,
-    opacity: 0.7,
-  },
+    // ── Message Bubbles ────────────────────────────────────
+    messageBubbleRow: {
+      flexDirection: "row" as const,
+      marginBottom: SPACING.md,
+      maxWidth: "88%" as const,
+    },
+    userBubbleRow: {
+      alignSelf: "flex-end" as const,
+    },
+    assistantBubbleRow: {
+      alignSelf: "flex-start" as const,
+    },
+    assistantAvatar: {
+      width: 28,
+      height: 28,
+      borderRadius: BORDER_RADIUS.full,
+      backgroundColor: colors.primaryMuted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginRight: SPACING.sm,
+      marginTop: SPACING.xxs,
+    },
+    messageBubble: {
+      borderRadius: BORDER_RADIUS.lg,
+      padding: SPACING.md,
+      maxWidth: "100%" as const,
+      flexShrink: 1,
+    },
+    userBubble: {
+      backgroundColor: colors.primary,
+      borderBottomRightRadius: BORDER_RADIUS.xs,
+    },
+    assistantBubble: {
+      backgroundColor: colors.surface,
+      borderBottomLeftRadius: BORDER_RADIUS.xs,
+      ...SHADOW.sm,
+    },
+    messageText: {
+      fontSize: FONT_SIZE.sm,
+      lineHeight: 22,
+    },
+    userMessageText: {
+      color: colors.white,
+      fontWeight: FONT_WEIGHT.regular,
+    },
+    assistantMessageText: {
+      color: colors.textPrimary,
+      fontWeight: FONT_WEIGHT.regular,
+    },
+    cursor: {
+      color: colors.primary,
+      opacity: 0.7,
+    },
 
-  // ── Thinking Indicator ─────────────────────────────────
-  thinkingBubble: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.sm,
-  },
-  thinkingText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textTertiary,
-    fontWeight: FONT_WEIGHT.medium,
-    fontStyle: "italic",
-  },
+    // ── Thinking Indicator ─────────────────────────────────
+    thinkingBubble: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: SPACING.sm,
+    },
+    thinkingText: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textTertiary,
+      fontWeight: FONT_WEIGHT.medium,
+      fontStyle: "italic" as const,
+    },
 
-  // ── Source Citations ───────────────────────────────────
-  sourcesContainer: {
-    marginTop: SPACING.sm,
-  },
-  sourcesDivider: {
-    height: 1,
-    backgroundColor: COLORS.borderLight,
-    marginBottom: SPACING.sm,
-  },
-  sourcesLabel: {
-    fontSize: FONT_SIZE.caption,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: SPACING.xs,
-  },
-  sourcesScroll: {
-    gap: SPACING.sm,
-  },
-  sourceCard: {
-    width: 200,
-    backgroundColor: COLORS.backgroundSubtle,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.sm,
-    borderLeftWidth: 2,
-    borderLeftColor: COLORS.primary,
-  },
-  sourceHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.xs,
-    marginBottom: SPACING.xxs,
-  },
-  sourceTitle: {
-    fontSize: FONT_SIZE.caption,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
-    flex: 1,
-  },
-  sourceSnippet: {
-    fontSize: FONT_SIZE.caption,
-    color: COLORS.textSecondary,
-    lineHeight: 16,
-  },
+    // ── Source Citations ───────────────────────────────────
+    sourcesContainer: {
+      marginTop: SPACING.sm,
+    },
+    sourcesDivider: {
+      height: 1,
+      backgroundColor: colors.borderLight,
+      marginBottom: SPACING.sm,
+    },
+    sourcesLabel: {
+      fontSize: FONT_SIZE.caption,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textTertiary,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.5,
+      marginBottom: SPACING.xs,
+    },
+    sourcesScroll: {
+      gap: SPACING.sm,
+    },
+    sourceCard: {
+      width: 200,
+      backgroundColor: colors.backgroundSubtle,
+      borderRadius: BORDER_RADIUS.md,
+      padding: SPACING.sm,
+      borderLeftWidth: 2,
+      borderLeftColor: colors.primary,
+    },
+    sourceHeader: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: SPACING.xs,
+      marginBottom: SPACING.xxs,
+    },
+    sourceTitle: {
+      fontSize: FONT_SIZE.caption,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.primary,
+      flex: 1,
+    },
+    sourceSnippet: {
+      fontSize: FONT_SIZE.caption,
+      color: colors.textSecondary,
+      lineHeight: 16,
+    },
 
-  // ── Stream Error ───────────────────────────────────────
-  streamErrorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.errorMuted,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.sm,
-    gap: SPACING.xs,
-    marginBottom: SPACING.md,
-  },
-  streamErrorText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.error,
-    fontWeight: FONT_WEIGHT.medium,
-    flex: 1,
-  },
+    // ── Stream Error ───────────────────────────────────────
+    streamErrorContainer: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: colors.errorMuted,
+      borderRadius: BORDER_RADIUS.md,
+      padding: SPACING.sm,
+      gap: SPACING.xs,
+      marginBottom: SPACING.md,
+    },
+    streamErrorText: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.error,
+      fontWeight: FONT_WEIGHT.medium,
+      flex: 1,
+    },
 
-  // ── Chat Empty State ───────────────────────────────────
-  chatEmptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: LAYOUT.screenPaddingH,
-  },
-  chatEmptyIconBg: {
-    width: 72,
-    height: 72,
-    borderRadius: BORDER_RADIUS.xl,
-    backgroundColor: COLORS.primaryMuted,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: SPACING.lg,
-  },
-  chatEmptyTitle: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.sm,
-    letterSpacing: -0.3,
-  },
-  chatEmptyBody: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.regular,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    lineHeight: 22,
-    maxWidth: 300,
-    marginBottom: SPACING.lg,
-  },
-  chatEmptySuggestions: {
-    alignItems: "center",
-    gap: SPACING.sm,
-  },
-  suggestionChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.full,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    gap: SPACING.xs,
-    ...SHADOW.sm,
-  },
-  suggestionText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
-  },
+    // ── Chat Empty State ───────────────────────────────────
+    chatEmptyState: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingHorizontal: LAYOUT.screenPaddingH,
+    },
+    chatEmptyIconBg: {
+      width: 72,
+      height: 72,
+      borderRadius: BORDER_RADIUS.xl,
+      backgroundColor: colors.primaryMuted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginBottom: SPACING.lg,
+    },
+    chatEmptyTitle: {
+      fontSize: FONT_SIZE.xl,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+      marginBottom: SPACING.sm,
+      letterSpacing: -0.3,
+    },
+    chatEmptyBody: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.regular,
+      color: colors.textSecondary,
+      textAlign: "center" as const,
+      lineHeight: 22,
+      maxWidth: 300,
+      marginBottom: SPACING.lg,
+    },
+    chatEmptySuggestions: {
+      alignItems: "center" as const,
+      gap: SPACING.sm,
+    },
+    suggestionChip: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.full,
+      paddingVertical: SPACING.sm,
+      paddingHorizontal: SPACING.md,
+      gap: SPACING.xs,
+      ...SHADOW.sm,
+    },
+    suggestionText: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textSecondary,
+    },
 
-  // ── Input Bar ──────────────────────────────────────────
-  inputBar: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-    backgroundColor: COLORS.surface,
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    backgroundColor: COLORS.backgroundSubtle,
-    borderRadius: BORDER_RADIUS.lg,
-    paddingLeft: SPACING.md,
-    paddingRight: SPACING.xs,
-    paddingVertical: SPACING.xs,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  textInput: {
-    flex: 1,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.regular,
-    color: COLORS.textPrimary,
-    maxHeight: 120,
-    paddingVertical: SPACING.sm,
-    lineHeight: 20,
-  },
-  sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.textMuted,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: SPACING.xs,
-  },
-  sendButtonActive: {
-    backgroundColor: COLORS.primary,
-    ...SHADOW.glow,
-  },
-});
-
+    // ── Input Bar ──────────────────────────────────────────
+    inputBar: {
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderLight,
+      backgroundColor: colors.surface,
+    },
+    inputContainer: {
+      flexDirection: "row" as const,
+      alignItems: "flex-end" as const,
+      backgroundColor: colors.backgroundSubtle,
+      borderRadius: BORDER_RADIUS.lg,
+      paddingLeft: SPACING.md,
+      paddingRight: SPACING.xs,
+      paddingVertical: SPACING.xs,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    textInput: {
+      flex: 1,
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.regular,
+      color: colors.textPrimary,
+      maxHeight: 120,
+      paddingVertical: SPACING.sm,
+      lineHeight: 20,
+    },
+    sendButton: {
+      width: 36,
+      height: 36,
+      borderRadius: BORDER_RADIUS.full,
+      backgroundColor: colors.textMuted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginLeft: SPACING.xs,
+    },
+    sendButtonActive: {
+      backgroundColor: colors.primary,
+      ...SHADOW.glow,
+    },
+  };
+}

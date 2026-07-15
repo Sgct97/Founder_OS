@@ -9,12 +9,15 @@ import { Stack } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { HeaderTitle } from "@/components/ui/HeaderTitle";
-import { COLORS, FONT_SIZE, FONT_WEIGHT } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
+import { FONT_SIZE, FONT_WEIGHT } from "@/constants/theme";
 
 function GradientHeaderBackground() {
+  const { colors, resolved } = useTheme();
+  const top = resolved === "dark" ? "#1A1000" : colors.navyMid;
   return (
     <LinearGradient
-      colors={["#1A1000", COLORS.navy]}
+      colors={[top, colors.navy]}
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
       style={{ flex: 1 }}
@@ -23,14 +26,17 @@ function GradientHeaderBackground() {
 }
 
 export default function KnowledgeLayout() {
+  const { colors, resolved } = useTheme();
+  const headerTint = resolved === "dark" ? colors.white : colors.textPrimary;
+
   return (
     <Stack
       screenOptions={{
         headerStyle: {
-          backgroundColor: COLORS.navy,
+          backgroundColor: colors.navy,
           height: 96,
         },
-        headerTintColor: COLORS.white,
+        headerTintColor: headerTint,
         headerTitleAlign: "center",
         headerTitleStyle: {
           fontWeight: FONT_WEIGHT.semibold,

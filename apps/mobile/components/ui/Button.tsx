@@ -10,14 +10,15 @@ import {
   ActivityIndicator,
   Animated,
   Pressable,
-  StyleSheet,
   Text,
   type ViewStyle,
 } from "react-native";
 
+import type { ColorPalette } from "@/constants/theme";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
+import { useTheme } from "@/hooks/use-theme";
 import {
   BORDER_RADIUS,
-  COLORS,
   FONT_SIZE,
   FONT_WEIGHT,
   LAYOUT,
@@ -46,6 +47,8 @@ export function Button({
   fullWidth = true,
   style,
 }: ButtonProps): React.JSX.Element {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = useCallback(() => {
@@ -86,8 +89,7 @@ export function Button({
     isDisabled && styles.labelDisabled,
   ];
 
-  const spinnerColor =
-    variant === "primary" ? COLORS.white : COLORS.primary;
+  const spinnerColor = variant === "primary" ? colors.white : colors.primary;
 
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
@@ -108,53 +110,54 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    height: LAYOUT.buttonHeight,
-    borderRadius: BORDER_RADIUS.md,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: SPACING.lg,
-  },
-  fullWidth: {
-    width: "100%",
-  },
-  primary: {
-    backgroundColor: COLORS.primary,
-  },
-  secondary: {
-    backgroundColor: "transparent",
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-  },
-  ghost: {
-    backgroundColor: "transparent",
-  },
-  danger: {
-    backgroundColor: COLORS.errorMuted,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  label: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.semibold,
-    letterSpacing: 0.2,
-  },
-  labelPrimary: {
-    color: COLORS.white,
-  },
-  labelSecondary: {
-    color: COLORS.textPrimary,
-  },
-  labelGhost: {
-    color: COLORS.primary,
-  },
-  labelDanger: {
-    color: COLORS.error,
-  },
-  labelDisabled: {
-    color: COLORS.textMuted,
-  },
-});
-
+function createStyles(colors: ColorPalette) {
+  return {
+    base: {
+      height: LAYOUT.buttonHeight,
+      borderRadius: BORDER_RADIUS.md,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingHorizontal: SPACING.lg,
+    },
+    fullWidth: {
+      width: "100%" as const,
+    },
+    primary: {
+      backgroundColor: colors.primary,
+    },
+    secondary: {
+      backgroundColor: "transparent",
+      borderWidth: 1.5,
+      borderColor: colors.border,
+    },
+    ghost: {
+      backgroundColor: "transparent",
+    },
+    danger: {
+      backgroundColor: colors.errorMuted,
+    },
+    disabled: {
+      opacity: 0.5,
+    },
+    label: {
+      fontSize: FONT_SIZE.md,
+      fontWeight: FONT_WEIGHT.semibold,
+      letterSpacing: 0.2,
+    },
+    labelPrimary: {
+      color: colors.white,
+    },
+    labelSecondary: {
+      color: colors.textPrimary,
+    },
+    labelGhost: {
+      color: colors.primary,
+    },
+    labelDanger: {
+      color: colors.error,
+    },
+    labelDisabled: {
+      color: colors.textMuted,
+    },
+  };
+}

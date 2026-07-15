@@ -27,14 +27,16 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { Button } from "@/components/ui/Button";
 import { useImportConfirm, useImportPreview } from "@/hooks/use-milestones";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
+import { useTheme } from "@/hooks/use-theme";
 import type {
   ImportPhaseItem,
   MilestoneImportPreview,
 } from "@/types/milestones";
+import type { ColorPalette } from "@/constants/theme";
 import {
   ANIMATION,
   BORDER_RADIUS,
-  COLORS,
   FONT_SIZE,
   FONT_WEIGHT,
   LAYOUT,
@@ -47,6 +49,8 @@ import {
 const STEPS = ["Paste Text", "Preview", "Done"] as const;
 
 function StepIndicator({ current }: { current: number }): React.JSX.Element {
+  const si = useThemedStyles(createStepIndicatorStyles);
+  const { colors } = useTheme();
   return (
     <View style={si.container}>
       {STEPS.map((label, i) => {
@@ -68,7 +72,7 @@ function StepIndicator({ current }: { current: number }): React.JSX.Element {
                 ]}
               >
                 {isDone ? (
-                  <Ionicons name="checkmark" size={10} color={COLORS.white} />
+                  <Ionicons name="checkmark" size={10} color={colors.white} />
                 ) : (
                   <Text
                     style={[
@@ -97,65 +101,67 @@ function StepIndicator({ current }: { current: number }): React.JSX.Element {
   );
 }
 
-const si = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: SPACING.lg,
-  },
-  connector: {
-    height: 1.5,
-    flex: 1,
-    backgroundColor: COLORS.borderLight,
-    marginHorizontal: SPACING.xs,
-  },
-  connectorActive: {
-    backgroundColor: COLORS.primary,
-  },
-  stepGroup: {
-    alignItems: "center",
-  },
-  dot: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: COLORS.backgroundSubtle,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  dotActive: {
-    backgroundColor: COLORS.primaryMuted,
-    borderColor: COLORS.primary,
-  },
-  dotDone: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  dotText: {
-    fontSize: 10,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textMuted,
-  },
-  dotTextActive: {
-    color: COLORS.primary,
-  },
-  label: {
-    fontSize: FONT_SIZE.caption,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textMuted,
-  },
-  labelActive: {
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  labelDone: {
-    color: COLORS.textTertiary,
-  },
-});
+function createStepIndicatorStyles(colors: ColorPalette) {
+  return {
+    container: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginBottom: SPACING.lg,
+    },
+    connector: {
+      height: 1.5,
+      flex: 1,
+      backgroundColor: colors.borderLight,
+      marginHorizontal: SPACING.xs,
+    },
+    connectorActive: {
+      backgroundColor: colors.primary,
+    },
+    stepGroup: {
+      alignItems: "center" as const,
+    },
+    dot: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: colors.backgroundSubtle,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginBottom: 4,
+    },
+    dotActive: {
+      backgroundColor: colors.primaryMuted,
+      borderColor: colors.primary,
+    },
+    dotDone: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    dotText: {
+      fontSize: 10,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textMuted,
+    },
+    dotTextActive: {
+      color: colors.primary,
+    },
+    label: {
+      fontSize: FONT_SIZE.caption,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textMuted,
+    },
+    labelActive: {
+      color: colors.primary,
+      fontWeight: FONT_WEIGHT.semibold,
+    },
+    labelDone: {
+      color: colors.textTertiary,
+    },
+  };
+}
 
 // ── Phase Preview Card ───────────────────────────────────────
 
@@ -166,6 +172,8 @@ function PhasePreviewCard({
   phase: ImportPhaseItem;
   index: number;
 }): React.JSX.Element {
+  const pc = useThemedStyles(createPhaseCardStyles);
+  const { colors } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
 
@@ -225,7 +233,7 @@ function PhasePreviewCard({
             <Ionicons
               name="ellipse-outline"
               size={16}
-              color={COLORS.textMuted}
+              color={colors.textMuted}
             />
           </View>
           <View style={pc.milestoneContent}>
@@ -244,89 +252,91 @@ function PhasePreviewCard({
   );
 }
 
-const pc = StyleSheet.create({
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    marginBottom: SPACING.md,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    padding: SPACING.md,
-    gap: SPACING.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
-  },
-  phaseNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: COLORS.primaryMuted,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  phaseNumberText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
-  },
-  headerText: {
-    flex: 1,
-  },
-  title: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-    letterSpacing: -0.2,
-  },
-  desc: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textTertiary,
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  countBadge: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xxs + 1,
-    borderRadius: BORDER_RADIUS.xs,
-    backgroundColor: COLORS.backgroundSubtle,
-  },
-  countText: {
-    fontSize: FONT_SIZE.caption,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textTertiary,
-  },
-  milestoneRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm + 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.borderLight,
-    gap: SPACING.sm,
-  },
-  milestoneCheck: {
-    marginTop: 1,
-  },
-  milestoneContent: {
-    flex: 1,
-  },
-  milestoneTitle: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textPrimary,
-    lineHeight: 20,
-  },
-  milestoneDesc: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textTertiary,
-    marginTop: 1,
-  },
-});
+function createPhaseCardStyles(colors: ColorPalette) {
+  return {
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.lg,
+      marginBottom: SPACING.md,
+      overflow: "hidden" as const,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+    },
+    header: {
+      flexDirection: "row" as const,
+      alignItems: "flex-start" as const,
+      padding: SPACING.md,
+      gap: SPACING.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderLight,
+    },
+    phaseNumber: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: colors.primaryMuted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    phaseNumberText: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.primary,
+    },
+    headerText: {
+      flex: 1,
+    },
+    title: {
+      fontSize: FONT_SIZE.md,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+      letterSpacing: -0.2,
+    },
+    desc: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textTertiary,
+      marginTop: 2,
+      lineHeight: 16,
+    },
+    countBadge: {
+      paddingHorizontal: SPACING.sm,
+      paddingVertical: SPACING.xxs + 1,
+      borderRadius: BORDER_RADIUS.xs,
+      backgroundColor: colors.backgroundSubtle,
+    },
+    countText: {
+      fontSize: FONT_SIZE.caption,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textTertiary,
+    },
+    milestoneRow: {
+      flexDirection: "row" as const,
+      alignItems: "flex-start" as const,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm + 2,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.borderLight,
+      gap: SPACING.sm,
+    },
+    milestoneCheck: {
+      marginTop: 1,
+    },
+    milestoneContent: {
+      flex: 1,
+    },
+    milestoneTitle: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textPrimary,
+      lineHeight: 20,
+    },
+    milestoneDesc: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textTertiary,
+      marginTop: 1,
+    },
+  };
+}
 
 // ── Main Import Modal ────────────────────────────────────────
 
@@ -339,6 +349,8 @@ export default function ImportModal({
   visible,
   onClose,
 }: ImportModalProps): React.JSX.Element {
+  const s = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const [step, setStep] = useState(0);
   const [content, setContent] = useState("");
   const [replaceExisting, setReplaceExisting] = useState(false);
@@ -402,7 +414,7 @@ export default function ImportModal({
     <>
       <View style={s.heroSection}>
         <View style={s.heroIcon}>
-          <Ionicons name="sparkles" size={24} color={COLORS.primary} />
+          <Ionicons name="sparkles" size={24} color={colors.primary} />
         </View>
         <Text style={s.heroTitle}>AI-Powered Import</Text>
         <Text style={s.heroSubtitle}>
@@ -416,7 +428,7 @@ export default function ImportModal({
         value={content}
         onChangeText={setContent}
         placeholder={`# Phase 1: Foundation\n- Set up authentication\n- Design database schema\n- Build API scaffolding\n\n# Phase 2: Core Features\n- Build document upload\n- Implement search\n- Create dashboard`}
-        placeholderTextColor={COLORS.textMuted}
+        placeholderTextColor={colors.textMuted}
         multiline
         textAlignVertical="top"
         autoFocus={Platform.OS !== "web"}
@@ -435,7 +447,7 @@ export default function ImportModal({
 
       {previewMutation.error ? (
         <View style={s.errorBanner}>
-          <Ionicons name="alert-circle" size={16} color={COLORS.error} />
+          <Ionicons name="alert-circle" size={16} color={colors.error} />
           <Text style={s.errorBannerText}>
             {previewMutation.error instanceof Error
               ? previewMutation.error.message
@@ -495,7 +507,7 @@ export default function ImportModal({
           style={[s.toggleBox, replaceExisting && s.toggleBoxActive]}
         >
           {replaceExisting && (
-            <Ionicons name="checkmark" size={12} color={COLORS.white} />
+            <Ionicons name="checkmark" size={12} color={colors.white} />
           )}
         </View>
         <View style={s.toggleContent}>
@@ -508,7 +520,7 @@ export default function ImportModal({
 
       {confirmMutation.error ? (
         <View style={s.errorBanner}>
-          <Ionicons name="alert-circle" size={16} color={COLORS.error} />
+          <Ionicons name="alert-circle" size={16} color={colors.error} />
           <Text style={s.errorBannerText}>
             {confirmMutation.error instanceof Error
               ? confirmMutation.error.message
@@ -540,7 +552,7 @@ export default function ImportModal({
     <View style={s.successContainer}>
       <View style={s.successIconOuter}>
         <View style={s.successIconInner}>
-          <Ionicons name="checkmark" size={28} color={COLORS.white} />
+          <Ionicons name="checkmark" size={28} color={colors.white} />
         </View>
       </View>
       <Text style={s.successTitle}>Import Complete</Text>
@@ -551,14 +563,14 @@ export default function ImportModal({
 
       <View style={s.successStats}>
         <View style={s.successStatCard}>
-          <Ionicons name="layers-outline" size={20} color={COLORS.primary} />
+          <Ionicons name="layers-outline" size={20} color={colors.primary} />
           <Text style={s.successStatNumber}>
             {importResult?.phases ?? 0}
           </Text>
           <Text style={s.successStatLabel}>Phases</Text>
         </View>
         <View style={s.successStatCard}>
-          <Ionicons name="flag-outline" size={20} color={COLORS.primary} />
+          <Ionicons name="flag-outline" size={20} color={colors.primary} />
           <Text style={s.successStatNumber}>
             {importResult?.milestones ?? 0}
           </Text>
@@ -597,242 +609,243 @@ export default function ImportModal({
 
 // ── Styles ───────────────────────────────────────────────────
 
-const s = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: COLORS.surfaceOverlay,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: LAYOUT.screenPaddingH,
-  },
-  modalContent: {
-    width: "100%",
-    maxWidth: 540,
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.lg,
-    maxHeight: "80%",
-    ...SHADOW.lg,
-  },
-  modalContentTall: {
-    maxHeight: "90%",
-  },
+function createStyles(colors: ColorPalette) {
+  return {
+    overlay: {
+      flex: 1,
+      backgroundColor: colors.surfaceOverlay,
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
+      padding: LAYOUT.screenPaddingH,
+    },
+    modalContent: {
+      width: "100%" as const,
+      maxWidth: 540,
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.xl,
+      padding: SPACING.lg,
+      maxHeight: "80%" as const,
+      ...SHADOW.lg,
+    },
+    modalContentTall: {
+      maxHeight: "90%" as const,
+    },
 
-  // ── Hero ─────────────────────────────────────────────
-  heroSection: {
-    alignItems: "center",
-    marginBottom: SPACING.lg,
-  },
-  heroIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.primaryMuted,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: SPACING.md,
-  },
-  heroTitle: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    letterSpacing: -0.3,
-    marginBottom: SPACING.xs,
-  },
-  heroSubtitle: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.regular,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    lineHeight: 20,
-    maxWidth: 380,
-  },
+    // ── Hero ─────────────────────────────────────────────
+    heroSection: {
+      alignItems: "center" as const,
+      marginBottom: SPACING.lg,
+    },
+    heroIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: BORDER_RADIUS.md,
+      backgroundColor: colors.primaryMuted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginBottom: SPACING.md,
+    },
+    heroTitle: {
+      fontSize: FONT_SIZE.xl,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+      letterSpacing: -0.3,
+      marginBottom: SPACING.xs,
+    },
+    heroSubtitle: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.regular,
+      color: colors.textSecondary,
+      textAlign: "center" as const,
+      lineHeight: 20,
+      maxWidth: 380,
+    },
 
-  // ── Text Area ────────────────────────────────────────
-  textArea: {
-    height: 200,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.md,
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.background,
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    lineHeight: 20,
-  },
-  charCount: {
-    alignItems: "flex-end",
-    marginTop: SPACING.xs,
-    marginBottom: SPACING.sm,
-  },
-  charCountText: {
-    fontSize: FONT_SIZE.caption,
-    color: COLORS.textMuted,
-  },
-  charCountWarn: {
-    color: COLORS.warning,
-  },
+    // ── Text Area ────────────────────────────────────────
+    textArea: {
+      height: 200,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: BORDER_RADIUS.md,
+      padding: SPACING.md,
+      fontSize: FONT_SIZE.sm,
+      color: colors.textPrimary,
+      backgroundColor: colors.background,
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+      lineHeight: 20,
+    },
+    charCount: {
+      alignItems: "flex-end" as const,
+      marginTop: SPACING.xs,
+      marginBottom: SPACING.sm,
+    },
+    charCountText: {
+      fontSize: FONT_SIZE.caption,
+      color: colors.textMuted,
+    },
+    charCountWarn: {
+      color: colors.warning,
+    },
 
-  // ── Error Banner ─────────────────────────────────────
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.sm,
-    backgroundColor: COLORS.errorMuted,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: BORDER_RADIUS.md,
-    marginBottom: SPACING.md,
-  },
-  errorBannerText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.error,
-    flex: 1,
-  },
+    // ── Error Banner ─────────────────────────────────────
+    errorBanner: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: SPACING.sm,
+      backgroundColor: colors.errorMuted,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm + 2,
+      borderRadius: BORDER_RADIUS.md,
+      marginBottom: SPACING.md,
+    },
+    errorBannerText: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.error,
+      flex: 1,
+    },
 
-  // ── Actions ──────────────────────────────────────────
-  actions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: SPACING.sm,
-    marginTop: SPACING.sm,
-  },
+    // ── Actions ──────────────────────────────────────────
+    actions: {
+      flexDirection: "row" as const,
+      justifyContent: "flex-end" as const,
+      gap: SPACING.sm,
+      marginTop: SPACING.sm,
+    },
 
-  // ── Preview ──────────────────────────────────────────
-  previewHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.backgroundSubtle,
-    borderRadius: BORDER_RADIUS.md,
-    paddingVertical: SPACING.md,
-    marginBottom: SPACING.md,
-  },
-  previewStat: {
-    alignItems: "center",
-    paddingHorizontal: SPACING.lg,
-  },
-  previewStatNumber: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
-    letterSpacing: -0.5,
-  },
-  previewStatLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textTertiary,
-    marginTop: 2,
-  },
-  previewStatDivider: {
-    width: 1,
-    height: 36,
-    backgroundColor: COLORS.border,
-  },
-  previewScroll: {
-    flex: 1,
-    maxHeight: 350,
-  },
-  previewScrollContent: {
-    paddingBottom: SPACING.sm,
-  },
+    // ── Preview ──────────────────────────────────────────
+    previewHeader: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: colors.backgroundSubtle,
+      borderRadius: BORDER_RADIUS.md,
+      paddingVertical: SPACING.md,
+      marginBottom: SPACING.md,
+    },
+    previewStat: {
+      alignItems: "center" as const,
+      paddingHorizontal: SPACING.lg,
+    },
+    previewStatNumber: {
+      fontSize: FONT_SIZE.xxl,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.primary,
+      letterSpacing: -0.5,
+    },
+    previewStatLabel: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textTertiary,
+      marginTop: 2,
+    },
+    previewStatDivider: {
+      width: 1,
+      height: 36,
+      backgroundColor: colors.border,
+    },
+    previewScroll: {
+      flex: 1,
+      maxHeight: 350,
+    },
+    previewScrollContent: {
+      paddingBottom: SPACING.sm,
+    },
 
-  // ── Toggle ───────────────────────────────────────────
-  toggleRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    paddingVertical: SPACING.md,
-    gap: SPACING.sm,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-  },
-  toggleBox: {
-    width: 20,
-    height: 20,
-    borderRadius: BORDER_RADIUS.xs,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.background,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 1,
-  },
-  toggleBoxActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  toggleContent: {
-    flex: 1,
-  },
-  toggleLabel: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textPrimary,
-  },
-  toggleDesc: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textTertiary,
-    marginTop: 1,
-  },
+    // ── Toggle ───────────────────────────────────────────
+    toggleRow: {
+      flexDirection: "row" as const,
+      alignItems: "flex-start" as const,
+      paddingVertical: SPACING.md,
+      gap: SPACING.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderLight,
+    },
+    toggleBox: {
+      width: 20,
+      height: 20,
+      borderRadius: BORDER_RADIUS.xs,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      backgroundColor: colors.background,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginTop: 1,
+    },
+    toggleBoxActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    toggleContent: {
+      flex: 1,
+    },
+    toggleLabel: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textPrimary,
+    },
+    toggleDesc: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textTertiary,
+      marginTop: 1,
+    },
 
-  // ── Success ──────────────────────────────────────────
-  successContainer: {
-    alignItems: "center",
-    paddingVertical: SPACING.lg,
-  },
-  successIconOuter: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: COLORS.primaryMuted,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: SPACING.lg,
-  },
-  successIconInner: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  successTitle: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    letterSpacing: -0.3,
-    marginBottom: SPACING.xs,
-  },
-  successSubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    marginBottom: SPACING.lg,
-  },
-  successStats: {
-    flexDirection: "row",
-    gap: SPACING.md,
-  },
-  successStatCard: {
-    alignItems: "center",
-    backgroundColor: COLORS.backgroundSubtle,
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    gap: SPACING.xs,
-  },
-  successStatNumber: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    letterSpacing: -0.5,
-  },
-  successStatLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textTertiary,
-  },
-});
-
+    // ── Success ──────────────────────────────────────────
+    successContainer: {
+      alignItems: "center" as const,
+      paddingVertical: SPACING.lg,
+    },
+    successIconOuter: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: colors.primaryMuted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginBottom: SPACING.lg,
+    },
+    successIconInner: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.primary,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    successTitle: {
+      fontSize: FONT_SIZE.xl,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+      letterSpacing: -0.3,
+      marginBottom: SPACING.xs,
+    },
+    successSubtitle: {
+      fontSize: FONT_SIZE.sm,
+      color: colors.textSecondary,
+      textAlign: "center" as const,
+      marginBottom: SPACING.lg,
+    },
+    successStats: {
+      flexDirection: "row" as const,
+      gap: SPACING.md,
+    },
+    successStatCard: {
+      alignItems: "center" as const,
+      backgroundColor: colors.backgroundSubtle,
+      paddingHorizontal: SPACING.xl,
+      paddingVertical: SPACING.md,
+      borderRadius: BORDER_RADIUS.md,
+      gap: SPACING.xs,
+    },
+    successStatNumber: {
+      fontSize: FONT_SIZE.xxl,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+      letterSpacing: -0.5,
+    },
+    successStatLabel: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textTertiary,
+    },
+  };
+}

@@ -14,7 +14,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -22,9 +21,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
 
+import type { ColorPalette } from "@/constants/theme";
+import { useThemedStyles } from "@/hooks/use-themed-styles";
+import { useTheme } from "@/hooks/use-theme";
 import {
   BORDER_RADIUS,
-  COLORS,
   FONT_SIZE,
   FONT_WEIGHT,
   LAYOUT,
@@ -66,35 +67,39 @@ function formatRelativeTime(dateStr: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-const STATUS_CONFIG: Record<
+function getStatusConfig(
+  colors: ColorPalette
+): Record<
   DocumentStatus,
   { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }
-> = {
-  queued: {
-    label: "Queued",
-    color: COLORS.textTertiary,
-    bg: COLORS.backgroundSubtle,
-    icon: "time-outline",
-  },
-  processing: {
-    label: "Processing",
-    color: COLORS.info,
-    bg: COLORS.infoMuted,
-    icon: "sync-outline",
-  },
-  ready: {
-    label: "Ready",
-    color: COLORS.success,
-    bg: COLORS.successMuted,
-    icon: "checkmark-circle",
-  },
-  failed: {
-    label: "Failed",
-    color: COLORS.error,
-    bg: COLORS.errorMuted,
-    icon: "alert-circle",
-  },
-};
+> {
+  return {
+    queued: {
+      label: "Queued",
+      color: colors.textTertiary,
+      bg: colors.backgroundSubtle,
+      icon: "time-outline",
+    },
+    processing: {
+      label: "Processing",
+      color: colors.info,
+      bg: colors.infoMuted,
+      icon: "sync-outline",
+    },
+    ready: {
+      label: "Ready",
+      color: colors.success,
+      bg: colors.successMuted,
+      icon: "checkmark-circle",
+    },
+    failed: {
+      label: "Failed",
+      color: colors.error,
+      bg: colors.errorMuted,
+      icon: "alert-circle",
+    },
+  };
+}
 
 const FILE_TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   pdf: "document-text",
@@ -114,7 +119,9 @@ const FILE_TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 // ── Status Badge ────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: DocumentStatus }) {
-  const config = STATUS_CONFIG[status];
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
+  const config = getStatusConfig(colors)[status];
   return (
     <View style={[styles.statusBadge, { backgroundColor: config.bg }]}>
       <Ionicons name={config.icon} size={12} color={config.color} />
@@ -134,6 +141,8 @@ interface DocumentCardProps {
 }
 
 function DocumentCard({ document, onPress, onDelete }: DocumentCardProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const iconName = FILE_TYPE_ICONS[document.file_type] ?? "document";
 
   const handleLongPress = useCallback(() => {
@@ -162,7 +171,7 @@ function DocumentCard({ document, onPress, onDelete }: DocumentCardProps) {
     >
       {/* File type icon */}
       <View style={styles.cardIconContainer}>
-        <Ionicons name={iconName} size={22} color={COLORS.primary} />
+        <Ionicons name={iconName} size={22} color={colors.primary} />
       </View>
 
       {/* Content */}
@@ -207,7 +216,7 @@ function DocumentCard({ document, onPress, onDelete }: DocumentCardProps) {
       <Ionicons
         name="chevron-forward"
         size={18}
-        color={COLORS.textMuted}
+        color={colors.textMuted}
         style={styles.cardChevron}
       />
     </Pressable>
@@ -217,6 +226,8 @@ function DocumentCard({ document, onPress, onDelete }: DocumentCardProps) {
 // ── Upload Button ───────────────────────────────────────────
 
 function UploadButton({ onPress }: { onPress: () => void }) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <Pressable
       style={({ pressed }) => [
@@ -226,13 +237,13 @@ function UploadButton({ onPress }: { onPress: () => void }) {
       onPress={onPress}
     >
       <View style={styles.uploadIconContainer}>
-        <Ionicons name="cloud-upload" size={20} color={COLORS.primary} />
+        <Ionicons name="cloud-upload" size={20} color={colors.primary} />
       </View>
       <View style={styles.uploadTextContainer}>
         <Text style={styles.uploadTitle}>Upload Document</Text>
         <Text style={styles.uploadSubtitle}>PDF, Markdown, CSV, HTML, JSON, and more</Text>
       </View>
-      <Ionicons name="add-circle" size={24} color={COLORS.primary} />
+      <Ionicons name="add-circle" size={24} color={colors.primary} />
     </Pressable>
   );
 }
@@ -240,10 +251,12 @@ function UploadButton({ onPress }: { onPress: () => void }) {
 // ── Empty State ─────────────────────────────────────────────
 
 function EmptyState({ onUpload }: { onUpload: () => void }) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.emptyState}>
       <View style={styles.emptyIconContainer}>
-        <Ionicons name="library" size={32} color={COLORS.primary} />
+        <Ionicons name="library" size={32} color={colors.primary} />
       </View>
       <Text style={styles.emptyTitle}>Your Knowledge Base</Text>
       <Text style={styles.emptyBody}>
@@ -257,14 +270,14 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
         ]}
         onPress={onUpload}
       >
-        <Ionicons name="cloud-upload" size={18} color={COLORS.white} />
+        <Ionicons name="cloud-upload" size={18} color={colors.white} />
         <Text style={styles.emptyUploadText}>Upload Your First Document</Text>
       </Pressable>
       <View style={styles.chip}>
         <Ionicons
           name="document-outline"
           size={14}
-          color={COLORS.textTertiary}
+          color={colors.textTertiary}
         />
         <Text style={styles.chipText}>
           PDF, CSV, HTML, JSON, Markdown, and more
@@ -277,6 +290,8 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
 // ── Main Screen ─────────────────────────────────────────────
 
 export default function KnowledgeScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const router = useRouter();
   const {
     data: documents,
@@ -426,7 +441,7 @@ export default function KnowledgeScreen() {
   if (error) {
     return (
       <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle" size={32} color={COLORS.error} />
+        <Ionicons name="alert-circle" size={32} color={colors.error} />
         <Text style={styles.errorTitle}>Failed to load documents</Text>
         <Pressable style={styles.retryButton} onPress={() => refetch()}>
           <Text style={styles.retryText}>Try Again</Text>
@@ -448,7 +463,7 @@ export default function KnowledgeScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={COLORS.primary}
+              tintColor={colors.primary}
             />
           }
         >
@@ -459,14 +474,14 @@ export default function KnowledgeScreen() {
               <Text style={styles.statLabel}>Documents</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: COLORS.success }]}>
+              <Text style={[styles.statValue, { color: colors.success }]}>
                 {stats.ready}
               </Text>
               <Text style={styles.statLabel}>Ready</Text>
             </View>
             {stats.processing > 0 && (
               <View style={styles.statCard}>
-                <Text style={[styles.statValue, { color: COLORS.info }]}>
+                <Text style={[styles.statValue, { color: colors.info }]}>
                   {stats.processing}
                 </Text>
                 <Text style={styles.statLabel}>Processing</Text>
@@ -482,7 +497,7 @@ export default function KnowledgeScreen() {
           {/* Uploading indicator */}
           {uploadDocument.isPending && (
             <View style={styles.uploadingBanner}>
-              <ActivityIndicator color={COLORS.primary} size="small" />
+              <ActivityIndicator color={colors.primary} size="small" />
               <Text style={styles.uploadingText}>
                 Uploading document…
               </Text>
@@ -511,7 +526,7 @@ export default function KnowledgeScreen() {
         style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85 }]}
         onPress={handleOpenChat}
       >
-        <Ionicons name="chatbubble-ellipses" size={26} color={COLORS.white} />
+        <Ionicons name="chatbubble-ellipses" size={26} color={colors.white} />
       </Pressable>
     </View>
   );
@@ -519,297 +534,299 @@ export default function KnowledgeScreen() {
 
 // ── Styles ──────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.background,
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.background,
-    paddingHorizontal: LAYOUT.screenPaddingH,
-  },
-  errorTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-    marginTop: SPACING.md,
-    marginBottom: SPACING.md,
-  },
-  retryButton: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.primaryMuted,
-  },
-  retryText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: LAYOUT.screenPaddingH,
-    paddingTop: SPACING.lg,
-    paddingBottom: 100,
-  },
+function createStyles(colors: ColorPalette) {
+  return {
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    loadingContainer: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: colors.background,
+    },
+    errorContainer: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: colors.background,
+      paddingHorizontal: LAYOUT.screenPaddingH,
+    },
+    errorTitle: {
+      fontSize: FONT_SIZE.lg,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+      marginTop: SPACING.md,
+      marginBottom: SPACING.md,
+    },
+    retryButton: {
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.sm,
+      borderRadius: BORDER_RADIUS.sm,
+      backgroundColor: colors.primaryMuted,
+    },
+    retryText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.primary,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: LAYOUT.screenPaddingH,
+      paddingTop: SPACING.lg,
+      paddingBottom: 100,
+    },
 
-  // ── Stats Row ──────────────────────────────────────────
-  statsRow: {
-    flexDirection: "row",
-    gap: SPACING.sm,
-    marginBottom: SPACING.lg,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.md,
-    alignItems: "center",
-    ...SHADOW.sm,
-  },
-  statValue: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    letterSpacing: -0.5,
-  },
-  statLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textTertiary,
-    marginTop: SPACING.xxs,
-  },
+    // ── Stats Row ──────────────────────────────────────────
+    statsRow: {
+      flexDirection: "row" as const,
+      gap: SPACING.sm,
+      marginBottom: SPACING.lg,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.md,
+      padding: SPACING.md,
+      alignItems: "center" as const,
+      ...SHADOW.sm,
+    },
+    statValue: {
+      fontSize: FONT_SIZE.xxl,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+      letterSpacing: -0.5,
+    },
+    statLabel: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textTertiary,
+      marginTop: SPACING.xxs,
+    },
 
-  // ── Upload Button ──────────────────────────────────────
-  uploadButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md,
-    marginBottom: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderStyle: "dashed",
-  },
-  uploadButtonPressed: {
-    opacity: 0.7,
-  },
-  uploadIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.primaryMuted,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: SPACING.md,
-  },
-  uploadTextContainer: {
-    flex: 1,
-  },
-  uploadTitle: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-    marginBottom: 2,
-  },
-  uploadSubtitle: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.regular,
-    color: COLORS.textTertiary,
-  },
+    // ── Upload Button ──────────────────────────────────────
+    uploadButton: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.lg,
+      padding: SPACING.md,
+      marginBottom: SPACING.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderStyle: "dashed" as const,
+    },
+    uploadButtonPressed: {
+      opacity: 0.7,
+    },
+    uploadIconContainer: {
+      width: 44,
+      height: 44,
+      borderRadius: BORDER_RADIUS.md,
+      backgroundColor: colors.primaryMuted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginRight: SPACING.md,
+    },
+    uploadTextContainer: {
+      flex: 1,
+    },
+    uploadTitle: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+      marginBottom: 2,
+    },
+    uploadSubtitle: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.regular,
+      color: colors.textTertiary,
+    },
 
-  // ── Uploading Banner ───────────────────────────────────
-  uploadingBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.primaryMuted,
-    borderRadius: BORDER_RADIUS.md,
-    paddingVertical: SPACING.sm,
-    marginBottom: SPACING.md,
-    gap: SPACING.sm,
-  },
-  uploadingText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.primary,
-  },
+    // ── Uploading Banner ───────────────────────────────────
+    uploadingBanner: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: colors.primaryMuted,
+      borderRadius: BORDER_RADIUS.md,
+      paddingVertical: SPACING.sm,
+      marginBottom: SPACING.md,
+      gap: SPACING.sm,
+    },
+    uploadingText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.primary,
+    },
 
-  // ── Section Title ──────────────────────────────────────
-  sectionTitle: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: SPACING.md,
-  },
+    // ── Section Title ──────────────────────────────────────
+    sectionTitle: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textTertiary,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.8,
+      marginBottom: SPACING.md,
+    },
 
-  // ── Document Card ──────────────────────────────────────
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    ...SHADOW.sm,
-  },
-  cardPressed: {
-    opacity: 0.7,
-  },
-  cardIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.primaryMuted,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: SPACING.md,
-  },
-  cardContent: {
-    flex: 1,
-  },
-  cardTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: SPACING.xxs,
-  },
-  cardTitle: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-    flex: 1,
-    marginRight: SPACING.sm,
-  },
-  cardMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.xs,
-  },
-  cardMetaText: {
-    fontSize: FONT_SIZE.caption,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textTertiary,
-  },
-  metaDot: {
-    width: 3,
-    height: 3,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.textMuted,
-  },
-  cardChevron: {
-    marginLeft: SPACING.sm,
-  },
-  errorMessage: {
-    fontSize: FONT_SIZE.caption,
-    color: COLORS.error,
-    fontWeight: FONT_WEIGHT.regular,
-    marginTop: SPACING.xxs,
-  },
+    // ── Document Card ──────────────────────────────────────
+    card: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.md,
+      padding: SPACING.md,
+      marginBottom: SPACING.sm,
+      ...SHADOW.sm,
+    },
+    cardPressed: {
+      opacity: 0.7,
+    },
+    cardIconContainer: {
+      width: 44,
+      height: 44,
+      borderRadius: BORDER_RADIUS.md,
+      backgroundColor: colors.primaryMuted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginRight: SPACING.md,
+    },
+    cardContent: {
+      flex: 1,
+    },
+    cardTitleRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      marginBottom: SPACING.xxs,
+    },
+    cardTitle: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textPrimary,
+      flex: 1,
+      marginRight: SPACING.sm,
+    },
+    cardMeta: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: SPACING.xs,
+    },
+    cardMetaText: {
+      fontSize: FONT_SIZE.caption,
+      fontWeight: FONT_WEIGHT.medium,
+      color: colors.textTertiary,
+    },
+    metaDot: {
+      width: 3,
+      height: 3,
+      borderRadius: BORDER_RADIUS.full,
+      backgroundColor: colors.textMuted,
+    },
+    cardChevron: {
+      marginLeft: SPACING.sm,
+    },
+    errorMessage: {
+      fontSize: FONT_SIZE.caption,
+      color: colors.error,
+      fontWeight: FONT_WEIGHT.regular,
+      marginTop: SPACING.xxs,
+    },
 
-  // ── Status Badge ───────────────────────────────────────
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 3,
-    borderRadius: BORDER_RADIUS.full,
-    gap: SPACING.xxs,
-  },
-  statusText: {
-    fontSize: FONT_SIZE.caption,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
+    // ── Status Badge ───────────────────────────────────────
+    statusBadge: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      paddingHorizontal: SPACING.sm,
+      paddingVertical: 3,
+      borderRadius: BORDER_RADIUS.full,
+      gap: SPACING.xxs,
+    },
+    statusText: {
+      fontSize: FONT_SIZE.caption,
+      fontWeight: FONT_WEIGHT.semibold,
+    },
 
-  // ── Empty State ────────────────────────────────────────
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: LAYOUT.screenPaddingH,
-  },
-  emptyIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: COLORS.primaryMuted,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: SPACING.lg,
-  },
-  emptyTitle: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.sm,
-    letterSpacing: -0.3,
-  },
-  emptyBody: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.regular,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    lineHeight: 22,
-    maxWidth: 320,
-    marginBottom: SPACING.lg,
-  },
-  emptyUploadBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.primary,
-    borderRadius: BORDER_RADIUS.md,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-    gap: SPACING.sm,
-    marginBottom: SPACING.lg,
-    ...SHADOW.glow,
-  },
-  emptyUploadText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.white,
-  },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.surfaceElevated,
-    borderRadius: BORDER_RADIUS.full,
-    paddingVertical: SPACING.xs + 2,
-    paddingHorizontal: SPACING.md,
-    ...SHADOW.sm,
-  },
-  chipText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textTertiary,
-    fontWeight: FONT_WEIGHT.medium,
-    marginLeft: SPACING.xs,
-  },
+    // ── Empty State ────────────────────────────────────────
+    emptyState: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingHorizontal: LAYOUT.screenPaddingH,
+    },
+    emptyIconContainer: {
+      width: 64,
+      height: 64,
+      borderRadius: BORDER_RADIUS.lg,
+      backgroundColor: colors.primaryMuted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginBottom: SPACING.lg,
+    },
+    emptyTitle: {
+      fontSize: FONT_SIZE.xl,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.textPrimary,
+      marginBottom: SPACING.sm,
+      letterSpacing: -0.3,
+    },
+    emptyBody: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.regular,
+      color: colors.textSecondary,
+      textAlign: "center" as const,
+      lineHeight: 22,
+      maxWidth: 320,
+      marginBottom: SPACING.lg,
+    },
+    emptyUploadBtn: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: colors.primary,
+      borderRadius: BORDER_RADIUS.md,
+      paddingVertical: SPACING.md,
+      paddingHorizontal: SPACING.lg,
+      gap: SPACING.sm,
+      marginBottom: SPACING.lg,
+      ...SHADOW.glow,
+    },
+    emptyUploadText: {
+      fontSize: FONT_SIZE.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.white,
+    },
+    chip: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: BORDER_RADIUS.full,
+      paddingVertical: SPACING.xs + 2,
+      paddingHorizontal: SPACING.md,
+      ...SHADOW.sm,
+    },
+    chipText: {
+      fontSize: FONT_SIZE.xs,
+      color: colors.textTertiary,
+      fontWeight: FONT_WEIGHT.medium,
+      marginLeft: SPACING.xs,
+    },
 
-  // ── FAB ────────────────────────────────────────────────
-  fab: {
-    position: "absolute",
-    bottom: 24,
-    right: LAYOUT.screenPaddingH,
-    width: 56,
-    height: 56,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    ...SHADOW.glow,
-  },
-});
+    // ── FAB ────────────────────────────────────────────────
+    fab: {
+      position: "absolute" as const,
+      bottom: 24,
+      right: LAYOUT.screenPaddingH,
+      width: 56,
+      height: 56,
+      borderRadius: BORDER_RADIUS.full,
+      backgroundColor: colors.primary,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      ...SHADOW.glow,
+    },
+  };
+}
