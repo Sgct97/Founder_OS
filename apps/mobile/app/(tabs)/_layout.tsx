@@ -90,6 +90,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="projects"
+        options={{
+          title: "Projects",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="cube-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="milestones"
         options={{
           title: "Milestones",
